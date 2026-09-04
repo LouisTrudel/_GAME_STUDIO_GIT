@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo:*)",
+      "Bash(python -c:*)",
+      "Bash(pip install:*)",
+      "Bash(python server.py:*)",
+      "Bash(timeout:*)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)",
+      "WebFetch(domain:firebase.google.com)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(del \"C:\\\\Users\\\\lou\\\\__MY_WORK__\\\\_GAME_STUDIO_\\\\studio\\\\docs\\\\concepts\\\\ceo.md\")",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /PID 44776 /F\")",
+      "Bash(dir:*)",
+      "Bash(cmd /c \"tree /F /A\")"
+    ]
+  }
+}

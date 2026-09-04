@@ -1,0 +1,364 @@
+{
+  "events": [
+    {
+      "type": "task_completed",
+      "task_id": "T005",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T10:53:22.599095"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T004",
+      "assignee": "Programmer",
+      "reason": "TIMEOUT: Agent response timed out after 30s (max retries exceeded)",
+      "timestamp": "2026-09-03T10:53:56.518256"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T007",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T11:02:10.849385"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T001",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T14:14:40.017025"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T002",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T14:26:36.142716"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T002",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T14:26:42.824951"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T003",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T14:33:30.600298"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T004",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T14:35:14.823650"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T003",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T14:36:15.943822"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T004",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T14:36:21.340527"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T005",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T20:09:10.058065"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T005",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T20:10:45.884710"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T006",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T20:15:17.836890"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T006",
+      "assignee": "Programmer",
+      "reason": "TIMEOUT: Agent response timed out after 30s (max retries exceeded)",
+      "timestamp": "2026-09-03T20:22:40.698878"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T007",
+      "assignee": "Designer",
+      "timestamp": "2026-09-03T21:30:46.864584"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T008",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T21:30:46.884587"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T009",
+      "assignee": "Artist",
+      "timestamp": "2026-09-03T21:30:46.902592"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T010",
+      "assignee": "Writer",
+      "timestamp": "2026-09-03T21:30:46.920596"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T011",
+      "assignee": "Qa",
+      "timestamp": "2026-09-03T21:30:46.940600"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T007",
+      "assignee": "Designer",
+      "timestamp": "2026-09-03T21:30:58.743948"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T008",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T21:31:05.936128"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T009",
+      "assignee": "Artist",
+      "timestamp": "2026-09-03T21:31:17.337691"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T010",
+      "assignee": "Writer",
+      "timestamp": "2026-09-03T21:31:25.170700"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T012",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T21:36:13.721625"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T012",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-03T21:38:14.373003"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T013",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T09:04:25.280009"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T013",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T09:05:23.047447"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T014",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T09:09:15.376096"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T014",
+      "assignee": "Programmer",
+      "reason": "TIMEOUT: Agent response timed out after 30s (max retries exceeded)",
+      "timestamp": "2026-09-04T09:14:34.184192"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T015",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T09:41:26.190818"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T015",
+      "assignee": "Designer",
+      "reason": "TIMEOUT: Agent response timed out after 30s (max retries exceeded)",
+      "timestamp": "2026-09-04T09:49:01.581181"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T016",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T10:06:19.314429"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T017",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T10:06:19.352859"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T018",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T10:06:19.490280"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T019",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T10:06:19.614308"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T020",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T10:06:19.649316"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T021",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T10:06:19.683324"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T022",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T10:06:19.739336"
+    }
+  ],
+  "by_day": {
+    "2026-09-03": {
+      "tasks_created": 13,
+      "tasks_completed": 10,
+      "tasks_rejected": 0,
+      "tasks_failed": 2,
+      "by_agent": {
+        "Programmer": {
+          "created": 9,
+          "completed": 7,
+          "rejected": 0,
+          "failed": 2
+        },
+        "Designer": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Artist": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Writer": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Qa": {
+          "created": 1,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0
+        }
+      }
+    },
+    "2026-09-04": {
+      "tasks_created": 10,
+      "tasks_completed": 1,
+      "tasks_rejected": 0,
+      "tasks_failed": 2,
+      "by_agent": {
+        "Programmer": {
+          "created": 2,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 1
+        },
+        "Designer": {
+          "created": 1,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 1
+        },
+        "Context": {
+          "created": 7,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0
+        }
+      }
+    }
+  },
+  "by_agent": {
+    "Programmer": {
+      "tasks_assigned": 11,
+      "tasks_completed": 8,
+      "tasks_rejected": 0,
+      "tasks_failed": 3,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Designer": {
+      "tasks_assigned": 2,
+      "tasks_completed": 1,
+      "tasks_rejected": 0,
+      "tasks_failed": 1,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Artist": {
+      "tasks_assigned": 1,
+      "tasks_completed": 1,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Writer": {
+      "tasks_assigned": 1,
+      "tasks_completed": 1,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Qa": {
+      "tasks_assigned": 1,
+      "tasks_completed": 0,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Context": {
+      "tasks_assigned": 7,
+      "tasks_completed": 0,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    }
+  },
+  "qa_stats": {
+    "total_reviews": 0,
+    "approvals": 0,
+    "rejections": 0,
+    "revisions_per_task": {}
+  }
+}

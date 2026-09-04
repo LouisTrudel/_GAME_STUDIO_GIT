@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#f0f0f0" />
+  
+  <!-- Dog Body (Low Poly Shapes) -->
+  <!-- Legs -->
+  <polygon points="150,400 180,400 180,300 150,300" fill="#E67E22" />
+  <polygon points="320,400 350,400 350,300 320,300" fill="#E67E22" />
+  
+  <!-- Main Body -->
+  <polygon points="150,200 350,200 350,320 150,320" fill="#D35400" />
+  
+  <!-- Head -->
+  <polygon points="200,100 300,100 320,220 180,220" fill="#E67E22" />
+  
+  <!-- Ear -->
+  <polygon points="180,120 150,80 200,100" fill="#D35400" />
+  
+  <!-- Eyes -->
+  <circle cx="230" cy="150" r="20" fill="white" />
+  <circle cx="230" cy="150" r="10" fill="black" />
+  <circle cx="270" cy="150" r="20" fill="white" />
+  <circle cx="270" cy="150" r="10" fill="black" />
+  
+  <!-- Goofy Tongue -->
+  <ellipse cx="250" cy="210" rx="15" ry="25" fill="#FF7675" />
+</svg>

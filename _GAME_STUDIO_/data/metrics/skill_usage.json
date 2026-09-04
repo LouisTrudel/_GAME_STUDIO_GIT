@@ -1,0 +1,70 @@
+{
+  "events": [
+    {
+      "skill": ":code/roblox/client",
+      "agent": "Programmer",
+      "timestamp": "2026-09-03T00:25:31.115890",
+      "task_id": "T002",
+      "success": true
+    },
+    {
+      "skill": ":code/patterns/data",
+      "agent": "Programmer",
+      "timestamp": "2026-09-03T00:25:31.121891",
+      "task_id": "T002",
+      "success": true
+    },
+    {
+      "skill": ":code/node",
+      "agent": "Programmer",
+      "timestamp": "2026-09-03T10:53:22.583092",
+      "task_id": "T005",
+      "success": false
+    },
+    {
+      "skill": ":code/patterns/orchestration",
+      "agent": "Programmer",
+      "timestamp": "2026-09-03T10:53:22.591093",
+      "task_id": "T005",
+      "success": false
+    }
+  ],
+  "summary": {
+    ":code/roblox/client": {
+      "total_loads": 1,
+      "successful_loads": 1,
+      "by_agent": {
+        "Programmer": 1
+      },
+      "first_loaded": "2026-09-03T00:25:31.115890",
+      "last_loaded": "2026-09-03T00:25:31.115890"
+    },
+    ":code/patterns/data": {
+      "total_loads": 1,
+      "successful_loads": 1,
+      "by_agent": {
+        "Programmer": 1
+      },
+      "first_loaded": "2026-09-03T00:25:31.121891",
+      "last_loaded": "2026-09-03T00:25:31.121891"
+    },
+    ":code/node": {
+      "total_loads": 1,
+      "successful_loads": 0,
+      "by_agent": {
+        "Programmer": 1
+      },
+      "first_loaded": "2026-09-03T10:53:22.583092",
+      "last_loaded": "2026-09-03T10:53:22.583092"
+    },
+    ":code/patterns/orchestration": {
+      "total_loads": 1,
+      "successful_loads": 0,
+      "by_agent": {
+        "Programmer": 1
+      },
+      "first_loaded": "2026-09-03T10:53:22.591093",
+      "last_loaded": "2026-09-03T10:53:22.591093"
+    }
+  }
+}

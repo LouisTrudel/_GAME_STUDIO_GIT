@@ -1,0 +1,2429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Studio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background: #16213e;
+            padding: 0.8rem 1.5rem;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        header h1 {
+            font-size: 1.3rem;
+            color: #e94560;
+        }
+
+        .status {
+            margin-left: auto;
+            padding: 0.25rem 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            background: #333;
+        }
+
+        .status.connected {
+            background: #2ecc71;
+            color: #000;
+        }
+
+        /* Auto-approve toggle */
+        .auto-approve {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: 0.5rem;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: #2ecc71;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: left 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            left: 18px;
+        }
+
+        /* Activity status bar */
+        .activity-bar {
+            display: none;
+            padding: 0.5rem 1.5rem;
+            background: #16213e;
+            border-top: 1px solid #0f3460;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .activity-bar.show {
+            display: flex;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.6rem;
+            background: #1a1a2e;
+            border-radius: 0.4rem;
+            font-size: 0.8rem;
+            border-left: 3px solid #888;
+        }
+
+        .activity-item.thinking {
+            border-left-color: #f39c12;
+            animation: pulse-border 1.5s infinite;
+        }
+
+        .activity-item.working {
+            border-left-color: #3498db;
+        }
+
+        .activity-item.idle {
+            display: none;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-left-color: #f39c12; }
+            50% { border-left-color: #f7dc6f; }
+        }
+
+        .activity-dots {
+            display: flex;
+            gap: 2px;
+        }
+
+        .activity-dots span {
+            width: 4px;
+            height: 4px;
+            background: currentColor;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .activity-dots span:nth-child(1) { animation-delay: 0s; }
+        .activity-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .activity-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        /* Thinking indicator (legacy, keep for compatibility) */
+        .thinking-indicator {
+            display: none;
+            padding: 0.7rem 1rem;
+            background: #16213e;
+            border-radius: 0.5rem;
+            border-left: 3px solid #f39c12;
+            margin: 0.6rem 0;
+            color: #f39c12;
+            font-size: 0.9rem;
+        }
+
+        .thinking-indicator.show {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .thinking-dots span {
+            width: 6px;
+            height: 6px;
+            background: #f39c12;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .thinking-dots span:nth-child(1) { animation-delay: 0s; }
+        .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+            padding: 0 1rem;
+        }
+
+        .tab {
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #888;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #ccc;
+            background: #1a1a2e;
+        }
+
+        .tab.active {
+            color: #e94560;
+            border-bottom-color: #e94560;
+        }
+
+        /* Main content */
+        .main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Tab panels */
+        .panel {
+            display: none;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .panel.active {
+            display: flex;
+        }
+
+        /* ===== HUB TAB ===== */
+        .hub-panel {
+            flex-direction: row;
+        }
+
+        .sidebar {
+            width: 180px;
+            background: #16213e;
+            border-right: 1px solid #0f3460;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .agent-list {
+            list-style: none;
+        }
+
+        .agent-list li {
+            padding: 0.4rem 0.5rem;
+            margin: 0.2rem 0;
+            border-radius: 0.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+
+        .agent-list li:hover {
+            background: #1a1a2e;
+        }
+
+        .agent-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.5rem;
+        }
+
+        .message {
+            margin: 0.6rem 0;
+            padding: 0.7rem 1rem;
+            background: #16213e;
+            border-radius: 0.5rem;
+            border-left: 3px solid #888;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .message-time {
+            font-size: 0.65rem;
+            color: #555;
+        }
+
+        .message-content {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .mention {
+            background: rgba(52, 152, 219, 0.3);
+            color: #5dade2;
+            padding: 0 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .message.user {
+            background: #0f3460;
+            border-left-color: #3498db;
+        }
+
+        .input-area {
+            padding: 1rem 1.5rem;
+            background: #16213e;
+            border-top: 1px solid #0f3460;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        input[type="text"], textarea {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border: 1px solid #0f3460;
+            border-radius: 0.4rem;
+            background: #1a1a2e;
+            color: #eee;
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: #e94560;
+        }
+
+        button {
+            padding: 0.7rem 1.2rem;
+            background: #e94560;
+            border: none;
+            border-radius: 0.4rem;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #c73e54;
+        }
+
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: #0f3460;
+        }
+
+        button.secondary:hover {
+            background: #1a4a7a;
+        }
+
+        /* ===== TASKS TAB ===== */
+        .tasks-panel {
+            flex-direction: column;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        /* Task Sub-tabs */
+        .task-sub-tabs {
+            display: flex;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+            padding: 0 1rem;
+            flex-shrink: 0;
+        }
+
+        .task-sub-tab {
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #888;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .task-sub-tab:hover {
+            color: #ccc;
+            background: #1a1a2e;
+        }
+
+        .task-sub-tab.active {
+            color: #e94560;
+            border-bottom-color: #e94560;
+        }
+
+        .task-sub-tab .count-badge {
+            background: #333;
+            color: #888;
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.8rem;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .task-sub-tab.active .count-badge {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .tasks-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .task-summary {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .task-stat {
+            padding: 0.5rem 1rem;
+            background: #16213e;
+            border-radius: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        .task-stat .count {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: #16213e;
+            border-radius: 0.4rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #888;
+        }
+
+        .task-item.pending { border-left-color: #888; }
+        .task-item.ready { border-left-color: #f39c12; }
+        .task-item.in_progress { border-left-color: #3498db; }
+        .task-item.completed { border-left-color: #9b59b6; }
+        .task-item.reviewed { border-left-color: #2ecc71; }
+        .task-item.failed { border-left-color: #e74c3c; }
+        .task-item.blocked { border-left-color: #555; }
+
+        .task-id {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #888;
+            min-width: 40px;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-description {
+            margin-bottom: 0.3rem;
+        }
+
+        .task-meta {
+            font-size: 0.75rem;
+            color: #666;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .task-status {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.2rem;
+            text-transform: uppercase;
+        }
+
+        .task-status.pending { background: #444; }
+        .task-status.ready { background: #f39c12; color: #000; }
+        .task-status.in_progress { background: #3498db; }
+        .task-status.completed { background: #9b59b6; }
+        .task-status.reviewed { background: #2ecc71; color: #000; }
+        .task-status.failed { background: #e74c3c; }
+        .task-status.blocked { background: #333; }
+
+        .task-agent {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+            background: #0f3460;
+        }
+
+        .task-result {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #1a1a2e;
+            border-radius: 0.3rem;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .task-tokens {
+            font-size: 0.7rem;
+            color: #5dade2;
+            background: rgba(93, 173, 226, 0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .task-expand-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .task-expand-btn:hover {
+            background: #333;
+            color: #fff;
+        }
+
+        .task-details {
+            display: none;
+            margin-top: 0.8rem;
+            padding: 0.8rem;
+            background: #1a1a2e;
+            border-radius: 0.4rem;
+            border: 1px solid #333;
+        }
+
+        .task-details.show {
+            display: block;
+        }
+
+        .task-details h4 {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .token-log {
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+
+        .token-log-entry {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.2rem 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .token-log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .token-log-step {
+            color: #888;
+            min-width: 30px;
+        }
+
+        .token-log-type {
+            color: #5dade2;
+            min-width: 100px;
+        }
+
+        .token-log-type.tool {
+            color: #f39c12;
+        }
+
+        .token-log-type.final {
+            color: #2ecc71;
+        }
+
+        .token-log-tokens {
+            color: #aaa;
+        }
+
+        .task-item.approved {
+            border-left-color: #2ecc71;
+        }
+
+        .task-status.approved {
+            background: #2ecc71;
+            color: #000;
+        }
+
+        .task-status.error {
+            background: #e74c3c;
+        }
+
+        .task-item.error {
+            border-left-color: #e74c3c;
+        }
+
+        .task-actions-inline {
+            display: flex;
+            gap: 0.3rem;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .task-actions-inline button {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            background: #e74c3c;
+        }
+
+        .task-actions-inline button:hover {
+            background: #c0392b;
+        }
+
+        .task-actions-inline button.retry {
+            background: #f39c12;
+        }
+
+        .task-actions-inline button.retry:hover {
+            background: #d68910;
+        }
+
+        .task-actions-inline button.delete {
+            background: #7f8c8d;
+        }
+
+        .task-actions-inline button.delete:hover {
+            background: #5d6d7e;
+        }
+
+        /* ===== HEARTBEATS TAB ===== */
+        .heartbeats-panel {
+            flex-direction: column;
+            padding: 1.5rem;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+
+        .heartbeat-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .heartbeat-card {
+            background: #16213e;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            border-left: 3px solid #3498db;
+        }
+
+        .heartbeat-card.paused {
+            border-left-color: #888;
+            opacity: 0.7;
+        }
+
+        .heartbeat-card.running {
+            border-left-color: #f39c12;
+        }
+
+        .heartbeat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .heartbeat-id {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .heartbeat-title {
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .heartbeat-interval {
+            font-size: 0.8rem;
+            color: #3498db;
+            background: #3498db22;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+        }
+
+        .heartbeat-status {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.3rem;
+        }
+
+        .heartbeat-status.active {
+            background: #2ecc71;
+            color: #000;
+        }
+
+        .heartbeat-status.paused {
+            background: #888;
+        }
+
+        .heartbeat-status.running {
+            background: #f39c12;
+            color: #000;
+        }
+
+        .heartbeat-description {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 0.8rem;
+        }
+
+        .heartbeat-meta {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.8rem;
+        }
+
+        .heartbeat-tasks {
+            background: #1a1a2e;
+            border-radius: 0.3rem;
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .heartbeat-task {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.3rem 0;
+            font-size: 0.8rem;
+        }
+
+        .heartbeat-task-num {
+            color: #888;
+            min-width: 20px;
+        }
+
+        .heartbeat-task-assignee {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.2rem;
+            background: #0f3460;
+        }
+
+        .heartbeat-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .heartbeat-buttons button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .heartbeat-buttons .danger {
+            background: #e74c3c;
+        }
+
+        /* Heartbeat task editor */
+        .hb-task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .hb-task-item {
+            background: #1a1a2e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 0.75rem;
+        }
+
+        .hb-task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .hb-task-num {
+            font-weight: bold;
+            color: #5dade2;
+        }
+
+        .hb-task-remove {
+            background: transparent;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0;
+        }
+
+        .hb-task-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hb-task-row input,
+        .hb-task-row select,
+        .hb-task-row textarea {
+            flex: 1;
+            margin: 0;
+        }
+
+        .hb-task-row select {
+            max-width: 140px;
+        }
+
+        .hb-task-row textarea {
+            min-height: 50px;
+            resize: vertical;
+        }
+
+        .hb-task-options {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .hb-task-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin: 0;
+        }
+
+        /* Create heartbeat modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: #16213e;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            width: 500px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            margin-bottom: 1rem;
+        }
+
+        .modal label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .modal input, .modal select, .modal textarea {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .modal textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .log-entry {
+            margin: 0.2rem 0;
+            color: #888;
+        }
+
+        .log-entry.info { color: #3498db; }
+        .log-entry.success { color: #2ecc71; }
+        .log-entry.warn { color: #f39c12; }
+        .log-entry.error { color: #e74c3c; }
+
+        /* ===== AGENTS TAB ===== */
+        .agents-panel {
+            flex-direction: row;
+            flex-wrap: wrap;
+            padding: 1.5rem;
+            gap: 1rem;
+            overflow-y: auto;
+            align-content: flex-start;
+        }
+
+        .agent-card {
+            background: #16213e;
+            border-radius: 0.5rem;
+            padding: 1.2rem;
+            width: 280px;
+            border-left: 4px solid #888;
+        }
+
+        .agent-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .agent-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .agent-title {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .agent-stats {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.8rem;
+        }
+
+        .agent-card button {
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        .agent-card-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .agent-card-buttons button {
+            flex: 1;
+        }
+
+        .agent-status {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 6px;
+        }
+
+        .agent-status.idle { background: #666; }
+        .agent-status.working { background: #2ecc71; animation: pulse 1s infinite; }
+        .agent-status.rate-limited { background: #e74c3c; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .agent-model {
+            font-size: 0.7rem;
+            color: #5dade2;
+            background: rgba(93, 173, 226, 0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-top: 2px;
+            display: inline-block;
+        }
+
+        .agent-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin: 0.6rem 0;
+        }
+
+        .agent-tool {
+            font-size: 0.65rem;
+            background: #1a1a2e;
+            color: #888;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #333;
+        }
+
+        .agent-tool.special {
+            color: #f39c12;
+            border-color: #f39c12;
+        }
+
+        .agent-tasks {
+            background: #1a1a2e;
+            border-radius: 4px;
+            padding: 0.5rem;
+            margin: 0.6rem 0;
+            max-height: 100px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+        }
+
+        .agent-tasks:empty::before {
+            content: "No tasks assigned";
+            color: #555;
+        }
+
+        .agent-task-item {
+            padding: 3px 0;
+            border-bottom: 1px solid #333;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .agent-task-item:last-child {
+            border-bottom: none;
+        }
+
+        .agent-task-status {
+            font-size: 0.6rem;
+            padding: 1px 4px;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+
+        .agent-task-status.ready { background: #2980b9; }
+        .agent-task-status.in_progress { background: #f39c12; }
+        .agent-task-status.completed { background: #27ae60; }
+        .agent-task-status.reviewed { background: #9b59b6; }
+
+        /* Config Modal */
+        .config-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .config-modal.active {
+            display: flex;
+        }
+
+        .config-modal-content {
+            background: #16213e;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            width: 350px;
+        }
+
+        .config-modal h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+        .config-modal label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .config-modal select,
+        .config-modal input {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        /* ===== EXPLORER TAB ===== */
+        .explorer-panel {
+            flex-direction: row;
+        }
+
+        .file-tree {
+            width: 280px;
+            background: #16213e;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .file-tree-header {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-tree-header h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #666;
+            flex: 1;
+        }
+
+        .file-tree-header button {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .file-tree-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .tree-item {
+            padding: 0.35rem 0.5rem;
+            cursor: pointer;
+            border-radius: 0.3rem;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            user-select: none;
+        }
+
+        .tree-item:hover {
+            background: #1a1a2e;
+        }
+
+        .tree-item.selected {
+            background: #0f3460;
+        }
+
+        .tree-item .icon {
+            width: 16px;
+            text-align: center;
+        }
+
+        .tree-item.folder .icon {
+            color: #f39c12;
+        }
+
+        .tree-item.file .icon {
+            color: #888;
+        }
+
+        .tree-item .name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .tree-item .size {
+            font-size: 0.7rem;
+            color: #555;
+        }
+
+        .tree-children {
+            margin-left: 1rem;
+        }
+
+        .tree-children.collapsed {
+            display: none;
+        }
+
+        .file-preview {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .file-preview-header {
+            padding: 0.8rem 1rem;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-preview-header .path {
+            flex: 1;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        .file-preview-header button {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .file-content {
+            flex: 1;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            background: #1a1a2e;
+            padding: 1rem;
+            overflow: auto;
+            white-space: pre;
+            line-height: 1.4;
+        }
+
+        .file-content.empty {
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .line-numbers {
+            color: #444;
+            text-align: right;
+            padding-right: 1rem;
+            border-right: 1px solid #333;
+            margin-right: 1rem;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎮 Game Studio</h1>
+        <span class="status" id="status">Disconnected</span>
+        <div class="auto-approve">
+            <span>Auto-approve</span>
+            <div class="toggle-switch" id="autoApproveToggle" onclick="toggleAutoApprove()"></div>
+        </div>
+        <button onclick="restartServer()" style="margin-left: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #e74c3c;">Restart</button>
+    </header>
+
+    <nav class="tabs">
+        <div class="tab active" data-tab="hub">Hub</div>
+        <div class="tab" data-tab="tasks">Tasks</div>
+        <div class="tab" data-tab="heartbeats">Heartbeats</div>
+        <div class="tab" data-tab="agents">Agents</div>
+        <div class="tab" data-tab="explorer">Explorer</div>
+    </nav>
+
+    <div class="main">
+        <!-- HUB TAB -->
+        <div class="panel hub-panel active" id="panel-hub">
+            <div class="chat-area">
+                <div class="messages" id="messages"></div>
+                <div class="thinking-indicator" id="thinkingIndicator">
+                    <div class="thinking-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span id="thinkingText">thinking...</span>
+                </div>
+                <div class="activity-bar" id="activityBar"></div>
+                <div class="input-area">
+                    <div class="input-row">
+                        <input type="text" id="messageInput" placeholder="Message BOSS..." autocomplete="off" />
+                        <button id="sendBtn">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TASKS TAB -->
+        <div class="panel tasks-panel" id="panel-tasks">
+            <div class="task-sub-tabs">
+                <div class="task-sub-tab active" data-subtab="active" onclick="switchTaskSubTab('active')">
+                    Active <span class="count-badge" id="activeCount">0</span>
+                </div>
+                <div class="task-sub-tab" data-subtab="completed" onclick="switchTaskSubTab('completed')">
+                    Completed <span class="count-badge" id="completedCount">0</span>
+                </div>
+            </div>
+            <div class="tasks-content">
+                <div class="task-actions" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <button onclick="clearCompletedTasks()">Clear Completed</button>
+                    <button class="secondary" onclick="clearAllTasks()">Clear All</button>
+                </div>
+                <div class="task-summary" id="taskSummary"></div>
+                <ul class="task-list" id="taskList"></ul>
+            </div>
+        </div>
+
+        <!-- HEARTBEATS TAB -->
+        <div class="panel heartbeats-panel" id="panel-heartbeats">
+            <div class="heartbeat-actions">
+                <button onclick="showCreateHeartbeat()">+ New Heartbeat</button>
+            </div>
+            <div id="heartbeatList"></div>
+        </div>
+
+        <!-- Create Heartbeat Modal -->
+        <div class="modal-overlay" id="createHeartbeatModal">
+            <div class="modal">
+                <h2>Create Heartbeat</h2>
+                <label>Name</label>
+                <input type="text" id="hbName" placeholder="e.g., Game Trends Report" />
+
+                <label>Description</label>
+                <input type="text" id="hbDescription" placeholder="What this heartbeat does..." />
+
+                <label>Interval</label>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <input type="number" id="hbIntervalValue" value="24" style="width: 100px;" />
+                    <select id="hbIntervalUnit">
+                        <option value="60">Minutes</option>
+                        <option value="3600" selected>Hours</option>
+                        <option value="86400">Days</option>
+                    </select>
+                </div>
+
+                <label>Tasks</label>
+                <div id="hbTaskList" class="hb-task-list"></div>
+                <button type="button" class="secondary" onclick="addHeartbeatTask()" style="margin-bottom: 1rem;">+ Add Task</button>
+
+                <div class="modal-buttons">
+                    <button class="secondary" onclick="hideCreateHeartbeat()">Cancel</button>
+                    <button onclick="createHeartbeat()">Create</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AGENTS TAB -->
+        <div class="panel agents-panel" id="panel-agents"></div>
+
+        <!-- Agent Config Modal -->
+        <div class="config-modal" id="configModal">
+            <div class="config-modal-content">
+                <h3>Configure <span id="configAgentName"></span></h3>
+                <label>Model</label>
+                <select id="configModel">
+                    <option value="gemini-2.5-flash">gemini-2.5-flash (500/day - smart)</option>
+                    <option value="gemini-2.0-flash">gemini-2.0-flash (1500/day)</option>
+                    <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite (1500/day - fast)</option>
+                </select>
+                <label>Title</label>
+                <input type="text" id="configTitle" placeholder="Agent title..." />
+                <div class="modal-buttons">
+                    <button class="secondary" onclick="hideConfigModal()">Cancel</button>
+                    <button onclick="saveAgentConfig()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPLORER TAB -->
+        <div class="panel explorer-panel" id="panel-explorer">
+            <div class="file-tree">
+                <div class="file-tree-header">
+                    <h3>Project Files</h3>
+                    <button onclick="refreshFileTree()">↻</button>
+                    <button onclick="openInExplorer('')">📂</button>
+                </div>
+                <div class="file-tree-content" id="fileTree"></div>
+            </div>
+            <div class="file-preview">
+                <div class="file-preview-header">
+                    <span class="path" id="filePath">No file selected</span>
+                    <button id="openFileBtn" onclick="openSelectedInExplorer()" style="display:none">Open in Explorer</button>
+                </div>
+                <div class="file-content empty" id="fileContent">Select a file to view its contents</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WS_URL = 'ws://127.0.0.1:8000/ws';
+        const API_URL = 'http://127.0.0.1:8000/api';
+
+        let ws = null;
+        let roles = {};
+        let agentStats = {};
+        let tasks = [];
+        let heartbeats = [];
+        let configAgent = null;
+        let autoApprove = localStorage.getItem('autoApprove') === 'true';
+        let isThinking = false;
+        let agentStatuses = {};  // Track agent activity states
+        let activityBarTimeout = null;  // Grace period timer
+        let currentTaskSubTab = 'active';  // Track which sub-tab is active
+
+        // DOM elements
+        const statusEl = document.getElementById('status');
+        const messagesEl = document.getElementById('messages');
+        const agentListEl = document.getElementById('agentList');
+        const inputEl = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Logging
+        function log(target, message, level = 'info') {
+            const el = document.getElementById(target);
+            if (!el) return;
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${level}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            el.appendChild(entry);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Fetch roles
+        async function fetchRoles() {
+            try {
+                const res = await fetch(`${API_URL}/roles`);
+                roles = await res.json();
+                renderAgentList();
+                renderTaskAgentSelect();
+                await fetchAgentStats();  // This also calls renderAgentCards
+                log('agentLogs', `Loaded ${Object.keys(roles).length} agents`, 'success');
+            } catch (e) {
+                log('agentLogs', `Failed to fetch roles: ${e}`, 'error');
+            }
+        }
+
+        // Fetch history
+        async function fetchHistory() {
+            try {
+                const res = await fetch(`${API_URL}/history`);
+                const history = await res.json();
+                history.forEach(msg => addMessage(msg));
+                log('wsLogs', `Loaded ${history.length} messages from history`, 'info');
+            } catch (e) {
+                log('wsLogs', `Failed to fetch history: ${e}`, 'error');
+            }
+        }
+
+        // Render agent list (sidebar)
+        function renderAgentList() {
+            agentListEl.innerHTML = '';
+            for (const [name, info] of Object.entries(roles)) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="agent-dot" style="background: ${info.color}"></span>
+                    <span>${name}</span>
+                `;
+                li.title = info.title;
+                li.onclick = () => pokeAgent(name);
+                agentListEl.appendChild(li);
+            }
+        }
+
+        // Render agent cards
+        function renderAgentCards() {
+            const panel = document.getElementById('panel-agents');
+            panel.innerHTML = '';
+            const emojis = { BOSS: '👔', Designer: '🎨', Programmer: '💻', Artist: '🖌️', Writer: '✍️', QA: '🔍' };
+            const specialTools = ['generate_image', 'generate_speech'];
+
+            for (const [name, info] of Object.entries(roles)) {
+                const stats = agentStats[name] || {};
+                const status = stats.status || 'idle';
+                const msgCount = stats.message_count || 0;
+                const lastActive = stats.last_active ? new Date(stats.last_active).toLocaleTimeString() : '--';
+                const taskInfo = stats.tasks || {};
+
+                // Build tools HTML
+                const toolsHtml = (info.tools || []).map(t => {
+                    const isSpecial = specialTools.includes(t);
+                    return `<span class="agent-tool ${isSpecial ? 'special' : ''}">${t}</span>`;
+                }).join('');
+
+                // Build tasks HTML
+                const tasksHtml = (taskInfo.tasks || []).map(t => `
+                    <div class="agent-task-item">
+                        <span class="agent-task-status ${t.status}">${t.status.replace('_', ' ')}</span>
+                        <span>${t.id}: ${t.description}</span>
+                    </div>
+                `).join('');
+
+                const card = document.createElement('div');
+                card.className = 'agent-card';
+                card.style.borderLeftColor = info.color;
+                card.innerHTML = `
+                    <div class="agent-card-header">
+                        <div class="agent-avatar" style="background: ${info.color}22">${emojis[name] || '🤖'}</div>
+                        <div>
+                            <div class="agent-name">
+                                ${name}
+                                <span class="agent-status ${status}" title="${status}"></span>
+                            </div>
+                            <div class="agent-title">${info.title}</div>
+                            <div class="agent-model">${info.model || 'default'}</div>
+                        </div>
+                    </div>
+                    <div class="agent-tools">${toolsHtml}</div>
+                    <div class="agent-stats">
+                        Messages: ${msgCount} | Tasks: ${taskInfo.assigned || 0} (${taskInfo.in_progress || 0} active) | Last: ${lastActive}
+                    </div>
+                    <div class="agent-tasks">${tasksHtml}</div>
+                    <div class="agent-card-buttons">
+                        <button onclick="pokeAgent('${name}')">Poke</button>
+                        <button class="secondary" onclick="showConfigModal('${name}')">Config</button>
+                    </div>
+                `;
+                panel.appendChild(card);
+            }
+        }
+
+        // Fetch agent stats
+        async function fetchAgentStats() {
+            try {
+                const res = await fetch(`${API_URL}/agents/stats`);
+                agentStats = await res.json();
+                renderAgentCards();
+            } catch (e) {
+                console.error('Failed to fetch agent stats:', e);
+            }
+        }
+
+        // Config modal functions
+        function showConfigModal(agentName) {
+            configAgent = agentName;
+            const info = roles[agentName] || {};
+            document.getElementById('configAgentName').textContent = agentName;
+            document.getElementById('configModel').value = info.model || 'gemini-2.0-flash-lite';
+            document.getElementById('configTitle').value = info.title || '';
+            document.getElementById('configModal').classList.add('active');
+        }
+
+        function hideConfigModal() {
+            document.getElementById('configModal').classList.remove('active');
+            configAgent = null;
+        }
+
+        async function saveAgentConfig() {
+            if (!configAgent) return;
+            const model = document.getElementById('configModel').value;
+            const title = document.getElementById('configTitle').value;
+
+            try {
+                const res = await fetch(`${API_URL}/agents/${configAgent}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, title })
+                });
+                if (res.ok) {
+                    hideConfigModal();
+                    await fetchRoles();
+                    log('agentLogs', `Updated ${configAgent} config`, 'success');
+                }
+            } catch (e) {
+                log('agentLogs', `Failed to save config: ${e}`, 'error');
+            }
+        }
+
+        // Render task agent select
+        function renderTaskAgentSelect() {
+            const select = document.getElementById('taskAgent');
+            select.innerHTML = '<option value="">Assign to...</option>';
+            for (const name of Object.keys(roles)) {
+                select.innerHTML += `<option value="${name}">${name}</option>`;
+            }
+        }
+
+        // Add message to chat
+        function addMessage(msg) {
+            const div = document.createElement('div');
+            const isUser = msg.sender === 'user';
+            const color = isUser ? '#3498db' : (roles[msg.sender]?.color || '#888');
+
+            div.className = `message ${isUser ? 'user' : ''}`;
+            div.style.borderLeftColor = color;
+
+            const time = new Date(msg.timestamp).toLocaleTimeString();
+
+            div.innerHTML = `
+                <div class="message-header">
+                    <span class="message-sender" style="color: ${color}">
+                        ${isUser ? 'You' : msg.sender}
+                    </span>
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-content">${highlightMentions(escapeHtml(msg.content))}</div>
+            `;
+
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            // Log to heartbeats
+            log('wsLogs', `${msg.sender}: ${msg.content.substring(0, 50)}...`, 'info');
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Highlight @mentions
+        function highlightMentions(text) {
+            return text.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+        }
+
+        // Auto-approve toggle
+        function toggleAutoApprove() {
+            autoApprove = !autoApprove;
+            localStorage.setItem('autoApprove', autoApprove);
+            updateAutoApproveUI();
+
+            // Notify server
+            if (ws) {
+                ws.send(JSON.stringify({ type: 'set_auto_approve', enabled: autoApprove }));
+            }
+        }
+
+        function updateAutoApproveUI() {
+            const toggle = document.getElementById('autoApproveToggle');
+            if (autoApprove) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+
+        // Thinking indicator
+        function showThinking(agentName = 'Agent') {
+            isThinking = true;
+            document.getElementById('thinkingText').textContent = `${agentName} is thinking...`;
+            document.getElementById('thinkingIndicator').classList.add('show');
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function hideThinking() {
+            isThinking = false;
+            document.getElementById('thinkingIndicator').classList.remove('show');
+        }
+
+        // Activity bar - shows all active agents
+        function updateActivityBar(statuses) {
+            agentStatuses = statuses;
+            const bar = document.getElementById('activityBar');
+            const activeAgents = Object.entries(statuses).filter(([name, info]) =>
+                info.status === 'thinking' || info.status === 'working'
+            );
+
+            // Clear any pending hide timeout
+            if (activityBarTimeout) {
+                clearTimeout(activityBarTimeout);
+                activityBarTimeout = null;
+            }
+
+            if (activeAgents.length === 0) {
+                // Add grace period before hiding (500ms) to prevent flicker
+                activityBarTimeout = setTimeout(() => {
+                    bar.classList.remove('show');
+                    bar.innerHTML = '';
+                }, 500);
+                return;
+            }
+
+            bar.classList.add('show');
+            bar.innerHTML = activeAgents.map(([name, info]) => {
+                const color = roles[name]?.color || '#888';
+                const statusClass = info.status;
+                const activity = info.activity || (info.status === 'thinking' ? 'Thinking...' : 'Working...');
+                return `
+                    <div class="activity-item ${statusClass}" style="border-left-color: ${color}">
+                        <span style="color: ${color}; font-weight: 600;">${name}</span>
+                        <span style="color: #aaa;">${activity}</span>
+                        <div class="activity-dots" style="color: ${color}">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Send message
+        function sendMessage() {
+            const content = inputEl.value.trim();
+            if (!content || !ws) return;
+
+            // Immediately show user message (optimistic UI)
+            addMessage({
+                sender: 'user',
+                content: content,
+                timestamp: new Date().toISOString()
+            });
+
+            ws.send(JSON.stringify({ type: 'user_message', content }));
+            inputEl.value = '';
+            showThinking('BOSS');  // Show thinking indicator
+            log('apiLogs', `Sent: ${content.substring(0, 50)}...`, 'info');
+        }
+
+        // Poke agent
+        function pokeAgent(name) {
+            if (!ws) return;
+            ws.send(JSON.stringify({ type: 'poke_agent', agent: name }));
+            log('agentLogs', `Poked ${name}`, 'info');
+        }
+
+        // Task management
+        async function clearCompletedTasks() {
+            try {
+                const res = await fetch(`${API_URL}/tasks/clear-completed`, { method: 'POST' });
+                const data = await res.json();
+                log('wsLogs', `Cleared ${data.cleared} completed tasks`, 'success');
+            } catch (e) {
+                log('wsLogs', `Failed to clear tasks: ${e}`, 'error');
+            }
+        }
+
+        async function clearAllTasks() {
+            if (!confirm('Clear ALL tasks? This cannot be undone.')) return;
+            try {
+                await fetch(`${API_URL}/tasks/clear`, { method: 'POST' });
+                log('wsLogs', 'All tasks cleared', 'success');
+            } catch (e) {
+                log('wsLogs', `Failed to clear tasks: ${e}`, 'error');
+            }
+        }
+
+        async function cancelTask(taskId) {
+            try {
+                const res = await fetch(`${API_URL}/tasks/${taskId}/cancel`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    log('wsLogs', `Cancelled task ${taskId}`, 'success');
+                } else {
+                    log('wsLogs', `Failed to cancel: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log('wsLogs', `Failed to cancel task: ${e}`, 'error');
+            }
+        }
+
+        async function retryTask(taskId) {
+            try {
+                const res = await fetch(`${API_URL}/tasks/${taskId}/retry`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    log('wsLogs', `Queued task ${taskId} for retry`, 'success');
+                } else {
+                    log('wsLogs', `Failed to retry: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log('wsLogs', `Failed to retry task: ${e}`, 'error');
+            }
+        }
+
+        async function deleteTask(taskId) {
+            if (!confirm(`Delete task ${taskId}? This cannot be undone.`)) return;
+            try {
+                const res = await fetch(`${API_URL}/tasks/${taskId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    log('wsLogs', `Deleted task ${taskId}`, 'success');
+                } else {
+                    log('wsLogs', `Failed to delete: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                log('wsLogs', `Failed to delete task: ${e}`, 'error');
+            }
+        }
+
+        // Switch task sub-tab
+        function switchTaskSubTab(subTab) {
+            currentTaskSubTab = subTab;
+            document.querySelectorAll('.task-sub-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.task-sub-tab[data-subtab="${subTab}"]`).classList.add('active');
+            renderTasks();
+        }
+
+        // Tasks (server-side)
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            const summary = document.getElementById('taskSummary');
+
+            // Define which statuses go in which tab
+            const activeStatuses = ['pending', 'ready', 'in_progress', 'blocked'];
+            const completedStatuses = ['approved', 'failed', 'error', 'completed', 'reviewed'];
+
+            // Count tasks for each sub-tab
+            const activeCount = tasks.filter(t => activeStatuses.includes(t.status)).length;
+            const completedCount = tasks.filter(t => completedStatuses.includes(t.status)).length;
+
+            // Update count badges
+            document.getElementById('activeCount').textContent = activeCount;
+            document.getElementById('completedCount').textContent = completedCount;
+
+            // Filter tasks based on current sub-tab
+            const filteredTasks = tasks.filter(t => {
+                if (currentTaskSubTab === 'active') {
+                    return activeStatuses.includes(t.status);
+                } else {
+                    return completedStatuses.includes(t.status);
+                }
+            });
+
+            // Count by status and total tokens (for filtered tasks)
+            const counts = {};
+            let totalInputTokens = 0;
+            let totalOutputTokens = 0;
+            filteredTasks.forEach(t => {
+                counts[t.status] = (counts[t.status] || 0) + 1;
+                totalInputTokens += t.total_input_tokens || 0;
+                totalOutputTokens += t.total_output_tokens || 0;
+            });
+
+            // Render summary
+            const statusColors = {
+                pending: '#888',
+                ready: '#f39c12',
+                in_progress: '#3498db',
+                completed: '#9b59b6',
+                approved: '#2ecc71',
+                failed: '#e74c3c',
+                blocked: '#555',
+                error: '#e74c3c'
+            };
+
+            let summaryHtml = Object.entries(counts).map(([status, count]) => `
+                <div class="task-stat">
+                    <span class="count" style="color: ${statusColors[status]}">${count}</span>
+                    <span>${status}</span>
+                </div>
+            `).join('');
+
+            // Add total tokens stat
+            if (totalInputTokens > 0 || totalOutputTokens > 0) {
+                summaryHtml += `
+                    <div class="task-stat" style="margin-left: auto;">
+                        <span class="count" style="color: #5dade2">${(totalInputTokens + totalOutputTokens).toLocaleString()}</span>
+                        <span>tokens</span>
+                    </div>
+                `;
+            }
+            summary.innerHTML = summaryHtml;
+
+            // Render task list
+            list.innerHTML = '';
+            filteredTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `task-item ${task.status}`;
+
+                const agentColor = roles[task.assignee]?.color || '#888';
+                const hasTokens = (task.total_input_tokens || 0) + (task.total_output_tokens || 0) > 0;
+                const hasDetails = hasTokens || task.token_log?.length > 0;
+
+                // Build token log HTML
+                let tokenLogHtml = '';
+                if (task.token_log?.length > 0) {
+                    tokenLogHtml = task.token_log.map(entry => {
+                        const typeClass = entry.type?.startsWith('tool:') ? 'tool' : (entry.type === 'final' ? 'final' : '');
+                        const tokens = entry.total_input_tokens !== undefined
+                            ? `${entry.total_input_tokens?.toLocaleString() || 0} in / ${entry.total_output_tokens?.toLocaleString() || 0} out`
+                            : `${entry.input_tokens?.toLocaleString() || 0} in / ${entry.output_tokens?.toLocaleString() || 0} out`;
+                        return `
+                            <div class="token-log-entry">
+                                <span class="token-log-step">${entry.step || '-'}</span>
+                                <span class="token-log-type ${typeClass}">${entry.type || 'unknown'}</span>
+                                <span class="token-log-tokens">${tokens}</span>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // Determine which buttons to show
+                const canCancel = ['pending', 'ready', 'in_progress'].includes(task.status);
+                const canRetry = ['failed', 'error'].includes(task.status);
+                const canDelete = ['approved', 'failed', 'error'].includes(task.status);
+
+                let actionButtons = '';
+                if (canCancel || canRetry || canDelete) {
+                    actionButtons = '<div class="task-actions-inline">';
+                    if (canCancel) {
+                        actionButtons += `<button onclick="cancelTask('${task.id}')" title="Cancel task">× Cancel</button>`;
+                    }
+                    if (canRetry) {
+                        actionButtons += `<button class="retry" onclick="retryTask('${task.id}')" title="Retry task">↻ Retry</button>`;
+                    }
+                    if (canDelete) {
+                        actionButtons += `<button class="delete" onclick="deleteTask('${task.id}')" title="Delete task">🗑 Delete</button>`;
+                    }
+                    actionButtons += '</div>';
+                }
+
+                li.innerHTML = `
+                    <span class="task-id">${task.id}</span>
+                    <div class="task-content">
+                        <div class="task-description">${escapeHtml(task.description)}</div>
+                        <div class="task-meta">
+                            <span class="task-status ${task.status}">${task.status}</span>
+                            ${task.assignee ? `<span class="task-agent" style="background: ${agentColor}33; color: ${agentColor}">${task.assignee}</span>` : ''}
+                            ${task.dependencies?.length ? `<span>depends: ${task.dependencies.join(', ')}</span>` : ''}
+                            ${hasTokens ? `<span class="task-tokens">${(task.total_input_tokens + task.total_output_tokens).toLocaleString()} tokens</span>` : ''}
+                            ${hasDetails ? `<button class="task-expand-btn" onclick="toggleTaskDetails('${task.id}')">Details</button>` : ''}
+                        </div>
+                        ${task.result ? `<div class="task-result">${escapeHtml(task.result)}</div>` : ''}
+                        ${task.error ? `<div class="task-result" style="color: #e74c3c;">${escapeHtml(task.error)}</div>` : ''}
+                        ${hasDetails ? `
+                            <div class="task-details" id="task-details-${task.id}">
+                                <h4>Token Usage</h4>
+                                <div style="margin-bottom: 0.5rem; font-size: 0.8rem;">
+                                    Input: <strong>${(task.total_input_tokens || 0).toLocaleString()}</strong> |
+                                    Output: <strong>${(task.total_output_tokens || 0).toLocaleString()}</strong> |
+                                    Total: <strong>${((task.total_input_tokens || 0) + (task.total_output_tokens || 0)).toLocaleString()}</strong>
+                                </div>
+                                ${tokenLogHtml ? `
+                                    <h4>Step-by-Step Log</h4>
+                                    <div class="token-log">${tokenLogHtml}</div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${actionButtons}
+                `;
+                list.appendChild(li);
+            });
+
+            if (filteredTasks.length === 0) {
+                const emptyMsg = currentTaskSubTab === 'active'
+                    ? 'No active tasks. Send a message to BOSS to create tasks.'
+                    : 'No completed tasks yet.';
+                list.innerHTML = `<li class="task-item" style="color: #666">${emptyMsg}</li>`;
+            }
+        }
+
+        function toggleTaskDetails(taskId) {
+            const details = document.getElementById(`task-details-${taskId}`);
+            if (details) {
+                details.classList.toggle('show');
+            }
+        }
+
+        // ===== HEARTBEATS =====
+        function renderHeartbeats() {
+            const list = document.getElementById('heartbeatList');
+
+            if (heartbeats.length === 0) {
+                list.innerHTML = `
+                    <div class="heartbeat-card" style="text-align: center; color: #666;">
+                        No heartbeats yet. Create one to schedule recurring tasks.
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = heartbeats.map(hb => {
+                const statusClass = hb.status;
+                const nextRun = hb.next_run ? new Date(hb.next_run).toLocaleString() : '--';
+                const lastRun = hb.last_run ? new Date(hb.last_run).toLocaleString() : 'Never';
+
+                const tasksHtml = hb.tasks.map((t, i) => {
+                    const outputIcon = t.output === 'report' ? '📄' : t.output === 'code' ? '💻' : '💬';
+                    const parallelIcon = t.parallel ? '⚡' : '';
+                    const contextHint = t.context ? '📋' : '';
+                    const skillsHint = t.skills?.length ? `[${t.skills.join(', ')}]` : '';
+                    return `
+                        <div class="heartbeat-task" title="${escapeHtml(t.context || '')}">
+                            <span class="heartbeat-task-num">${i + 1}.</span>
+                            <span>${parallelIcon}</span>
+                            <span style="flex:1">${escapeHtml(t.description)}</span>
+                            <span style="font-size:0.75rem;color:#666">${skillsHint}</span>
+                            <span>${outputIcon}${contextHint}</span>
+                            <span class="heartbeat-task-assignee" style="background: ${roles[t.assignee]?.color || '#888'}33">${t.assignee}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="heartbeat-card ${statusClass}">
+                        <div class="heartbeat-header">
+                            <span class="heartbeat-id">${hb.id}</span>
+                            <span class="heartbeat-title">${escapeHtml(hb.name)}</span>
+                            <span class="heartbeat-interval">⏱ ${hb.interval_human}</span>
+                            <span class="heartbeat-status ${statusClass}">${hb.status}</span>
+                        </div>
+                        ${hb.description ? `<div class="heartbeat-description">${escapeHtml(hb.description)}</div>` : ''}
+                        <div class="heartbeat-meta">
+                            Last run: ${lastRun} | Next run: ${nextRun} | Runs: ${hb.run_count}
+                        </div>
+                        <div class="heartbeat-tasks">${tasksHtml}</div>
+                        <div class="heartbeat-buttons">
+                            <button onclick="triggerHeartbeat('${hb.id}')">▶ Run Now</button>
+                            ${hb.status === 'active'
+                                ? `<button class="secondary" onclick="pauseHeartbeat('${hb.id}')">⏸ Pause</button>`
+                                : `<button class="secondary" onclick="resumeHeartbeat('${hb.id}')">▶ Resume</button>`
+                            }
+                            <button class="danger" onclick="deleteHeartbeat('${hb.id}')">🗑</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        let hbTaskCount = 0;
+
+        function showCreateHeartbeat() {
+            document.getElementById('createHeartbeatModal').classList.add('show');
+            // Add initial task
+            if (document.getElementById('hbTaskList').children.length === 0) {
+                addHeartbeatTask();
+            }
+        }
+
+        function hideCreateHeartbeat() {
+            document.getElementById('createHeartbeatModal').classList.remove('show');
+        }
+
+        function addHeartbeatTask() {
+            hbTaskCount++;
+            const list = document.getElementById('hbTaskList');
+            const agentOptions = Object.keys(roles).map(name =>
+                `<option value="${name}">${name}</option>`
+            ).join('');
+
+            const taskHtml = `
+                <div class="hb-task-item" id="hbTask${hbTaskCount}">
+                    <div class="hb-task-header">
+                        <span class="hb-task-num">Task ${list.children.length + 1}</span>
+                        <button type="button" class="hb-task-remove" onclick="removeHeartbeatTask(${hbTaskCount})">×</button>
+                    </div>
+                    <div class="hb-task-row">
+                        <input type="text" placeholder="What should this agent do..." class="hb-desc" />
+                        <select class="hb-assignee">${agentOptions}</select>
+                    </div>
+                    <div class="hb-task-row">
+                        <textarea placeholder="Additional context, instructions, or reference info..." class="hb-context"></textarea>
+                    </div>
+                    <div class="hb-task-row">
+                        <select class="hb-output">
+                            <option value="hub">Output to Hub</option>
+                            <option value="report">Save as Report</option>
+                            <option value="code">Save as Code</option>
+                        </select>
+                        <input type="text" placeholder="Skills to inject (e.g., economy, camera)" class="hb-skills" style="flex: 2;" />
+                    </div>
+                    <div class="hb-task-options">
+                        <label><input type="checkbox" class="hb-parallel" /> Run in parallel with previous</label>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('beforeend', taskHtml);
+            renumberTasks();
+        }
+
+        function removeHeartbeatTask(id) {
+            const task = document.getElementById(`hbTask${id}`);
+            if (task) {
+                task.remove();
+                renumberTasks();
+            }
+        }
+
+        function renumberTasks() {
+            const items = document.querySelectorAll('.hb-task-item');
+            items.forEach((item, i) => {
+                item.querySelector('.hb-task-num').textContent = `Task ${i + 1}`;
+            });
+        }
+
+        function createHeartbeat() {
+            const name = document.getElementById('hbName').value.trim();
+            const description = document.getElementById('hbDescription').value.trim();
+            const intervalValue = parseInt(document.getElementById('hbIntervalValue').value);
+            const intervalUnit = parseInt(document.getElementById('hbIntervalUnit').value);
+
+            if (!name) {
+                alert('Name is required');
+                return;
+            }
+
+            // Collect tasks from the dynamic list
+            const taskItems = document.querySelectorAll('.hb-task-item');
+            const tasks = [];
+
+            taskItems.forEach(item => {
+                const desc = item.querySelector('.hb-desc').value.trim();
+                const assignee = item.querySelector('.hb-assignee').value;
+                const context = item.querySelector('.hb-context').value.trim();
+                const output = item.querySelector('.hb-output').value;
+                const skills = item.querySelector('.hb-skills').value.split(',').map(s => s.trim()).filter(s => s);
+                const parallel = item.querySelector('.hb-parallel').checked;
+
+                if (desc) {
+                    tasks.push({ description: desc, assignee, context, output, skills, parallel });
+                }
+            });
+
+            if (tasks.length === 0) {
+                alert('At least one task is required');
+                return;
+            }
+
+            ws.send(JSON.stringify({
+                type: 'create_heartbeat',
+                name,
+                description,
+                interval_seconds: intervalValue * intervalUnit,
+                tasks,
+            }));
+
+            // Reset form
+            document.getElementById('hbName').value = '';
+            document.getElementById('hbDescription').value = '';
+            document.getElementById('hbTaskList').innerHTML = '';
+            hbTaskCount = 0;
+            hideCreateHeartbeat();
+        }
+
+        function triggerHeartbeat(id) {
+            ws.send(JSON.stringify({ type: 'trigger_heartbeat', id }));
+        }
+
+        function pauseHeartbeat(id) {
+            ws.send(JSON.stringify({ type: 'pause_heartbeat', id }));
+        }
+
+        function resumeHeartbeat(id) {
+            ws.send(JSON.stringify({ type: 'resume_heartbeat', id }));
+        }
+
+        function deleteHeartbeat(id) {
+            if (confirm('Delete this heartbeat?')) {
+                ws.send(JSON.stringify({ type: 'delete_heartbeat', id }));
+            }
+        }
+
+        // ===== FILE EXPLORER =====
+        let fileTree = [];
+        let selectedFilePath = null;
+
+        async function fetchFileTree() {
+            try {
+                const res = await fetch(`${API_URL}/files`);
+                const data = await res.json();
+                fileTree = data.tree;
+                renderFileTree();
+            } catch (e) {
+                console.error('Failed to fetch file tree:', e);
+            }
+        }
+
+        function refreshFileTree() {
+            fetchFileTree();
+        }
+
+        function renderFileTree() {
+            const container = document.getElementById('fileTree');
+            container.innerHTML = renderTreeItems(fileTree, 0);
+        }
+
+        function renderTreeItems(items, depth) {
+            return items.map(item => {
+                if (item.type === 'folder') {
+                    const childrenHtml = item.children?.length
+                        ? `<div class="tree-children" id="children-${item.path.replace(/[\/\.]/g, '-')}">${renderTreeItems(item.children, depth + 1)}</div>`
+                        : '';
+                    return `
+                        <div class="tree-item folder" onclick="toggleFolder(event, '${item.path}')">
+                            <span class="icon">📁</span>
+                            <span class="name">${item.name}</span>
+                        </div>
+                        ${childrenHtml}
+                    `;
+                } else {
+                    const size = formatFileSize(item.size);
+                    return `
+                        <div class="tree-item file" onclick="selectFile('${item.path}')" ondblclick="openInExplorer('${item.path}')">
+                            <span class="icon">${getFileIcon(item.name)}</span>
+                            <span class="name">${item.name}</span>
+                            <span class="size">${size}</span>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function getFileIcon(name) {
+            const ext = name.split('.').pop().toLowerCase();
+            const icons = {
+                'py': '🐍',
+                'js': '📜',
+                'html': '🌐',
+                'css': '🎨',
+                'json': '📋',
+                'md': '📝',
+                'txt': '📄',
+                'env': '🔐',
+            };
+            return icons[ext] || '📄';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function toggleFolder(event, path) {
+            event.stopPropagation();
+            const childrenId = 'children-' + path.replace(/[\/\.]/g, '-');
+            const children = document.getElementById(childrenId);
+            if (children) {
+                children.classList.toggle('collapsed');
+                // Toggle folder icon
+                const icon = event.currentTarget.querySelector('.icon');
+                if (children.classList.contains('collapsed')) {
+                    icon.textContent = '📁';
+                } else {
+                    icon.textContent = '📂';
+                }
+            }
+        }
+
+        async function selectFile(path) {
+            // Update selection
+            document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+
+            selectedFilePath = path;
+            document.getElementById('filePath').textContent = path;
+            document.getElementById('openFileBtn').style.display = 'inline-block';
+
+            // Fetch file content
+            try {
+                const res = await fetch(`${API_URL}/files/read?path=${encodeURIComponent(path)}`);
+                const data = await res.json();
+
+                const contentEl = document.getElementById('fileContent');
+                if (data.error) {
+                    contentEl.textContent = `Error: ${data.error}`;
+                    contentEl.classList.add('empty');
+                } else {
+                    contentEl.textContent = data.content;
+                    contentEl.classList.remove('empty');
+                }
+            } catch (e) {
+                document.getElementById('fileContent').textContent = `Error: ${e}`;
+            }
+        }
+
+        async function openInExplorer(path) {
+            try {
+                await fetch(`${API_URL}/files/open-explorer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path }),
+                });
+            } catch (e) {
+                console.error('Failed to open explorer:', e);
+            }
+        }
+
+        function openSelectedInExplorer() {
+            if (selectedFilePath) {
+                openInExplorer(selectedFilePath);
+            }
+        }
+
+        // Load file tree on init
+        fetchFileTree();
+
+        // WebSocket
+        function connect() {
+            log('wsLogs', 'Connecting...', 'info');
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                statusEl.textContent = 'Connected';
+                statusEl.classList.add('connected');
+                document.getElementById('wsStatus').textContent = 'Connected';
+                document.getElementById('wsStatus').className = 'heartbeat-status ok';
+                sendBtn.disabled = false;
+                log('wsLogs', 'WebSocket connected', 'success');
+            };
+
+            ws.onclose = () => {
+                statusEl.textContent = 'Disconnected';
+                statusEl.classList.remove('connected');
+                document.getElementById('wsStatus').textContent = 'Disconnected';
+                document.getElementById('wsStatus').className = 'heartbeat-status error';
+                sendBtn.disabled = true;
+                log('wsLogs', 'WebSocket disconnected, reconnecting...', 'warn');
+                setTimeout(connect, 2000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'message') {
+                    hideThinking();  // Hide thinking when we get a response
+                    addMessage(data.data);
+                } else if (data.type === 'tasks_update') {
+                    tasks = data.data;
+                    renderTasks();
+                } else if (data.type === 'heartbeats_update') {
+                    heartbeats = data.data;
+                    renderHeartbeats();
+                } else if (data.type === 'thinking') {
+                    // Server broadcasts thinking state with agent name
+                    if (data.active) {
+                        showThinking(data.agent || 'Agent');
+                    } else {
+                        hideThinking();
+                    }
+                } else if (data.type === 'agent_statuses') {
+                    // Update activity bar with all agent statuses
+                    updateActivityBar(data.data);
+                }
+            };
+
+            ws.onerror = (err) => {
+                log('wsLogs', `WebSocket error`, 'error');
+            };
+        }
+
+        // Restart server
+        async function restartServer() {
+            if (!confirm('Restart the server?')) return;
+            try {
+                await fetch(`${API_URL}/restart`, { method: 'POST' });
+            } catch (e) {
+                // Expected - server is shutting down
+            }
+            statusEl.textContent = 'Restarting...';
+            statusEl.classList.remove('connected');
+
+            // Poll until server is back up, then reload
+            const checkServer = async () => {
+                try {
+                    const resp = await fetch(`${API_URL}/health`, { method: 'GET' });
+                    if (resp.ok) {
+                        window.location.reload();
+                        return;
+                    }
+                } catch (e) {
+                    // Still down, keep polling
+                }
+                setTimeout(checkServer, 500);
+            };
+            setTimeout(checkServer, 1500);  // Wait a bit before starting to poll
+        }
+
+        // Event listeners
+        sendBtn.onclick = sendMessage;
+        inputEl.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
+
+        // Initialize
+        fetchRoles();
+        fetchHistory();
+        connect();
+        updateAutoApproveUI();  // Set initial toggle state
+
+        // Poll agent stats every 5 seconds
+        setInterval(fetchAgentStats, 5000);
+    </script>
+</body>
+</html>

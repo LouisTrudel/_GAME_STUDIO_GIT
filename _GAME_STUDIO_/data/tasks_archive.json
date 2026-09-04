@@ -1,0 +1,20 @@
+[
+  {
+    "id": "T002",
+    "description": "[WHAT] Print 'Hello from Programmer' to console\n[CONTEXT] Simple test to verify server-driven tick loop works\n[SKILLS] None needed\n[CONSTRAINTS] Just use print(), nothing else",
+    "assignee": "Programmer",
+    "status": "approved",
+    "dependencies": [],
+    "result": "```python\nprint('Hello from Programmer')\n```",
+    "review_notes": null,
+    "error": null,
+    "retry_count": 0,
+    "created_at": "2026-09-03T14:26:36.135715",
+    "started_at": "2026-09-03T14:26:37.342181",
+    "completed_at": "2026-09-03T14:26:42.818950",
+    "token_log": [],
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "prompt_sent": null
+  }
+]
