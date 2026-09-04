@@ -46,12 +46,22 @@ class ClaudeCLIBackend(Backend):
         # Add system prompt (shortened for CLI)
         prompt_parts.append(f"SYSTEM: {system_prompt[:2000]}")
 
-        # Add tool descriptions if provided
+        # Add tool descriptions if provided (with full schema)
         if tools:
-            tool_desc = "\n\nAvailable tools:\n"
+            tool_desc = "\n\n## Available Tools\n"
             for tool in tools:
-                tool_desc += f"- {tool['name']}: {tool['description']}\n"
-            tool_desc += "\nTo use a tool: <tool>name</tool><params>{...}</params>"
+                tool_desc += f"\n### {tool['name']}\n{tool['description']}\n"
+                if 'input_schema' in tool:
+                    schema = tool['input_schema']
+                    props = schema.get('properties', {})
+                    required = schema.get('required', [])
+                    if props:
+                        tool_desc += "Parameters:\n"
+                        for param, details in props.items():
+                            req = " (required)" if param in required else ""
+                            desc = details.get('description', '')
+                            tool_desc += f"  - {param}{req}: {desc}\n"
+            tool_desc += "\n**To use a tool, output:**\n```\n<tool>tool_name</tool>\n<params>{\"param\": \"value\"}</params>\n```"
             prompt_parts.append(tool_desc)
 
         # Add conversation history (last message only to keep it short)
@@ -122,8 +132,8 @@ class ClaudeCLIBackend(Backend):
             # Try to parse as JSON, fall back to plain text
             response = self._parse_output(raw_output)
 
-            # Handle tool calls if we have handlers
-            if tools and tool_handlers:
+            # Handle tool calls if we have handlers (tools may be empty now - schemas in skills)
+            if tool_handlers:
                 response = self._handle_tool_calls(response, tool_handlers)
 
             return response

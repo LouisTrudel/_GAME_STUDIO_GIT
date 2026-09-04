@@ -12,11 +12,15 @@ Tasks flow:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional
 from pathlib import Path
 import json
+
+
+# Stale task threshold: if a task is IN_PROGRESS for longer than this, recover it
+STALE_TASK_MINUTES = 35  # 30 min timeout + 5 min grace
 
 # Import metrics tracking (lazy to avoid circular imports)
 def _track_created(task_id: str, assignee: Optional[str]):
@@ -85,6 +89,9 @@ class Task:
     created_at: datetime = field(default_factory=datetime.now)
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    # Claim tracking (for stale task recovery)
+    claimed_by: Optional[str] = None  # Which agent/session claimed it
+    claimed_at: Optional[datetime] = None  # When it was claimed
     # Token tracking
     token_log: list = field(default_factory=list)  # Per-step token breakdown
     total_input_tokens: int = 0
@@ -106,6 +113,8 @@ class Task:
             "created_at": self.created_at.isoformat(),
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "claimed_by": self.claimed_by,
+            "claimed_at": self.claimed_at.isoformat() if self.claimed_at else None,
             "token_log": self.token_log,
             "total_input_tokens": self.total_input_tokens,
             "total_output_tokens": self.total_output_tokens,
@@ -127,6 +136,8 @@ class Task:
             created_at=datetime.fromisoformat(data["created_at"]),
             started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None,
             completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            claimed_by=data.get("claimed_by"),
+            claimed_at=datetime.fromisoformat(data["claimed_at"]) if data.get("claimed_at") else None,
             token_log=data.get("token_log", []),
             total_input_tokens=data.get("total_input_tokens", 0),
             total_output_tokens=data.get("total_output_tokens", 0),
@@ -237,12 +248,14 @@ class TaskManager:
         """Get tasks waiting for QA review."""
         return [t for t in self.tasks.values() if t.status == TaskStatus.COMPLETED]
 
-    def start_task(self, task_id: str) -> bool:
-        """Mark task as in progress."""
+    def start_task(self, task_id: str, claimed_by: str = None) -> bool:
+        """Mark task as in progress and record claim."""
         task = self.tasks.get(task_id)
         if task and task.status == TaskStatus.READY:
             task.status = TaskStatus.IN_PROGRESS
             task.started_at = datetime.now()
+            task.claimed_by = claimed_by or task.assignee
+            task.claimed_at = datetime.now()
             self._save_tasks()
             return True
         return False
@@ -253,6 +266,8 @@ class TaskManager:
         if task and task.status == TaskStatus.IN_PROGRESS:
             task.status = TaskStatus.READY
             task.started_at = None
+            task.claimed_by = None
+            task.claimed_at = None
             self._save_tasks()
             return True
         return False
@@ -424,6 +439,8 @@ class TaskManager:
             task.retry_count = 0
             task.started_at = None
             task.completed_at = None
+            task.claimed_by = None
+            task.claimed_at = None
             self._save_tasks()
             return True
         return False
@@ -452,7 +469,9 @@ class TaskManager:
             if task.status == TaskStatus.IN_PROGRESS:
                 task.status = TaskStatus.READY
                 task.retry_count = 0
-                task.started_at = None  # Clear stale start time
+                task.started_at = None
+                task.claimed_by = None
+                task.claimed_at = None
                 reset_ids.append(task.id)
                 print(f"[Tasks] Reset stale IN_PROGRESS task {task.id} -> READY")
 
@@ -461,6 +480,39 @@ class TaskManager:
             print(f"[Tasks] Reset {len(reset_ids)} stale tasks on startup: {reset_ids}")
 
         return reset_ids
+
+    def recover_stale_tasks(self) -> list[str]:
+        """
+        Recover tasks that have been IN_PROGRESS for too long.
+
+        If a task has been claimed for longer than STALE_TASK_MINUTES,
+        assume the agent crashed and reset it to READY for re-dispatch.
+
+        Call this periodically (e.g., every tick or every minute).
+        Returns list of task IDs that were recovered.
+        """
+        now = datetime.now()
+        threshold = timedelta(minutes=STALE_TASK_MINUTES)
+        recovered_ids = []
+
+        for task in self.tasks.values():
+            if task.status == TaskStatus.IN_PROGRESS and task.claimed_at:
+                elapsed = now - task.claimed_at
+                if elapsed > threshold:
+                    old_claimer = task.claimed_by
+                    task.status = TaskStatus.READY
+                    task.started_at = None
+                    task.claimed_by = None
+                    task.claimed_at = None
+                    # Don't reset retry_count - this is a recovery, not a fresh start
+                    recovered_ids.append(task.id)
+                    print(f"[Tasks] Recovered stale task {task.id} (claimed by {old_claimer} for {elapsed.total_seconds()//60:.0f}min)")
+
+        if recovered_ids:
+            self._save_tasks()
+            print(f"[Tasks] Recovered {len(recovered_ids)} stale tasks: {recovered_ids}")
+
+        return recovered_ids
 
     def to_context_string(self) -> str:
         """Format ALL tasks for agent context."""

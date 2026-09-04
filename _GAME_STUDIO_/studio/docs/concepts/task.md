@@ -28,6 +28,8 @@ A unit of work assigned to an agent.
 | created_at | Timestamp |
 | started_at | When picked up |
 | completed_at | When finished |
+| claimed_by | Which agent/session claimed the task |
+| claimed_at | When the task was claimed |
 
 ## Lifecycle
 
@@ -41,6 +43,21 @@ IN_PROGRESS → ERROR (timeout, malformed task, etc.)
 ```
 
 No review gate. Tasks complete directly to approved.
+
+## Stale Task Recovery
+
+If a task is `IN_PROGRESS` for more than 35 minutes (30 min timeout + 5 min grace), it's considered stale. The orchestrator automatically resets it to `READY` for re-dispatch.
+
+```
+IN_PROGRESS (claimed_at: 35+ min ago)
+    ↓
+READY (claimed_by: null, claimed_at: null)
+```
+
+This handles cases where:
+- Agent crashes mid-task
+- Network timeout without proper cleanup
+- Server restart while task was in progress
 
 ## Storage
 

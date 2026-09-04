@@ -146,28 +146,33 @@ class StudioAgent:
         # Build system prompt from role + skills
         system_prompt = self._build_system_prompt(role_md)
 
-        # Load tools based on role
-        tools, handlers = self._load_tools()
+        # Load tool handlers (schemas now live in skill files, not injected)
+        _, handlers = self._load_tools()
 
         self.agent = Agent(
             name=self.name,
             system_prompt=system_prompt,
             backend=backend,
             model=self.model,
-            tools=tools,
-            tool_handlers=handlers,
+            tools=[],  # Schemas in :_tools/* skills, loaded on demand
+            tool_handlers=handlers,  # Handlers still active for <tool> parsing
         )
 
         print(f"  [{self.name}] Using backend: {backend}, {len(self.skills)} skills loaded")
 
     def _build_system_prompt(self, role_md: str) -> str:
-        """Build full system prompt from role + router + shared skills."""
+        """Build full system prompt from role + router + shared skills + core tools."""
         parts = [role_md]
 
         # Add router skill (skill loading navigation)
         router = load_router_skill(self.name_raw)
         if router:
             parts.append(router)
+
+        # Auto-load core tool skills (reliability over token savings)
+        tool_skills = self._get_core_tool_skills()
+        for tool_skill in tool_skills:
+            parts.append(tool_skill)
 
         # Add shared project conventions
         for skill in self.shared_skills:
@@ -178,6 +183,29 @@ class StudioAgent:
             parts.append(skill)
 
         return "\n\n---\n\n".join(parts)
+
+    def _get_core_tool_skills(self) -> list[str]:
+        """Load core tool skills for this agent type."""
+        tools_dir = SKILLS_DIR / "_tools"
+        tool_skills = []
+
+        if self.is_boss:
+            # BOSS needs: task management, context
+            tool_files = ["tasks.md", "context.md"]
+        else:
+            # Employees need: skill loading, files, context
+            tool_files = ["skills.md", "files.md", "context.md"]
+            # QA also needs QA-specific tools
+            if self.name == "QA":
+                tool_files.append("qa.md")
+
+        for filename in tool_files:
+            filepath = tools_dir / filename
+            if filepath.exists():
+                content = filepath.read_text(encoding="utf-8")
+                tool_skills.append(content)
+
+        return tool_skills
 
     def _load_tools(self) -> tuple[list, dict]:
         """Load tools for this agent."""
@@ -434,13 +462,18 @@ class Studio:
 
         SERVER-DRIVEN FLOW:
         1. Server finds READY task
-        2. Server sets task to IN_PROGRESS
+        2. Server sets task to IN_PROGRESS (with claimed_by/claimed_at)
         3. Server sends task to agent (agent just does the work)
         4. Server captures response and sets task to APPROVED
 
         Agents don't need to call pick_task or complete_task - server handles state.
         """
         did_work = False
+
+        # Recover any stale tasks (claimed for >35 min)
+        recovered = task_manager.recover_stale_tasks()
+        if recovered:
+            did_work = True
 
         # Check for ready tasks
         ready_tasks = task_manager.get_ready_tasks()
@@ -456,8 +489,8 @@ class Studio:
                         did_work = True
                         continue
 
-                    # SERVER: Start the task (sets IN_PROGRESS)
-                    task_manager.start_task(task.id)
+                    # SERVER: Start the task (sets IN_PROGRESS with claim)
+                    task_manager.start_task(task.id, claimed_by=agent.name)
                     print(f"[Studio] Started {task.id} for {agent.name}")
 
                     # Execute task with error handling and timeout

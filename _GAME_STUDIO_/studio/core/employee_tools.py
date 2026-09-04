@@ -4,12 +4,15 @@ Shared tools for all employee agents (non-BOSS).
 
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 from studio.core.tasks import task_manager, TaskStatus
 from studio.core.hub import hub
 from studio.core.skill_tracker import track_skill_load
 
 # Skills directory
 SKILLS_DIR = Path(__file__).parent.parent / "skills"
+# Projects directory (for CONTEXT.md files)
+PROJECTS_DIR = Path(__file__).parent.parent.parent / "projects"
 
 # Thread-local storage for current task context
 _current_task_id: Optional[str] = None
@@ -157,11 +160,125 @@ def list_skills(category: str = "") -> str:
     return "\n".join(lines)
 
 
+# ============ CONTEXT TOOLS (Shared Brain) ============
+
+READ_CONTEXT_SCHEMA = {
+    "name": "read_context",
+    "description": "Read the project's CONTEXT.md (shared brain). Contains cross-agent signals, decisions, and blockers.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "project_id": {
+                "type": "string",
+                "description": "Project ID. Defaults to 'default' if not specified."
+            }
+        },
+        "required": []
+    }
+}
+
+
+def read_context(project_id: str = "default") -> str:
+    """Read the CONTEXT.md for a project."""
+    context_file = PROJECTS_DIR / project_id / "CONTEXT.md"
+
+    if not context_file.exists():
+        # Check if project exists at all
+        project_dir = PROJECTS_DIR / project_id
+        if not project_dir.exists():
+            return f"Project '{project_id}' not found. Available: {', '.join(p.name for p in PROJECTS_DIR.iterdir() if p.is_dir() and not p.name.startswith('_'))}"
+        return f"No CONTEXT.md found for project '{project_id}'. Create one from projects/_template/CONTEXT.md"
+
+    try:
+        content = context_file.read_text(encoding="utf-8")
+        return f"=== CONTEXT: {project_id} ===\n\n{content}"
+    except Exception as e:
+        return f"Error reading context: {e}"
+
+
+SIGNAL_AGENT_SCHEMA = {
+    "name": "signal_agent",
+    "description": "Add a cross-agent signal to CONTEXT.md. Use when another agent needs to know something for their work.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "to_agent": {
+                "type": "string",
+                "description": "Target agent (Programmer, Designer, Artist, Writer, QA)"
+            },
+            "message": {
+                "type": "string",
+                "description": "What they need to know (be specific)"
+            },
+            "project_id": {
+                "type": "string",
+                "description": "Project ID. Defaults to 'default' if not specified."
+            }
+        },
+        "required": ["to_agent", "message"]
+    }
+}
+
+
+def signal_agent(to_agent: str, message: str, from_agent: str, project_id: str = "default") -> str:
+    """Append a signal to CONTEXT.md for another agent."""
+    context_file = PROJECTS_DIR / project_id / "CONTEXT.md"
+
+    # Create project dir if needed
+    context_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # If no context file, create from template
+    if not context_file.exists():
+        template = PROJECTS_DIR / "_template" / "CONTEXT.md"
+        if template.exists():
+            content = template.read_text(encoding="utf-8").replace("{PROJECT_NAME}", project_id)
+        else:
+            content = f"# Project: {project_id}\n\n## Cross-Agent Signals\n\n"
+        context_file.write_text(content, encoding="utf-8")
+
+    # Read current content
+    content = context_file.read_text(encoding="utf-8")
+
+    # Format the signal
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    signal = f"- [{from_agent.upper()} -> {to_agent.upper()}] {message} ({timestamp})"
+
+    # Insert after "## Cross-Agent Signals" header
+    marker = "## Cross-Agent Signals"
+    if marker in content:
+        # Find the next section or end of file
+        marker_pos = content.find(marker) + len(marker)
+        next_section = content.find("\n## ", marker_pos)
+        if next_section == -1:
+            next_section = len(content)
+
+        # Get the signals section
+        before = content[:marker_pos]
+        signals_section = content[marker_pos:next_section]
+        after = content[next_section:]
+
+        # Append signal
+        if signals_section.strip().endswith("- (none yet)"):
+            signals_section = "\n\n" + signal + "\n"
+        else:
+            signals_section = signals_section.rstrip() + "\n" + signal + "\n"
+
+        content = before + signals_section + after
+    else:
+        # Append at end if no marker
+        content += f"\n\n## Cross-Agent Signals\n\n{signal}\n"
+
+    context_file.write_text(content, encoding="utf-8")
+    return f"Signal added: {from_agent} -> {to_agent}: {message}"
+
+
 # Tool bundle - workflow tools removed (server handles pick/complete automatically)
 TOOLS = [
     GET_MY_TASKS_SCHEMA,
     LOAD_SKILL_SCHEMA,
     LIST_SKILLS_SCHEMA,
+    READ_CONTEXT_SCHEMA,
+    SIGNAL_AGENT_SCHEMA,
 ]
 
 
@@ -171,4 +288,6 @@ def make_handlers(agent_name: str) -> dict:
         "get_my_tasks": lambda **kwargs: get_my_tasks(agent_name),
         "load_skill": lambda skill_path, **kwargs: load_skill(skill_path, agent_name),
         "list_skills": lambda category="", **kwargs: list_skills(category),
+        "read_context": lambda project_id="default", **kwargs: read_context(project_id),
+        "signal_agent": lambda to_agent, message, project_id="default", **kwargs: signal_agent(to_agent, message, agent_name, project_id),
     }

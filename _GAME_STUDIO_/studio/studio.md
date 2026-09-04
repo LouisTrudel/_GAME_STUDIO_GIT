@@ -10,9 +10,10 @@ An abstract self-improving agent fleet that delegates tasks, accumulates data, a
 |---------|------------|
 | Agent | A folder containing role.md, config.json, skills, and tools specific to one AI worker |
 | BOSS | The orchestrator agent that receives user input, decomposes tasks, and delegates to agents |
-| Skill | An injectable md file containing task-specific knowledge |
+| Skill | An injectable md file containing task-specific knowledge or tool docs |
 | Asset | Reusable artifact (code, templates, media, lore) stored for injection |
-| Hub | Central message channel where all agents post and read messages |
+| Hub | Central message channel where all agents post and read messages (chat-like) |
+| Context | Per-project CONTEXT.md for cross-agent signals and decisions (document-like) |
 | Heartbeat | Periodic execution system for both local Python and AI agent tasks |
 | Task | A unit of work with assignee, dependencies, status, and result |
 
@@ -29,6 +30,7 @@ studio/
 ├── agents/            # Agent definitions (role.md, config.json, skills/)
 ├── skills/            # Shared skill library
 │   ├── _routers/      # Always-loaded routing skills per agent type
+│   ├── _tools/        # Tool documentation (loaded on demand, saves tokens)
 │   ├── code/          # Programmer skills
 │   ├── design/        # Designer skills
 │   ├── art/           # Artist skills
@@ -38,6 +40,12 @@ studio/
 ├── assets/            # Reusable artifacts
 ├── core/              # Hub, TaskManager, Heartbeats
 └── data/              # Accumulated logs and metrics
+
+projects/
+├── _template/         # Copy this to start a new project
+│   └── CONTEXT.md     # Shared brain template
+└── {project_id}/      # Each project folder
+    └── CONTEXT.md     # Cross-agent signals, decisions, blockers
 ```
 
 ## Principles
@@ -47,6 +55,7 @@ studio/
 3. Human approval for destructive operations
 4. Skills are data, not code
 5. Agents are stateless; state lives in /data
+6. Scripts for deterministic tasks, agents for judgment calls
 
 ## Documentation Index
 

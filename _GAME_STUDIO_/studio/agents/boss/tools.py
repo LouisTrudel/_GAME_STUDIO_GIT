@@ -2,8 +2,12 @@
 BOSS-specific tools for task management.
 """
 
+from pathlib import Path
 from studio.core.tasks import task_manager, TaskStatus
 from studio.core.hub import hub
+
+# Projects directory (for CONTEXT.md files)
+PROJECTS_DIR = Path(__file__).parent.parent.parent.parent / "projects"
 
 
 CREATE_TASK_SCHEMA = {
@@ -112,13 +116,51 @@ def get_task_status(task_id: str = None, include_completed: bool = False) -> str
             return task_manager.to_active_context_string()
 
 
+# ============ CONTEXT TOOLS ============
+
+READ_CONTEXT_SCHEMA = {
+    "name": "read_context",
+    "description": "Read the project's CONTEXT.md (shared brain). Contains cross-agent signals, decisions, and blockers.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "project_id": {
+                "type": "string",
+                "description": "Project ID. Defaults to 'default' if not specified."
+            }
+        },
+        "required": []
+    }
+}
+
+
+def read_context(project_id: str = "default") -> str:
+    """Read the CONTEXT.md for a project."""
+    context_file = PROJECTS_DIR / project_id / "CONTEXT.md"
+
+    if not context_file.exists():
+        project_dir = PROJECTS_DIR / project_id
+        if not project_dir.exists():
+            available = [p.name for p in PROJECTS_DIR.iterdir() if p.is_dir() and not p.name.startswith("_")]
+            return f"Project '{project_id}' not found. Available: {', '.join(available) or 'none'}"
+        return f"No CONTEXT.md found for project '{project_id}'."
+
+    try:
+        content = context_file.read_text(encoding="utf-8")
+        return f"=== CONTEXT: {project_id} ===\n\n{content}"
+    except Exception as e:
+        return f"Error reading context: {e}"
+
+
 # Tool bundle
 TOOLS = [
     CREATE_TASK_SCHEMA,
     GET_TASK_STATUS_SCHEMA,
+    READ_CONTEXT_SCHEMA,
 ]
 
 HANDLERS = {
     "create_task": create_task,
     "get_task_status": get_task_status,
+    "read_context": read_context,
 }
