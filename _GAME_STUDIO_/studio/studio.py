@@ -1,325 +1,52 @@
 """
 Studio: Main orchestration class for the game studio agents.
+
+Structure:
+- studio/loader.py: Agent loading and configuration helpers
+- studio/agent.py: StudioAgent class (individual agent wrapper)
+- studio/studio.py: Studio orchestrator (this file)
 """
 
 import time
-import json
-import re
-from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
-from agents import Agent
-from agents.backends import ClaudeCLIBackend
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, Future
+from datetime import datetime
+from typing import Optional
 
-from studio.core import hub, task_manager, TaskStatus
+from studio.core import task_manager, TaskStatus, hub
 from studio.core.studio_metrics import track_tokens
+from studio.core.memory import memory_manager
+from studio.core.history import history_manager
+from studio.loader import get_all_agent_names
+from studio.agent import StudioAgent
+
+# Import backends for Raw pseudo-agent
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+import gemini
+from backends.backends.claude_cli import ClaudeCLIBackend
+from backends.backends.ollama import OllamaBackend
+
+
+# Re-export for backwards compatibility with server.py imports
+from studio.loader import (
+    load_agent_role,
+    load_agent_config,
+    get_all_agent_names,
+)
 
 
 # Timeout for agent responses (seconds)
-AGENT_RESPONSE_TIMEOUT = 30
-
-
-# Agent folders
-AGENTS_DIR = Path(__file__).parent / "agents"
-SHARED_DIR = AGENTS_DIR / "shared"
-SKILLS_DIR = Path(__file__).parent / "skills"
-ROUTERS_DIR = SKILLS_DIR / "_routers"
-
-# Agent name to router type mapping
-AGENT_ROUTER_MAP = {
-    "boss": "boss",
-    "programmer": "programmer",
-    "designer": "designer",
-    "artist": "artist",
-    "writer": "writer",
-    "qa": "qa",
-    "taxonomy": "taxonomy",
-    "context": "context",
-}
-
-
-def load_markdown(filepath: Path) -> str:
-    """Load a markdown file as string."""
-    if filepath.exists():
-        return filepath.read_text(encoding="utf-8")
-    return ""
-
-
-def load_agent_role_md(name: str) -> str:
-    """Load agent role from markdown file."""
-    role_file = AGENTS_DIR / name.lower() / "role.md"
-    return load_markdown(role_file)
-
-
-def load_agent_config(name: str) -> dict:
-    """Load agent config from JSON file."""
-    config_file = AGENTS_DIR / name.lower() / "config.json"
-    if config_file.exists():
-        with open(config_file) as f:
-            return json.load(f)
-    return {}
-
-
-def load_agent_skills(name: str) -> list[str]:
-    """Load all skills for an agent."""
-    skills_dir = AGENTS_DIR / name.lower() / "skills"
-    skills = []
-    if skills_dir.exists():
-        for skill_file in skills_dir.glob("*.md"):
-            skills.append(load_markdown(skill_file))
-    return skills
-
-
-def load_shared_skills() -> list[str]:
-    """Load shared skills available to all agents."""
-    skills = []
-    if SHARED_DIR.exists():
-        for skill_file in SHARED_DIR.glob("*.md"):
-            skills.append(load_markdown(skill_file))
-    return skills
-
-
-def load_router_skill(agent_name: str) -> str:
-    """Load the router skill for an agent type."""
-    # Map agent name to router type
-    router_type = AGENT_ROUTER_MAP.get(agent_name.lower())
-    if not router_type:
-        return ""
-
-    router_file = ROUTERS_DIR / f"{router_type}.md"
-    if router_file.exists():
-        return load_markdown(router_file)
-    return ""
-
-
-def get_all_agent_names() -> list[str]:
-    """Get list of all agent names from folders."""
-    names = []
-    for folder in AGENTS_DIR.iterdir():
-        if folder.is_dir() and folder.name != "shared":
-            # Check for role.md or role.json
-            if (folder / "role.md").exists() or (folder / "role.json").exists():
-                config = load_agent_config(folder.name)
-                names.append(config.get("name", folder.name.upper() if folder.name == "boss" else folder.name.capitalize()))
-    return names
-
-
-def load_agent_role(name: str) -> dict:
-    """Load agent role - for backwards compat with server.py"""
-    # Try JSON first
-    config_file = AGENTS_DIR / name.lower() / "role.json"
-    if config_file.exists():
-        with open(config_file) as f:
-            return json.load(f)
-
-    # Parse markdown frontmatter-style
-    md = load_agent_role_md(name)
-    config = load_agent_config(name)
-    return {
-        "name": config.get("name", name),
-        "title": config.get("title", "Agent"),
-        "color": config.get("color", "#888"),
-        "is_boss": "boss" in name.lower(),
-        "system_prompt": md,
-    }
-
-
-class StudioAgent:
-    """An agent that reads/writes to the shared hub and uses task tools."""
-
-    def __init__(self, name: str, backend: str = "claude-cli"):
-        self.name_raw = name
-        config = load_agent_config(name)
-
-        self.name = config.get("name", name)
-        self.title = config.get("title", "Agent")
-        self.color = config.get("color", "#888")
-        self.model = config.get("model", "claude")  # Model ignored for CLI backend
-        self.is_boss = "boss" in name.lower()
-
-        # Load role from markdown
-        role_md = load_agent_role_md(name)
-
-        # Load skills
-        self.skills = load_agent_skills(name)
-        self.shared_skills = load_shared_skills()
-
-        # Build system prompt from role + skills
-        system_prompt = self._build_system_prompt(role_md)
-
-        # Load tool handlers (schemas now live in skill files, not injected)
-        _, handlers = self._load_tools()
-
-        self.agent = Agent(
-            name=self.name,
-            system_prompt=system_prompt,
-            backend=backend,
-            model=self.model,
-            tools=[],  # Schemas in :_tools/* skills, loaded on demand
-            tool_handlers=handlers,  # Handlers still active for <tool> parsing
-        )
-
-        print(f"  [{self.name}] Using backend: {backend}, {len(self.skills)} skills loaded")
-
-    def _build_system_prompt(self, role_md: str) -> str:
-        """Build full system prompt from role + router + shared skills + core tools."""
-        parts = [role_md]
-
-        # Add router skill (skill loading navigation)
-        router = load_router_skill(self.name_raw)
-        if router:
-            parts.append(router)
-
-        # Auto-load core tool skills (reliability over token savings)
-        tool_skills = self._get_core_tool_skills()
-        for tool_skill in tool_skills:
-            parts.append(tool_skill)
-
-        # Add shared project conventions
-        for skill in self.shared_skills:
-            parts.append(skill)
-
-        # Add agent-specific skills (legacy - from agents/{name}/skills/)
-        for skill in self.skills:
-            parts.append(skill)
-
-        return "\n\n---\n\n".join(parts)
-
-    def _get_core_tool_skills(self) -> list[str]:
-        """Load core tool skills for this agent type."""
-        tools_dir = SKILLS_DIR / "_tools"
-        tool_skills = []
-
-        if self.is_boss:
-            # BOSS needs: task management, context
-            tool_files = ["tasks.md", "context.md"]
-        else:
-            # Employees need: skill loading, files, context
-            tool_files = ["skills.md", "files.md", "context.md"]
-            # QA also needs QA-specific tools
-            if self.name == "QA":
-                tool_files.append("qa.md")
-
-        for filename in tool_files:
-            filepath = tools_dir / filename
-            if filepath.exists():
-                content = filepath.read_text(encoding="utf-8")
-                tool_skills.append(content)
-
-        return tool_skills
-
-    def _load_tools(self) -> tuple[list, dict]:
-        """Load tools for this agent."""
-        tools = []
-        handlers = {}
-
-        # All agents get file tools
-        from studio.core.file_tools import FILE_TOOLS, FILE_HANDLERS
-        tools.extend(FILE_TOOLS)
-        handlers.update(FILE_HANDLERS)
-
-        if self.is_boss:
-            from studio.agents.boss.tools import TOOLS, HANDLERS
-            tools.extend(TOOLS)
-            handlers.update(HANDLERS)
-        else:
-            # All employees get base employee tools
-            from studio.core.employee_tools import TOOLS as EMP_TOOLS, make_handlers
-            tools.extend(EMP_TOOLS)
-            handlers.update(make_handlers(self.name))
-
-            # Check for agent-specific tools
-            agent_tools_file = AGENTS_DIR / self.name_raw.lower() / "tools.py"
-            if agent_tools_file.exists():
-                if self.name == "Artist":
-                    from studio.agents.artist.tools import TOOLS as ART_TOOLS, HANDLERS as ART_HANDLERS
-                    tools.extend(ART_TOOLS)
-                    handlers.update(ART_HANDLERS)
-                elif self.name == "Writer":
-                    from studio.agents.writer.tools import TOOLS as WRITE_TOOLS, HANDLERS as WRITE_HANDLERS
-                    tools.extend(WRITE_TOOLS)
-                    handlers.update(WRITE_HANDLERS)
-                elif self.name == "QA":
-                    from studio.agents.qa.tools import TOOLS as QA_TOOLS, HANDLERS as QA_HANDLERS
-                    tools.extend(QA_TOOLS)
-                    handlers.update(QA_HANDLERS)
-                elif self.name == "Taxonomy":
-                    from studio.agents.taxonomy.tools import TOOLS as TAX_TOOLS, HANDLERS as TAX_HANDLERS
-                    tools.extend(TAX_TOOLS)
-                    handlers.update(TAX_HANDLERS)
-
-        return tools, handlers
-
-    def _build_context(self, trigger_message: str = None) -> str:
-        """Build scoped context for this agent."""
-        parts = []
-
-        if self.is_boss:
-            # BOSS sees: recent hub (limited), active tasks only
-            context = hub.get_context_for_agent(self.name, limit=10)
-            parts.append(f"RECENT MESSAGES:\n{context}")
-
-            # Only show active tasks (not approved/failed) to save tokens
-            task_context = task_manager.to_active_context_string()
-            parts.append(task_context)
-
-        else:
-            # Employees see: messages mentioning them, their tasks only
-            my_tasks = task_manager.get_agent_tasks(self.name)
-
-            if my_tasks:
-                task_lines = [f"YOUR TASKS ({self.name}):"]
-                for task in my_tasks:
-                    task_lines.append(f"  [{task.id}] {task.status.value}: {task.description}")
-                    if task.review_notes and task.status == TaskStatus.READY:
-                        task_lines.append(f"       Feedback: {task.review_notes}")
-                parts.append("\n".join(task_lines))
-            else:
-                parts.append("You have no assigned tasks.")
-
-            # Only recent messages that mention this agent
-            recent = hub.get_history(limit=10)
-            relevant = [m for m in recent if self.name in m.content or m.sender == "BOSS"]
-            if relevant:
-                lines = [f"[{m.sender}]: {m.content}" for m in relevant[-5:]]
-                parts.append(f"RELEVANT MESSAGES:\n" + "\n".join(lines))
-
-        # Add trigger
-        parts.append(trigger_message or "Respond appropriately.")
-
-        return "\n\n".join(parts)
-
-    def respond(self, trigger_message: str = None) -> str:
-        """Generate a response based on scoped context."""
-        try:
-            prompt = self._build_context(trigger_message)
-
-            print(f"[{self.name}] Thinking...")
-            start = time.time()
-            response = self.agent.chat(prompt)
-            elapsed = time.time() - start
-
-            # Get token usage
-            usage = self.agent.get_last_token_usage()
-            tokens_in = usage.get("total_input_tokens", 0)
-            tokens_out = usage.get("total_output_tokens", 0)
-            print(f"[{self.name}] Done. ({elapsed:.1f}s, {tokens_in}+{tokens_out} tokens)")
-
-            hub.post(self.name, response)
-            return response
-
-        except Exception as e:
-            error_msg = f"Error: {e}"
-            print(f"[{self.name}] {error_msg}")
-            hub.post(self.name, error_msg)
-            return error_msg
-
-    def get_last_token_usage(self) -> dict:
-        """Get token usage from last respond() call."""
-        return self.agent.get_last_token_usage()
+# This is a safety net - real stale detection is in claude_cli.py (20 min no output)
+# 30 min hard cap = absolute maximum, should never hit this
+AGENT_RESPONSE_TIMEOUT = 1800
 
 
 class Studio:
     """The full studio with all agents and task orchestration."""
+
+    # Maximum concurrent agent tasks
+    MAX_CONCURRENT_AGENTS = 3
 
     def __init__(self, backend: str = "claude-cli"):
         self.backend = backend
@@ -327,11 +54,23 @@ class Studio:
         self.thinking_callback = None  # Set by server for UI updates
         self.status_callback = None  # Set by server for agent status updates
 
+        # Parallel execution tracking
+        self._active_tasks: dict[str, Future] = {}  # agent_name -> Future
+        self._executor = ThreadPoolExecutor(max_workers=self.MAX_CONCURRENT_AGENTS)
+
         # Load all agents from folders
         for name in get_all_agent_names():
             self.agents[name] = StudioAgent(name, backend)
 
         self.boss = self.agents.get("BOSS")
+
+        # Wire up session memory summarization callback (T164)
+        hub.set_summarize_callback(self._summarize_session_memory)
+
+        # Wire up history tier trigger callback (T309)
+        # Note: T282 history callback was deprecated in favor of T309 tiered system (T311)
+        memory_manager.set_history_tier_callback(self._trigger_history_tier)
+        history_manager.set_narrative_callback(self._generate_tier_narrative)
 
     def set_thinking_callback(self, callback):
         """Set callback for thinking state changes. callback(agent_name | None)"""
@@ -350,6 +89,157 @@ class Studio:
         """Notify agent status change."""
         if self.status_callback:
             self.status_callback(agent_name, status, activity)
+
+    def _summarize_session_memory(self, messages: list[dict], current_summary: str) -> Optional[str]:
+        """Summarize messages into session_memory.md via Context agent (T164).
+
+        This is called by Hub when message count reaches 50.
+        Invokes Context agent with a summarization prompt.
+
+        Args:
+            messages: Last 50 messages as dicts
+            current_summary: Current session_memory.md content
+
+        Returns:
+            New session_memory.md content, or None on failure
+        """
+        context_agent = self.agents.get("Context")
+        if not context_agent:
+            print("[Studio] Context agent not found for summarization")
+            return None
+
+        # Build summarization prompt
+        messages_text = "\n".join(
+            f"[{m.get('sender', '?')}]: {m.get('content', '')[:200]}"
+            for m in messages
+        )
+
+        prompt = f"""SUMMARIZE SESSION for session_memory.md update.
+
+CURRENT SESSION MEMORY:
+{current_summary[:2000] if current_summary else "(empty)"}
+
+RECENT 50 MESSAGES:
+{messages_text}
+
+INSTRUCTIONS:
+1. Analyze the messages for key decisions, completed work, and active context
+2. Use update_session_memory tool to write the cumulative summary
+3. Preserve important decisions from current summary, add new ones
+4. Keep milestones list growing (max 15 most significant)
+5. Update active context to reflect current state
+
+Focus on WHAT was decided/completed, not conversation details."""
+
+        try:
+            self._notify_status("Context", "working", "Updating session memory...")
+            response = context_agent.respond(prompt)
+            self._notify_status("Context", "idle", "")
+            return response
+        except Exception as e:
+            print(f"[Studio] Session summarization failed: {e}")
+            return None
+
+    def _trigger_history_tier(self, content: str, tier_index: int):
+        """Trigger history tier system after memory compression (T309).
+
+        Maps memory tiers to history tiers:
+        - Tier 0 compression → Draft trigger
+        - Tier 1 compression → Chapter trigger (epoch end)
+        - Tier 2+ compression → Book/Collection triggers (phase complete)
+        """
+        from studio.core.history import history_manager
+
+        if tier_index == 0:
+            # Memory tier 0 = session messages → Draft
+            history_manager.trigger_draft(content, source="memory_t0")
+        elif tier_index == 1:
+            # Memory tier 1 = daily summaries → Chapter (epoch end)
+            history_manager.trigger_epoch_end(content)
+        elif tier_index >= 2:
+            # Memory tier 2+ = archives → Book (project phase)
+            history_manager.trigger_phase_complete(
+                phase_name=f"archive_t{tier_index}",
+                phase_summary=content
+            )
+
+    def _generate_tier_narrative(self, content: str, tier, compression_count: int) -> Optional[str]:
+        """Generate narrative for history tier via Writer (T309).
+
+        Called by HistoryManager during tier compression. Writer transforms
+        accumulated tier content into narrative prose.
+
+        Args:
+            content: The tier content to narrate
+            tier: The HistoryTier being compressed
+            compression_count: How many times this tier has been compressed
+
+        Returns:
+            Narrative markdown string, or None on failure
+        """
+        writer_agent = self.agents.get("Writer")
+        if not writer_agent:
+            print("[Studio] Writer agent not found for tier narrative")
+            return None
+
+        # Truncate content for Writer
+        content_preview = content[:6000] if len(content) > 6000 else content
+
+        # Tier-specific prompts
+        tier_prompts = {
+            "draft": """Write a session summary. Focus on:
+- What work was started/completed
+- Key decisions made
+- Problems encountered and resolved
+Keep it to 2-3 short paragraphs.""",
+
+            "chapter": """Write an epoch summary covering multiple sessions. Focus on:
+- Major milestones achieved
+- Patterns in the work
+- How the project evolved
+Keep it to 3-4 paragraphs.""",
+
+            "book": """Write a project phase summary. This is a significant milestone. Focus on:
+- What this phase accomplished
+- Key architectural decisions
+- Lessons learned
+- Setup for next phase
+Keep it to 4-5 paragraphs.""",
+
+            "collection": """Write a portfolio overview covering multiple projects. Focus on:
+- Cross-project themes
+- Evolution of practices
+- Major accomplishments
+- Knowledge gained
+Keep it to 5-6 paragraphs, this is archival.""",
+        }
+
+        tier_name = tier.name
+        tier_prompt = tier_prompts.get(tier_name, tier_prompts["draft"])
+
+        prompt = f"""HISTORY NARRATIVE: {tier_name.upper()} #{compression_count}
+
+{tier_prompt}
+
+CONTENT TO NARRATE:
+{content_preview}
+
+FORMAT:
+# {tier_name.title()}: Entry {compression_count}
+
+[Your narrative here]
+
+---
+*Recorded: {datetime.now().strftime("%Y-%m-%d")}*"""
+
+        try:
+            self._notify_status("Writer", "working", f"Writing {tier_name} narrative...")
+            narrative = writer_agent.respond(prompt)
+            self._notify_status("Writer", "idle", "")
+            return narrative
+        except Exception as e:
+            print(f"[Studio] Tier narrative generation failed: {e}")
+            return None
 
     def _find_agent(self, name: str) -> StudioAgent | None:
         """Find agent by name (case-insensitive).
@@ -370,6 +260,7 @@ class Studio:
 
     def handle_user_message(self, content: str) -> str:
         """Process user message through BOSS."""
+        from studio.core.hub import hub
         hub.post("user", content)
         self._notify_status("BOSS", "working", "Processing user message...")
         self._notify_thinking("BOSS")
@@ -409,18 +300,6 @@ class Studio:
             return result
         return None
 
-    def _execute_with_timeout(self, agent: StudioAgent, prompt: str, timeout: int = AGENT_RESPONSE_TIMEOUT) -> str:
-        """
-        Execute agent.respond() with a timeout.
-        Raises TimeoutError if the agent doesn't respond in time.
-        """
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(agent.respond, prompt)
-            try:
-                return future.result(timeout=timeout)
-            except FuturesTimeoutError:
-                raise TimeoutError(f"Agent response timed out after {timeout}s")
-
     def _classify_error(self, error: Exception) -> tuple[str, str]:
         """
         Classify an error and return (error_type, action).
@@ -453,118 +332,456 @@ class Studio:
         if "401" in error_str or "403" in error_str or "auth" in error_str:
             return "AUTH_ERROR", "skip"
 
+        # Not implemented errors (T203: explicit handling for clarity)
+        if "not yet implemented" in error_str or "not implemented" in error_str:
+            return "NOT_IMPLEMENTED", "skip"
+
+        # Invalid configuration errors (don't retry - fix the config)
+        if isinstance(error, ValueError) and ("invalid" in error_str or "backend" in error_str):
+            return "INVALID_CONFIG", "skip"
+
         # Default: unknown error
         return error_type, "skip"
+
+    def _run_raw_task(self, task, backend: str = "gemini") -> tuple[str, Optional[str], dict, dict]:
+        """
+        Run a Raw task (direct LLM query, no agent overhead).
+        Returns (task_id, response, usage, quality_metrics) or (task_id, None, {}, {}) on error.
+
+        Raw tasks are:
+        - Stateless (no conversation history)
+        - No context injection (no role, no memory, no skills)
+        - Always return plain text
+        - Default backend: gemini (free tier)
+        """
+        import time as _task_time
+        task_start = _task_time.time()
+        print(f"[Studio] _run_raw_task() start | task={task.id} | backend={backend}")
+
+        try:
+            # Extract prompt from task description
+            prompt = task.description
+
+            # Log minimal input (Raw has no role/skills injection)
+            task_manager.log_input(task.id, role_md="", skills="", task_prompt=prompt)
+
+            # T215: Log char counts (Raw has no context injection)
+            task_manager.log_context_injected(task.id, role_md="", skills="", context_md="", task_prompt=prompt)
+
+            # Route to backend (extensible for future LLMs)
+            # Supported: gemini (free tier), claude_cli (Pro subscription), ollama (local), openai (paid)
+            if backend == "gemini":
+                # Status callback for rate limit retries (T196)
+                def gemini_status_cb(msg):
+                    print(f"[Raw] {msg}")
+                    if self.status_callback:
+                        self.status_callback("Raw", "working", msg)
+
+                response = gemini.query(prompt, status_callback=gemini_status_cb)
+            elif backend in ("claude_cli", "claude"):
+                # Use Claude CLI backend - leverages Pro subscription
+                cli_backend = ClaudeCLIBackend(agent_name="Raw")
+                # Simple prompt, no tools, no context - just prompt → response
+                response = cli_backend.chat(
+                    messages=[{"role": "user", "content": prompt}],
+                    system_prompt="You are a helpful assistant. Respond concisely.",
+                    tools=None,
+                    tool_handlers=None
+                )
+            elif backend == "ollama":
+                # Use Ollama backend - local LLM
+                ollama_backend = OllamaBackend(agent_name="Raw")
+                response = ollama_backend.chat(
+                    messages=[{"role": "user", "content": prompt}],
+                    system_prompt="You are a helpful assistant. Respond concisely.",
+                    tools=None,
+                    tool_handlers=None
+                )
+            elif backend == "openai":
+                # Future: implement openai backend
+                raise ValueError(f"Backend 'openai' not yet implemented. Available: gemini, claude_cli, claude, ollama")
+            else:
+                valid_backends = ["gemini", "claude_cli", "claude", "ollama"]
+                raise ValueError(f"Invalid backend '{backend}'. Valid options: {', '.join(valid_backends)}")
+
+            task_elapsed = _task_time.time() - task_start
+            print(f"[Studio] _run_raw_task() done | task={task.id} | elapsed={task_elapsed:.1f}s")
+
+            # Return minimal usage/metrics (gemini.py doesn't track tokens)
+            usage = {"total_input_tokens": 0, "total_output_tokens": 0}
+            quality_metrics = {"duration_ms": int(task_elapsed * 1000)}
+            return (task.id, response, usage, quality_metrics)
+
+        except Exception as e:
+            task_elapsed = _task_time.time() - task_start
+            print(f"[Studio] _run_raw_task() EXCEPTION | task={task.id} | elapsed={task_elapsed:.1f}s | error={type(e).__name__}: {str(e)[:100]}")
+            return (task.id, None, {"error": e}, {})
+
+    def _prepare_agent_context(self, agent: StudioAgent, task) -> tuple[str, str, dict]:
+        """Build structured prompt and log context metrics.
+
+        Returns (full_prompt, trigger, context_metrics).
+        """
+        # Build clean prompt - agent just needs to do the work
+        trigger = f"""TASK {task.id}:
+{task.description}
+
+Do this task and respond with your deliverable. Your response will be saved as the task result."""
+
+        # T226: Build structured prompt with explicit section markers
+        # Order optimized for primacy/recency effects (T224):
+        # skills (primacy) → role (middle) → context → task (recency)
+        prompt_sections = []
+
+        # ## SKILLS - How to do work (primacy position)
+        skills = agent.get_skills_content()
+        if skills:
+            prompt_sections.append("## SKILLS\n\n" + skills)
+
+        # ## ROLE - Agent identity/constraints (middle = lowest recall, but needed)
+        role = agent.get_role_md()
+        if role:
+            prompt_sections.append("## ROLE\n\n" + role)
+
+        # ## CONTEXT - Project context + tasks (Boss compacts into task, employees get assigned tasks only)
+        context = agent.get_context_md()
+        if context:
+            prompt_sections.append("## CONTEXT\n\n" + context)
+
+        # ## TASK - Action to take (recency position = highest recall)
+        prompt_sections.append("## TASK\n\n" + trigger)
+
+        full_prompt = "\n\n".join(prompt_sections)
+
+        # Capture injected context metrics (T108 - kept for backwards compat)
+        context_metrics = {
+            "full_prompt_length": len(full_prompt),
+            "system_prompt_length": len(agent.agent.system_prompt) if hasattr(agent.agent, 'system_prompt') else 0,
+            "tool_count": len(agent.agent.tools) if hasattr(agent.agent, 'tools') else 0,
+            "message_count": len(agent.agent.messages) if hasattr(agent.agent, 'messages') else 0,
+            "estimated_context_tokens": len(full_prompt) // 4,
+        }
+
+        return full_prompt, trigger, context_metrics
+
+    def _log_task_error(self, task_id: str, agent_name: str, error: Exception, full_prompt: str = None):
+        """Save error details to debug log (T108)."""
+        try:
+            from pathlib import Path
+            import json
+            from datetime import datetime
+            debug_log_path = Path(__file__).parent.parent / "data" / "logs" / "error_prompts.json"
+            debug_log_path.parent.mkdir(parents=True, exist_ok=True)
+
+            error_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "task_id": task_id,
+                "agent": agent_name,
+                "error": f"{type(error).__name__}: {str(error)}",
+                "full_prompt": full_prompt,
+                "prompt_length": len(full_prompt) if full_prompt else 0,
+            }
+
+            # Append to log file
+            existing = []
+            if debug_log_path.exists():
+                try:
+                    with open(debug_log_path, "r") as f:
+                        existing = json.load(f)
+                except (json.JSONDecodeError, IOError):
+                    existing = []
+
+            existing.append(error_entry)
+            existing = existing[-50:]  # Keep last 50 error entries
+
+            with open(debug_log_path, "w") as f:
+                json.dump(existing, f, indent=2)
+            print(f"[Studio] Saved error prompt to {debug_log_path}")
+        except Exception as log_err:
+            print(f"[Studio] Failed to save error prompt: {log_err}")
+
+    def _run_agent_task(self, agent: StudioAgent, task) -> tuple[str, Optional[str], dict, dict]:
+        """
+        Run a single agent task. Returns (task_id, response, usage, quality_metrics) or (task_id, None, {}, {}) on error.
+        This runs in a background thread.
+        """
+        import time as _task_time
+        task_start = _task_time.time()
+        print(f"[Studio] _run_agent_task() start | task={task.id} | agent={agent.name}")
+        full_prompt = None
+
+        try:
+            # Build structured prompt
+            print(f"[Studio] _run_agent_task() building context for {task.id}")
+            full_prompt, trigger, context_metrics = self._prepare_agent_context(agent, task)
+            task_manager.save_prompt(task.id, full_prompt)
+
+            # T115: Capture raw injected content for full visibility
+            task_manager.log_input(
+                task.id,
+                role_md=agent.get_role_md(),
+                skills=agent.get_skills_content(),
+                task_prompt=trigger
+            )
+
+            # T215: Log char counts of injected context at dispatch (<1ms overhead)
+            task_manager.log_context_injected(
+                task.id,
+                role_md=agent.get_role_md(),
+                skills=agent.get_skills_content(),
+                context_md=agent.get_context_md(),
+                task_prompt=trigger
+            )
+
+            task_manager.log_context_metrics(task.id, context_metrics)
+            print(f"[Studio] _run_agent_task() calling agent.respond() for {task.id} | prompt_len={len(full_prompt)} | est_tokens={context_metrics['estimated_context_tokens']}")
+
+            # Get agent's response (blocking call in thread)
+            response = agent.respond(full_prompt=full_prompt)
+            usage = agent.get_last_token_usage()
+            quality_metrics = agent.get_quality_metrics()
+
+            task_elapsed = _task_time.time() - task_start
+            retries = quality_metrics.get("retries", 0)
+            tool_errors = len(quality_metrics.get("tool_errors", []))
+            print(f"[Studio] _run_agent_task() done | task={task.id} | elapsed={task_elapsed:.1f}s | retries={retries} | tool_errors={tool_errors}")
+            return (task.id, response, usage, quality_metrics)
+
+        except Exception as e:
+            task_elapsed = _task_time.time() - task_start
+            print(f"[Studio] _run_agent_task() EXCEPTION | task={task.id} | elapsed={task_elapsed:.1f}s | error={type(e).__name__}: {str(e)[:100]}")
+            self._log_task_error(task.id, agent.name, e, full_prompt)
+            return (task.id, None, {"error": e}, {})
+
+    def _handle_successful_task(self, task_id: str, agent_name: str, response: str, usage: dict, quality_metrics: dict):
+        """Handle successful task completion - logging, archival, and metrics."""
+        task_manager.complete_task(task_id, response)
+        print(f"[Studio] Completed {task_id}")
+
+        # Post Raw task responses to chat (they have no agent to post)
+        if agent_name == "Raw":
+            task = task_manager.get_task(task_id)
+            hub.post(
+                sender="Raw",
+                content=response,
+                task_id=task_id,
+                task_description=task.description if task else None,
+            )
+
+        # Archive old tasks and summarize old messages to keep context small
+        task_manager.archive_old_tasks(keep_recent=10)
+        hub.summarize_old_messages()
+
+        # T258: Trigger AB compression cascade on memory tiers
+        try:
+            compressed = memory_manager.check_and_compress_all()
+            if compressed > 0:
+                print(f"[Studio] Memory compression: {compressed} tier(s)")
+        except Exception as mem_err:
+            print(f"[Studio] Memory compression error (non-fatal): {mem_err}")
+
+        # Log token usage with substep breakdown
+        input_tokens = usage.get("total_input_tokens", 0)
+        output_tokens = usage.get("total_output_tokens", 0)
+        token_log = usage.get("token_log", [])
+        task_manager.log_tokens(task_id, input_tokens, output_tokens, token_log)
+        track_tokens(
+            agent=agent_name,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            task_id=task_id,
+        )
+
+        # Log quality metrics (retries, tool errors, cost, duration)
+        if quality_metrics:
+            task_manager.log_quality_metrics(task_id, quality_metrics)
+            retries = quality_metrics.get("retries", 0)
+            tool_errors = quality_metrics.get("tool_errors", [])
+            if retries > 0 or tool_errors:
+                print(f"[Studio] {task_id} quality: {retries} retries, {len(tool_errors)} tool errors")
+
+    def _handle_failed_task(self, task_id: str, usage: dict):
+        """Handle task failure with retry logic."""
+        error = usage.get("error")
+        error_type, action = self._classify_error(error)
+        error_msg = f"{error_type}: {str(error)[:200]}"
+        print(f"[Studio] Task {task_id} error ({action}): {error_msg}")
+
+        if action == "retry":
+            task_manager.reset_task(task_id)
+            can_retry = task_manager.increment_retry(task_id, max_retries=3)
+            if can_retry:
+                retry_count = task_manager.get_retry_count(task_id)
+                print(f"[Studio] Task {task_id} will retry ({retry_count}/3)")
+            else:
+                task_manager.set_error(task_id, f"{error_msg} (max retries exceeded)")
+        else:
+            task_manager.set_error(task_id, error_msg)
+
+    def _process_completed_futures(self) -> bool:
+        """Process completed agent futures and update task states. Returns True if work was done."""
+        did_work = False
+        completed_agents = []
+
+        for agent_name, future in list(self._active_tasks.items()):
+            if not future.done():
+                continue
+
+            print(f"[Studio] future DONE for {agent_name}")
+            completed_agents.append(agent_name)
+            try:
+                task_id, response, usage, quality_metrics = future.result(timeout=0)
+                print(f"[Studio] got result for {task_id} | has_response={response is not None}")
+
+                if response is not None:
+                    self._handle_successful_task(task_id, agent_name, response, usage, quality_metrics)
+                else:
+                    self._handle_failed_task(task_id, usage)
+
+                self._notify_thinking(None)
+                self._notify_status(agent_name, "idle", "")
+                did_work = True
+
+            except Exception as e:
+                print(f"[Studio] Future error for {agent_name}: {e}")
+                self._notify_status(agent_name, "idle", "")
+
+        # Remove completed agents from active tracking
+        for agent_name in completed_agents:
+            del self._active_tasks[agent_name]
+        if completed_agents:
+            print(f"[Studio] removed completed: {completed_agents}")
+
+        return did_work
+
+    def _recover_stale_tasks(self) -> bool:
+        """Recover tasks that have been claimed too long. Returns True if any recovered."""
+        recovered = task_manager.recover_stale_tasks()
+        if recovered:
+            print(f"[Studio] recovered stale tasks: {recovered}")
+            return True
+        return False
+
+    def _dispatch_raw_task(self, task) -> bool:
+        """Dispatch a Raw pseudo-agent task. Returns True if dispatched."""
+        # Skip if Raw is already working
+        if "Raw" in self._active_tasks:
+            return False
+
+        # Validate task
+        is_valid, error_msg = task_manager.validate_task(task.id)
+        if not is_valid:
+            print(f"[Studio] Skipping invalid Raw task {task.id}: {error_msg}")
+            task_manager.set_error(task.id, error_msg)
+            return True  # Did work (marked as error)
+
+        # Claim the task
+        if not task_manager.start_task(task.id, claimed_by="Raw"):
+            print(f"[Studio] Task {task.id} already claimed, skipping")
+            return False
+
+        print(f"[Studio] Started Raw task {task.id}")
+        self._notify_status("Raw", "working", f"Processing {task.id}...")
+        self._notify_thinking("Raw")
+
+        # Submit to executor - read backend from task, default to gemini
+        backend = task.backend or "gemini"
+        future = self._executor.submit(self._run_raw_task, task, backend)
+        self._active_tasks["Raw"] = future
+        return True
+
+    def _dispatch_agent_task(self, task, agent: StudioAgent) -> bool:
+        """Dispatch a task to a regular agent. Returns True if dispatched."""
+        # Skip if this agent is already working
+        if agent.name in self._active_tasks:
+            return False
+
+        # Validate task before dispatch
+        is_valid, error_msg = task_manager.validate_task(task.id)
+        if not is_valid:
+            print(f"[Studio] Skipping invalid task {task.id}: {error_msg}")
+            task_manager.set_error(task.id, error_msg)
+            return True  # Did work (marked as error)
+
+        # Claim the task atomically
+        if not task_manager.start_task(task.id, claimed_by=agent.name):
+            print(f"[Studio] Task {task.id} already claimed, skipping")
+            return False
+
+        print(f"[Studio] Started {task.id} for {agent.name}")
+        self._notify_status(agent.name, "working", f"Working on {task.id}...")
+        self._notify_thinking(agent.name)
+
+        # Submit to executor (non-blocking)
+        future = self._executor.submit(self._run_agent_task, agent, task)
+        self._active_tasks[agent.name] = future
+        print(f"[Studio] submitted {task.id} to executor for {agent.name}")
+        return True
+
+    def _dispatch_new_tasks(self) -> bool:
+        """Dispatch ready tasks to available agents. Returns True if any dispatched."""
+        did_work = False
+
+        ready_tasks = task_manager.get_ready_tasks()
+        print(f"[Studio] found {len(ready_tasks)} ready tasks")
+
+        # Process Raw tasks first (they don't consume agent slots)
+        for task in ready_tasks:
+            if task.assignee == "Raw":
+                if self._dispatch_raw_task(task):
+                    did_work = True
+
+        # Process regular agent tasks (subject to capacity limit)
+        active_count = len(self._active_tasks)
+        if active_count >= self.MAX_CONCURRENT_AGENTS:
+            return did_work  # At capacity for regular agents
+
+        for task in ready_tasks:
+            if active_count >= self.MAX_CONCURRENT_AGENTS:
+                break
+
+            # Skip Raw tasks (already handled above)
+            if task.assignee == "Raw":
+                continue
+
+            # Regular agent dispatch
+            agent = self._find_agent(task.assignee)
+            if not agent or agent.is_boss:
+                continue
+
+            if self._dispatch_agent_task(task, agent):
+                active_count += 1
+                did_work = True
+
+        return did_work
 
     def tick(self) -> bool:
         """
         Process one cycle of work. Returns True if any work was done.
 
-        SERVER-DRIVEN FLOW:
-        1. Server finds READY task
-        2. Server sets task to IN_PROGRESS (with claimed_by/claimed_at)
-        3. Server sends task to agent (agent just does the work)
-        4. Server captures response and sets task to APPROVED
-
-        Agents don't need to call pick_task or complete_task - server handles state.
+        PARALLEL EXECUTION:
+        - Multiple agents can work simultaneously (up to MAX_CONCURRENT_AGENTS)
+        - Each agent can only work on one task at a time
+        - Dependencies are respected (dependent tasks stay READY until deps complete)
         """
+        import time as _tick_time
+        tick_start = _tick_time.time()
+        print(f"[Studio] tick() start | active_agents={list(self._active_tasks.keys())}")
+
         did_work = False
 
-        # Recover any stale tasks (claimed for >35 min)
-        recovered = task_manager.recover_stale_tasks()
-        if recovered:
+        # 1. Process completed futures
+        if self._process_completed_futures():
             did_work = True
 
-        # Check for ready tasks
-        ready_tasks = task_manager.get_ready_tasks()
-        for task in ready_tasks:
-            agent = self._find_agent(task.assignee)
-            if agent:
-                if not agent.is_boss:
-                    # Validate task before dispatch
-                    is_valid, error_msg = task_manager.validate_task(task.id)
-                    if not is_valid:
-                        print(f"[Studio] Skipping invalid task {task.id}: {error_msg}")
-                        task_manager.set_error(task.id, error_msg)
-                        did_work = True
-                        continue
+        # 2. Recover stale tasks
+        if self._recover_stale_tasks():
+            did_work = True
 
-                    # SERVER: Start the task (sets IN_PROGRESS with claim)
-                    task_manager.start_task(task.id, claimed_by=agent.name)
-                    print(f"[Studio] Started {task.id} for {agent.name}")
+        # 3. Dispatch new tasks
+        if self._dispatch_new_tasks():
+            did_work = True
 
-                    # Execute task with error handling and timeout
-                    try:
-                        self._notify_status(agent.name, "working", f"Working on {task.id}...")
-                        self._notify_thinking(agent.name)
-
-                        # Build clean prompt - agent just needs to do the work
-                        trigger = f"""TASK {task.id}:
-{task.description}
-
-Do this task and respond with your deliverable. Your response will be saved as the task result."""
-
-                        # Build and save full context (what agent actually sees)
-                        full_prompt = agent._build_context(trigger)
-                        task_manager.save_prompt(task.id, full_prompt)
-
-                        # Get agent's response
-                        response = self._execute_with_timeout(agent, trigger, timeout=AGENT_RESPONSE_TIMEOUT)
-
-                        # SERVER: Complete the task with agent's response
-                        task_manager.complete_task(task.id, response)
-                        print(f"[Studio] Completed {task.id}")
-
-                        # Archive old tasks to keep context small
-                        task_manager.archive_old_tasks(keep_recent=10)
-
-                        # Log token usage on task
-                        usage = agent.get_last_token_usage()
-                        input_tokens = usage.get("total_input_tokens", 0)
-                        output_tokens = usage.get("total_output_tokens", 0)
-
-                        # Save to task
-                        task_manager.log_tokens(
-                            task.id,
-                            usage.get("token_log", []),
-                            input_tokens,
-                            output_tokens,
-                        )
-
-                        # Also track in session metrics
-                        track_tokens(
-                            agent=agent.name,
-                            input_tokens=input_tokens,
-                            output_tokens=output_tokens,
-                            task_id=task.id,
-                        )
-
-                        self._notify_thinking(None)
-                        self._notify_status(agent.name, "idle", "")
-                        did_work = True
-                        break
-
-                    except Exception as e:
-                        # Classify and handle the error
-                        error_type, action = self._classify_error(e)
-                        error_msg = f"{error_type}: {str(e)[:200]}"
-                        print(f"[Studio] Task {task.id} error ({action}): {error_msg}")
-
-                        if action == "retry":
-                            # Reset to READY for retry
-                            task_manager.reset_task(task.id)
-                            can_retry = task_manager.increment_retry(task.id, max_retries=3)
-                            if can_retry:
-                                retry_count = task_manager.get_retry_count(task.id)
-                                print(f"[Studio] Task {task.id} will retry ({retry_count}/3) on next tick")
-                            else:
-                                task_manager.set_error(task.id, f"{error_msg} (max retries exceeded)")
-                        else:
-                            task_manager.set_error(task.id, error_msg)
-
-                        self._notify_thinking(None)
-                        self._notify_status(agent.name, "idle", "")
-                        did_work = True
-                        continue
-
+        tick_elapsed = _tick_time.time() - tick_start
+        print(f"[Studio] tick() end | elapsed={tick_elapsed:.3f}s | did_work={did_work} | active={len(self._active_tasks)}")
         return did_work

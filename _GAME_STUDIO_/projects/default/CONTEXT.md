@@ -3,7 +3,7 @@
 ## Cross-Agent Signals
 
 Active handoffs between agents:
-- (none yet)
+- [DESIGNER -> PROGRAMMER] Loaded skill ':design/economy' (economy-design) - covers faucets, sinks, and balance curves for game economy design. Use this for pricing systems and currency flow. (2026-09-04 stress test)
 
 ## Decisions
 

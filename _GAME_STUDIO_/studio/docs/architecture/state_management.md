@@ -8,7 +8,7 @@ Where data lives and how it persists.
 |-------|----------|--------|
 | Tasks | `data/tasks.json` | JSON array with counter |
 | Hub history | `data/hub_history.json` | JSON array of messages |
-| Heartbeats | In-memory (not persisted yet) | Runtime only |
+| Schedules | In-memory (not persisted yet) | Runtime only |
 
 ## Task File Structure
 
@@ -22,8 +22,6 @@ Where data lives and how it persists.
       "assignee": "Designer",
       "status": "completed",
       "dependencies": [],
-      "result": "...",
-      "review_notes": "...",
       "created_at": "2024-01-01T00:00:00",
       "started_at": "...",
       "completed_at": "..."
@@ -56,5 +54,5 @@ Where data lives and how it persists.
 ```python
 from studio.core.hub import hub
 from studio.core.tasks import task_manager
-from studio.core.heartbeats import heartbeat_manager
+from studio.core.schedules import schedule_manager
 ```

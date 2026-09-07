@@ -1,6 +1,11 @@
-# Task Management Tools
+# Task Management Tools (BOSS only)
 
-Use these tools to create and track tasks.
+These tools are available to BOSS. Output the format below and the system executes them automatically.
+
+```
+<tool>tool_name</tool>
+<params>{"param": "value"}</params>
+```
 
 ## create_task
 
@@ -43,4 +48,33 @@ Check status of tasks.
 ```
 <tool>get_task_status</tool>
 <params>{"task_id": "T003"}</params>
+```
+
+## create_suggestion
+
+Create a suggestion for human review in the Learning tab. Use when you notice patterns, issues, or improvements worth surfacing.
+
+```
+<tool>create_suggestion</tool>
+<params>{"title": "...", "content": "...", "category": "..."}</params>
+```
+
+**Parameters:**
+- `title` (required): Short summary (max 80 chars)
+- `content` (required): Full suggestion text (max 500 chars)
+- `category` (required): process | architecture | tooling | workflow | documentation | new_skill | feature | new_skill | feature
+- `related_tasks`: List of task IDs this relates to (optional)
+- `files_mentioned`: File paths mentioned (optional)
+- `evidence`: Supporting evidence or data (optional)
+
+**Example:**
+```
+<tool>create_suggestion</tool>
+<params>{
+  "title": "Add caching for skill loading",
+  "content": "Skill files are re-read from disk on every task. Cache in memory to reduce I/O.",
+  "category": "architecture",
+  "related_tasks": ["T123"],
+  "files_mentioned": ["studio/core/employee_tools.py"]
+}</params>
 ```

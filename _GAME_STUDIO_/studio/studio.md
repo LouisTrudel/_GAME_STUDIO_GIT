@@ -2,20 +2,20 @@
 
 ## Purpose
 
-An abstract self-improving agent fleet that delegates tasks, accumulates data, and refines its skill library. Optimizes AI output per token through dynamic context injection and monitoring.
+An abstract self-improving agent fleet that delegates tasks, accumulates data, and refines its skill library to ship fully working complex projects. Optimizes AI output quality per token through dynamic context injection.
 
 ## Core Concepts
 
-| Concept | Definition |
-|---------|------------|
-| Agent | A folder containing role.md, config.json, skills, and tools specific to one AI worker |
-| BOSS | The orchestrator agent that receives user input, decomposes tasks, and delegates to agents |
-| Skill | An injectable md file containing task-specific knowledge or tool docs |
-| Asset | Reusable artifact (code, templates, media, lore) stored for injection |
-| Hub | Central message channel where all agents post and read messages (chat-like) |
-| Context | Per-project CONTEXT.md for cross-agent signals and decisions (document-like) |
-| Heartbeat | Periodic execution system for both local Python and AI agent tasks |
-| Task | A unit of work with assignee, dependencies, status, and result |
+| Concept   | Definition                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------ |
+| Agent     | A folder containing role.md, config.json, skills, and tools specific to one AI worker      |
+| BOSS      | The orchestrator agent that receives user input, decomposes tasks, and delegates to agents |
+| Skill     | An injectable md file containing task-specific knowledge or tool docs                      |
+| Asset     | Reusable artifact (code, templates, media, lore) stored for injection                      |
+| Hub       | Central message channel where all agents post and read messages (chat-like)                |
+| Context   | Per-project CONTEXT.md for cross-agent signals and decisions (document-like)               |
+| Heartbeat | Periodic execution system for both local Python and AI agent tasks                         |
+| Task      | A unit of work with assignee, dependencies, status, and result                             |
 
 ## Architecture
 
@@ -66,11 +66,11 @@ projects/
 
 ## Current Agents
 
-| Agent | Role |
-|-------|------|
-| BOSS | Orchestrator - receives user prompts, creates tasks, reviews work |
-| Designer | Game design, mechanics, systems |
-| Programmer | Code implementation |
-| Artist | Visual design, UI |
-| Writer | Narrative, dialogue, documentation |
-| QA | Testing, review, quality assurance |
+| Agent      | Role                                                              |
+| ---------- | ----------------------------------------------------------------- |
+| BOSS       | Orchestrator - receives user prompts, creates tasks, reviews work |
+| Designer   | Game design, mechanics, systems                                   |
+| Programmer | Code implementation                                               |
+| Artist     | Visual design, UI                                                 |
+| Writer     | Narrative, dialogue, documentation                                |
+| QA         | Testing, review, quality assurance                                |

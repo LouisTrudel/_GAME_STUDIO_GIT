@@ -8,6 +8,7 @@ from datetime import datetime
 from studio.core.tasks import task_manager, TaskStatus
 from studio.core.hub import hub
 from studio.core.skill_tracker import track_skill_load
+from studio.core.suggestions import suggestion_manager, VALID_CATEGORIES
 
 # Skills directory
 SKILLS_DIR = Path(__file__).parent.parent / "skills"
@@ -40,6 +41,26 @@ GET_MY_TASKS_SCHEMA = {
 }
 
 
+LOG_STEP_SCHEMA = {
+    "name": "log_step",
+    "description": "Log a checkpoint step in your current task. Call this at key progress points to track multi-step execution.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "description": {
+                "type": "string",
+                "description": "What you just completed (e.g., 'Added touch detection to collectible')"
+            },
+            "tokens_used": {
+                "type": "integer",
+                "description": "Approximate tokens used for this step (optional, defaults to 0)"
+            }
+        },
+        "required": ["description"]
+    }
+}
+
+
 def get_my_tasks(agent_name: str) -> str:
     """Wrapped to inject agent name."""
     tasks = task_manager.get_agent_tasks(agent_name)
@@ -49,9 +70,19 @@ def get_my_tasks(agent_name: str) -> str:
     lines = [f"Your tasks ({agent_name}):"]
     for task in tasks:
         lines.append(f"  [{task.id}] {task.status.value}: {task.description}")
-        if task.review_notes and task.status == TaskStatus.READY:
-            lines.append(f"       Feedback: {task.review_notes}")
     return "\n".join(lines)
+
+
+def log_step(description: str, tokens_used: int = 0) -> str:
+    """Log a checkpoint step for the current task."""
+    task_id = get_current_task()
+    if not task_id:
+        return "No active task context. Cannot log step."
+
+    success = task_manager.log_step(task_id, description, tokens_used)
+    if success:
+        return f"Step logged: {description}"
+    return f"Failed to log step - task {task_id} not found"
 
 
 # NOTE: pick_task and complete_task removed - server handles workflow automatically
@@ -164,13 +195,13 @@ def list_skills(category: str = "") -> str:
 
 READ_CONTEXT_SCHEMA = {
     "name": "read_context",
-    "description": "Read the project's CONTEXT.md (shared brain). Contains cross-agent signals, decisions, and blockers.",
+    "description": "Read a project's CONTEXT.md (shared brain). Contains cross-agent signals, decisions, and blockers. NOTE: This reads projects/<project_id>/CONTEXT.md only - NOT for reading studio/docs/ files.",
     "input_schema": {
         "type": "object",
         "properties": {
             "project_id": {
                 "type": "string",
-                "description": "Project ID. Defaults to 'default' if not specified."
+                "description": "Project folder name (e.g., 'default'). Reads projects/<project_id>/CONTEXT.md"
             }
         },
         "required": []
@@ -218,6 +249,98 @@ SIGNAL_AGENT_SCHEMA = {
         "required": ["to_agent", "message"]
     }
 }
+
+
+CREATE_SUGGESTION_SCHEMA = {
+    "name": "create_suggestion",
+    "description": "Create a suggestion for human review in the Learning tab. Use when you notice patterns, issues, or improvements worth surfacing.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "title": {
+                "type": "string",
+                "description": "Short summary (max 80 chars)"
+            },
+            "content": {
+                "type": "string",
+                "description": "Full suggestion text (max 500 chars)"
+            },
+            "category": {
+                "type": "string",
+                "enum": list(VALID_CATEGORIES),
+                "description": "process|architecture|tooling|workflow|documentation"
+            },
+            "related_tasks": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Task IDs this relates to (optional)"
+            },
+            "files_mentioned": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "File paths mentioned (optional)"
+            },
+            "evidence": {
+                "type": "string",
+                "description": "Supporting evidence or data (optional)"
+            }
+        },
+        "required": ["title", "content", "category"]
+    }
+}
+
+
+ADD_DISCUSSION_SCHEMA = {
+    "name": "add_discussion",
+    "description": "Add your research/analysis to a suggestion's discussion history. Use when completing a suggestion research task to record your findings for Boss to review.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "suggestion_id": {
+                "type": "string",
+                "description": "The suggestion ID (e.g., 'S001')"
+            },
+            "content": {
+                "type": "string",
+                "description": "Your research findings or analysis (max 1000 chars)"
+            }
+        },
+        "required": ["suggestion_id", "content"]
+    }
+}
+
+
+def add_discussion(suggestion_id: str, content: str, agent_name: str) -> str:
+    """Add an agent's analysis to a suggestion's discussion history."""
+    content = (content or "")[:1000]  # Truncate to limit
+    if suggestion_manager.add_discussion(suggestion_id, agent_name, content):
+        return f"Added {agent_name} analysis to suggestion {suggestion_id}"
+    return f"Failed to add discussion - suggestion {suggestion_id} not found"
+
+
+def create_suggestion(
+    title: str,
+    content: str,
+    category: str,
+    agent_name: str,
+    related_tasks: list = None,
+    files_mentioned: list = None,
+    evidence: str = None
+) -> str:
+    """Create a suggestion for human review."""
+    try:
+        suggestion = suggestion_manager.create(
+            source_agent=agent_name,
+            title=title,
+            content=content,
+            category=category,
+            related_tasks=related_tasks,
+            files_mentioned=files_mentioned,
+            evidence=evidence,
+        )
+        return f"Suggestion created: {suggestion.id} - {suggestion.title}"
+    except ValueError as e:
+        return f"Failed to create suggestion: {e}"
 
 
 def signal_agent(to_agent: str, message: str, from_agent: str, project_id: str = "default") -> str:
@@ -275,10 +398,13 @@ def signal_agent(to_agent: str, message: str, from_agent: str, project_id: str =
 # Tool bundle - workflow tools removed (server handles pick/complete automatically)
 TOOLS = [
     GET_MY_TASKS_SCHEMA,
+    LOG_STEP_SCHEMA,
     LOAD_SKILL_SCHEMA,
     LIST_SKILLS_SCHEMA,
     READ_CONTEXT_SCHEMA,
     SIGNAL_AGENT_SCHEMA,
+    CREATE_SUGGESTION_SCHEMA,
+    ADD_DISCUSSION_SCHEMA,
 ]
 
 
@@ -286,8 +412,13 @@ def make_handlers(agent_name: str) -> dict:
     """Create handlers bound to a specific agent."""
     return {
         "get_my_tasks": lambda **kwargs: get_my_tasks(agent_name),
+        "log_step": lambda description, tokens_used=0, **kwargs: log_step(description, tokens_used),
         "load_skill": lambda skill_path, **kwargs: load_skill(skill_path, agent_name),
         "list_skills": lambda category="", **kwargs: list_skills(category),
-        "read_context": lambda project_id="default", **kwargs: read_context(project_id),
+        "read_context": lambda project_id="default", path=None, **kwargs: read_context(path or project_id),
         "signal_agent": lambda to_agent, message, project_id="default", **kwargs: signal_agent(to_agent, message, agent_name, project_id),
+        "create_suggestion": lambda title, content, category, related_tasks=None, files_mentioned=None, evidence=None, **kwargs: create_suggestion(
+            title, content, category, agent_name, related_tasks, files_mentioned, evidence
+        ),
+        "add_discussion": lambda suggestion_id, content, **kwargs: add_discussion(suggestion_id, content, agent_name),
     }

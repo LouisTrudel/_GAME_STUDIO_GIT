@@ -31,15 +31,15 @@ FastAPI backend with WebSocket support.
 | `/api/tasks/clear-completed` | POST | Clear finished tasks |
 | `/api/tasks/{id}/cancel` | POST | Cancel specific task |
 
-### Heartbeats
+### Schedules
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/heartbeats` | GET | List all heartbeats |
-| `/api/heartbeats` | POST | Create heartbeat |
-| `/api/heartbeats/{id}/pause` | POST | Pause heartbeat |
-| `/api/heartbeats/{id}/resume` | POST | Resume heartbeat |
-| `/api/heartbeats/{id}/trigger` | POST | Manually trigger |
-| `/api/heartbeats/{id}` | DELETE | Delete heartbeat |
+| `/api/schedules` | GET | List all schedules |
+| `/api/schedules` | POST | Create schedule |
+| `/api/schedules/{id}/pause` | POST | Pause schedule |
+| `/api/schedules/{id}/resume` | POST | Resume schedule |
+| `/api/schedules/{id}/trigger` | POST | Manually trigger |
+| `/api/schedules/{id}` | DELETE | Delete schedule |
 
 ### Files
 | Endpoint | Method | Description |
@@ -64,15 +64,15 @@ FastAPI backend with WebSocket support.
 | user_message | User sends chat message |
 | poke_agent | Trigger specific agent |
 | tick | Manual task processing |
-| create_heartbeat | Create new heartbeat |
-| pause/resume/trigger/delete_heartbeat | Heartbeat controls |
+| create_schedule | Create new schedule |
+| pause/resume/trigger/delete_schedule | Schedule controls |
 
 ### Outgoing Broadcasts
 | Type | Description |
 |------|-------------|
 | message | New Hub message |
 | tasks_update | Task list changed |
-| heartbeats_update | Heartbeat state changed |
+| schedules_update | Schedule state changed |
 
 ## Background Loops
 
@@ -80,6 +80,6 @@ FastAPI backend with WebSocket support.
 |------|----------|---------|
 | broadcast_loop | 100ms | Send new Hub messages |
 | task_broadcast_loop | 500ms | Broadcast task changes |
-| heartbeat_broadcast_loop | 1s | Broadcast heartbeat state |
-| heartbeat_tick_loop | 5s | Check and run due heartbeats |
+| schedule_broadcast_loop | 1s | Broadcast schedule state |
+| schedule_tick_loop | 5s | Check and run due schedules |
 | task_tick_loop | 3s | Process ready tasks |

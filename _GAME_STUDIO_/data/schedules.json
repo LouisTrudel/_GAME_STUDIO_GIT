@@ -1,0 +1,31 @@
+{
+  "counter": 2,
+  "schedules": [
+    {
+      "id": "SCH001",
+      "name": "Daily Codebase Review",
+      "description": "Taxonomy analyzes codebase structure and creates summary suggestion for human review",
+      "interval_seconds": 86400,
+      "interval_human": "1d",
+      "schedule_type": "tasks",
+      "status": "active",
+      "last_run": "2026-09-07T09:57:42.156331",
+      "next_run": "2026-09-08T09:57:42.156331",
+      "run_count": 4,
+      "tasks": [
+        {
+          "description": "[WHAT] Analyze codebase and create summary suggestion [CONTEXT] Scan all files for: file sizes (>400 lines warn, logic files >1500 action), function lengths (>50 lines), duplicate code (>15 lines), naming inconsistencies, dead code, missing types [OUTPUT] Create ONE suggestion using create_suggestion tool with: title 'Daily Codebase Review - {date}', content summarizing top 5-10 issues with file:line references grouped by priority, category 'codebase' [CONSTRAINTS] Single summary suggestion only, prioritize by impact, include exact file paths and line numbers for each issue",
+          "assignee": "Taxonomy",
+          "context": "",
+          "skills": [],
+          "output": "hub",
+          "parallel": false
+        }
+      ],
+      "created_task_ids": [
+        "T304",
+        "T305"
+      ]
+    }
+  ]
+}

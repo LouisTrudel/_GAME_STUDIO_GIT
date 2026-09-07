@@ -23,7 +23,7 @@ A unit of work assigned to an agent.
 | assignee | Agent name |
 | status | Current state |
 | dependencies | List of task IDs that must complete first |
-| result | Output produced by agent |
+| output_response | Agent's response text |
 | error | Error message if failed |
 | created_at | Timestamp |
 | started_at | When picked up |

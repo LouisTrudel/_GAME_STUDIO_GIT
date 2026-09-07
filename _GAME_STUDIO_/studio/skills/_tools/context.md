@@ -2,9 +2,17 @@
 
 Use these tools to read/write project context.
 
+**To use a tool, output exactly this format:**
+```
+<tool>tool_name</tool>
+<params>{"param": "value"}</params>
+```
+
 ## read_context
 
-Read the project's CONTEXT.md shared brain.
+Read a project's CONTEXT.md shared brain. Reads `projects/<project_id>/CONTEXT.md`.
+
+> **NOTE:** This tool only reads project CONTEXT.md files. It cannot read studio/docs/ or other files.
 
 ```
 <tool>read_context</tool>
@@ -12,7 +20,7 @@ Read the project's CONTEXT.md shared brain.
 ```
 
 **Parameters:**
-- `project_id`: Project folder name. Defaults to "default".
+- `project_id`: Project folder name. Defaults to "default". Reads `projects/<project_id>/CONTEXT.md`.
 
 **Returns:** Cross-agent signals, decisions, blockers.
 
@@ -40,3 +48,24 @@ Send a signal to another agent via CONTEXT.md.
 ```
 
 Creates entry: `[DESIGNER -> PROGRAMMER] Economy uses 3 tiers...`
+
+## create_suggestion
+
+Create a suggestion for human review in the Learning tab.
+
+```
+<tool>create_suggestion</tool>
+<params>{
+  "title": "Add caching for skill loading",
+  "content": "Skill files are re-read from disk on every task. Cache in memory to reduce I/O.",
+  "category": "architecture"
+}</params>
+```
+
+**Parameters:**
+- `title` (required): Short summary (max 80 chars)
+- `content` (required): Full suggestion text (max 500 chars)
+- `category` (required): process | architecture | tooling | workflow | documentation
+- `related_tasks`: List of task IDs (optional)
+- `files_mentioned`: File paths mentioned (optional)
+- `evidence`: Supporting data (optional)

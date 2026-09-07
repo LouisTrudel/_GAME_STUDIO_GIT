@@ -1,0 +1,15 @@
+{
+  "counter": 2,
+  "active_project_id": "P001",
+  "projects": [
+    {
+      "id": "P001",
+      "name": "CHESS 1V1 HUMAN ONLY",
+      "path": "C:\\Users\\lou\\__MY_WORK__\\STUDIO_TEST_ROOM",
+      "description": "",
+      "status": "active",
+      "created_at": "2026-09-07T11:37:02.210077",
+      "updated_at": "2026-09-07T11:37:02.210077"
+    }
+  ]
+}

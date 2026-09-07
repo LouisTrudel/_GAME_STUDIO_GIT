@@ -2,6 +2,12 @@
 
 Use these tools to load additional skills and templates.
 
+**To use a tool, output exactly this format:**
+```
+<tool>tool_name</tool>
+<params>{"param": "value"}</params>
+```
+
 ## load_skill
 
 Load a skill or template into your context.
@@ -43,3 +49,16 @@ Get your assigned tasks.
 ```
 
 Returns all tasks assigned to you with their status.
+
+## log_step
+
+Log a checkpoint step in your current task. Call this at key progress points.
+
+```
+<tool>log_step</tool>
+<params>{"description": "Added touch detection to collectible"}</params>
+```
+
+**Parameters:**
+- `description` (required): What you just completed
+- `tokens_used`: Approximate tokens used (optional, default: 0)

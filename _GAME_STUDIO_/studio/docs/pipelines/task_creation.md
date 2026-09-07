@@ -20,7 +20,7 @@ BOSS decides work needed
 
 ## Steps
 
-1. **BOSS analyzes** - User request or heartbeat trigger
+1. **BOSS analyzes** - User request or schedule trigger
 2. **BOSS decomposes** - Breaks into tasks with dependencies
 3. **create_task called** - For each task:
    - description: what to do

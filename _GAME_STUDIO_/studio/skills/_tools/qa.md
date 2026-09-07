@@ -2,49 +2,63 @@
 
 Use these tools for testing and bug reporting.
 
+**To use a tool, output exactly this format:**
+```
+<tool>tool_name</tool>
+<params>{"param": "value"}</params>
+```
+
 ## report_bug
 
-Report a bug found during testing.
+Report a bug found during testing. Creates a task for the responsible agent to fix.
 
 ```
 <tool>report_bug</tool>
 <params>{
   "title": "Shop button unresponsive after rapid clicks",
-  "steps": "1. Open shop\n2. Click buy 5x rapidly\n3. Button stops responding",
-  "expected": "Button works every click",
-  "actual": "Button becomes unclickable",
+  "assignee": "Programmer",
+  "description": "Steps: 1. Open shop 2. Click buy 5x rapidly 3. Button stops responding\nExpected: Button works every click\nActual: Button becomes unclickable",
   "severity": "major"
 }</params>
 ```
 
 **Parameters:**
 - `title` (required): Short bug description
-- `steps` (required): Numbered reproduction steps
-- `expected` (required): What should happen
-- `actual` (required): What actually happens
+- `assignee`: Agent to fix the bug (Programmer, Designer, Artist, Writer). Default: Programmer
+- `description`: Bug details - steps to reproduce, expected vs actual behavior
 - `severity`: critical, major, minor, polish (default: major)
 
-Creates a bug-fix task assigned to the original implementer.
+Creates a bug-fix task and notifies the assignee via Hub.
 
 ## test_summary
 
-Submit test results when done testing.
+Submit test results when done testing a task. Reports findings to BOSS.
 
 ```
 <tool>test_summary</tool>
 <params>{
-  "passed": ["Purchase flow", "Inventory update", "Price display"],
-  "failed": ["Rapid click handling"],
-  "bugs_filed": 1,
-  "notes": "Core flow works. Edge case found with rapid inputs."
+  "task_id": "T005",
+  "passed": true,
+  "summary": "Shop purchase flow works correctly. Tested buy, sell, and inventory sync.",
+  "bugs_reported": []
+}</params>
+```
+
+```
+<tool>test_summary</tool>
+<params>{
+  "task_id": "T005",
+  "passed": false,
+  "summary": "Core flow works but found edge case with rapid inputs.",
+  "bugs_reported": ["T006", "T007"]
 }</params>
 ```
 
 **Parameters:**
-- `passed` (required): List of test cases that passed
-- `failed`: List of test cases that failed
-- `bugs_filed`: Number of bugs reported via report_bug
-- `notes`: Additional observations
+- `task_id` (required): The testing task ID you completed (e.g., T005)
+- `passed` (required): true if all tests passed, false if bugs were found
+- `summary` (required): Brief description of what was tested and findings
+- `bugs_reported`: List of bug task IDs created via report_bug (if any)
 
 ## check_files
 

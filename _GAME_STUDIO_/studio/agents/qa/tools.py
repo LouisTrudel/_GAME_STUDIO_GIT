@@ -33,12 +33,17 @@ Use after testing when you find issues that need fixing.""",
                 "description": "Bug severity level"
             }
         },
-        "required": ["title", "description", "assignee"]
+        "required": ["title", "assignee"]
     }
 }
 
 
-def report_bug(title: str, description: str, assignee: str, severity: str = "major") -> str:
+def report_bug(title: str, assignee: str = "Programmer", description: str = "", severity: str = "major", **kwargs) -> str:
+    # Handle alternate parameter names
+    # 'steps' is sometimes passed instead of 'description'
+    if not description and "steps" in kwargs:
+        description = kwargs["steps"]
+
     # Normalize assignee (BOSS and QA are uppercase, others capitalized)
     if assignee.lower() == "boss":
         assignee = "BOSS"
@@ -47,7 +52,9 @@ def report_bug(title: str, description: str, assignee: str, severity: str = "maj
     else:
         assignee = assignee.capitalize()
 
-    full_desc = f"[BUG - {severity.upper()}] {title}\n\n{description}"
+    full_desc = f"[BUG - {severity.upper()}] {title}"
+    if description:
+        full_desc += f"\n\n{description}"
     task = task_manager.create_task(full_desc, assignee)
 
     hub.post("QA", f"@{assignee} Bug reported: {task.id} - {title}")
@@ -120,7 +127,15 @@ TEST_SUMMARY_SCHEMA = {
 }
 
 
-def test_summary(task_id: str, passed: bool, summary: str, bugs_reported: list = None) -> str:
+def test_summary(task_id: str, passed: bool = None, summary: str = "", bugs_reported: list = None, **kwargs) -> str:
+    # Handle alternate parameter names
+    # 'failed' is sometimes passed instead of 'passed' (inverse logic)
+    if passed is None:
+        if "failed" in kwargs:
+            passed = not kwargs["failed"]
+        else:
+            passed = True  # Default to passed if not specified
+
     status = "PASSED" if passed else "FAILED"
     bugs = f" | Bugs: {', '.join(bugs_reported)}" if bugs_reported else ""
 

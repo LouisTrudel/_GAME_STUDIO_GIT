@@ -13,7 +13,7 @@ HTML frontend served as static file.
 | Chat | Main Hub view, send messages, see responses |
 | Tasks | Task list with status filters |
 | Agents | Agent roster with stats |
-| Heartbeats | Create, manage, trigger heartbeats |
+| Routines | Create, manage, trigger routines |
 | Files | Project file explorer |
 | Reports | View saved reports |
 
@@ -42,4 +42,4 @@ Interface displays new message
 
 - **Lightweight** - Vanilla HTML/CSS/JS
 - **Real-time** - WebSocket for live updates
-- **Direct control** - Poke agents, trigger heartbeats, cancel tasks
+- **Direct control** - Poke agents, trigger routines, cancel tasks
