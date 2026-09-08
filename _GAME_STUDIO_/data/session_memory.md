@@ -24,10 +24,29 @@ Chess with visual indicators: attacked squares, defended pieces, 3-turn threat p
 2. 32 tasks completed across 7 phases
 3. 4 bugs caught by QA, all fixed
 4. First complete pipeline run in studio
+5. Multimedia agents fleet added (IMAGE, SOUND, VIDEO)
+6. CLAUDE vanilla agent created for A/B testing context injection
+
+## Post-P001 Studio Expansion
+
+### Multimedia Agents (T345-T352)
+- **IMAGE**: Asset generation/fetching (sprites, textures, UI, concept art)
+- **SOUND**: Audio assets (SFX, music, ambient)
+- **VIDEO**: Video assets (cutscenes, trailers, animations)
+- All three: config.json, role.md, tools.py, router skills
+- QA reviewed and approved
+
+### CLAUDE Agent (T353-T355)
+- Vanilla passthrough agent with no studio context
+- Purpose: Test raw Claude CLI vs studio-augmented responses
+- Measures context injection effectiveness
+- No restrictions, passthrough mode
 
 ## Studio Status
 - **Idle** - No active tasks
 - Ready for next project
+- 5 agents operational: BOSS, Taxonomy, Programmer, QA, Context
+- 4 new agents added: IMAGE, SOUND, VIDEO, CLAUDE
 
 ## Pending Suggestions
 - Project files in dedicated folders outside studio
