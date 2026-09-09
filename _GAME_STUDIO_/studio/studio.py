@@ -67,9 +67,13 @@ class Studio:
         # Wire up session memory summarization callback (T164)
         hub.set_summarize_callback(self._summarize_session_memory)
 
-        # Wire up history tier trigger callback (T309)
-        # Note: T282 history callback was deprecated in favor of T309 tiered system (T311)
-        memory_manager.set_history_tier_callback(self._trigger_history_tier)
+        # Wire up AC-Memory compression callback - Context agent compacts tiers
+        # AC-Memory: bullet points, infinite tiers, for agent recall
+        memory_manager.set_compress_callback(self._compress_with_context_agent)
+
+        # Wire up History narrative callback - Writer compacts tiers
+        # History: narrative prose, caps at Collection, for human reading
+        # History runs INDEPENDENTLY from AC-Memory (both consume raw hub chat)
         history_manager.set_narrative_callback(self._generate_tier_narrative)
 
     def set_thinking_callback(self, callback):
@@ -140,6 +144,166 @@ Focus on WHAT was decided/completed, not conversation details."""
             print(f"[Studio] Session summarization failed: {e}")
             return None
 
+    def _compress_with_context_agent(self, content: str, tier_index: int, prev_tier_context: str) -> dict:
+        """Compact tier content via Context agent with compress → classify → split.
+
+        AC-Memory compression:
+        1. COMPRESS raw content into key bullet points
+        2. CLASSIFY each as ACTIVE, DONE, or FRICTION
+        3. SPLIT: ACTIVE stays, DONE pushes, FRICTION tracked separately
+
+        Args:
+            content: The tier content to compact
+            tier_index: Which tier is being compacted (0, 1, 2, ...)
+            prev_tier_context: Content from tier N-1 for relevance判定
+
+        Returns:
+            dict with {keep: str, push: str, friction: str}
+        """
+        context_agent = self.agents.get("Context")
+        if not context_agent:
+            print("[Studio] Context agent not found for AC-Memory compression")
+            return self._fallback_compress(content, tier_index, prev_tier_context)
+
+        # Truncate for context window
+        content_preview = content[:8000] if len(content) > 8000 else content
+        prev_preview = prev_tier_context[:2000] if prev_tier_context else "(empty - this is tier 0)"
+
+        prompt = f"""AC-MEMORY COMPACTION: Tier {tier_index}
+
+TASK: Compress, classify, and split this tier's content.
+
+STEP 1 - COMPRESS
+Summarize the raw content into concise bullet points. Each bullet = ONE of:
+- A decision made
+- A task status (created/active/completed/failed)
+- An important outcome
+- Active context needed for current work
+- A friction event (error, bug, blocker, retry, failure, problem)
+
+STEP 2 - CLASSIFY
+Mark each bullet point:
+- [ACTIVE] = Ongoing, unresolved, needed for current context
+- [DONE] = Completed, resolved, historical
+- [FRICTION] = Error, bug, blocker, failure, problem (resolved or not)
+
+STEP 3 - OUTPUT (use exact headers)
+
+===KEEP===
+(All [ACTIVE] points - stay in tier {tier_index})
+
+===PUSH===
+(All [DONE] points - move to tier {tier_index + 1})
+
+===FRICTION===
+(All [FRICTION] points - tracked separately for pattern analysis)
+Format: [RESOLVED] or [UNRESOLVED] prefix + description
+
+REFERENCE - Tier {tier_index - 1} context:
+{prev_preview}
+
+CONTENT TO COMPRESS ({len(content)} chars):
+{content_preview}
+
+CONSTRAINTS:
+- COMPRESS first - don't copy raw text, summarize
+- Maximum 60% KEEP (prevents tier bloat)
+- When uncertain, older = DONE
+- FRICTION items are important - capture all errors, bugs, blockers, retries
+- Bullet points only, no prose"""
+
+        try:
+            self._notify_status("Context", "working", f"Compacting tier {tier_index}...")
+            response = context_agent.respond(prompt)
+            self._notify_status("Context", "idle", "")
+
+            # Parse response into keep/push
+            result = self._parse_split_response(response)
+            print(f"[Studio] AC-Memory: Tier {tier_index} split by Context agent "
+                  f"(keep={len(result['keep'])} chars, push={len(result['push'])} chars)")
+            return result
+
+        except Exception as e:
+            print(f"[Studio] AC-Memory compression failed: {e}")
+            return self._fallback_compress(content, tier_index, prev_tier_context)
+
+    def _parse_split_response(self, response: str) -> dict:
+        """Parse Context agent response into keep/push/friction sections."""
+        keep = ""
+        push = ""
+        friction = ""
+
+        response_upper = response.upper()
+
+        # Find all section markers
+        keep_start = response_upper.find("===KEEP===")
+        push_start = response_upper.find("===PUSH===")
+        friction_start = response_upper.find("===FRICTION===")
+
+        # Build list of (position, name, header_len) sorted by position
+        markers = []
+        if keep_start != -1:
+            markers.append((keep_start, "keep", 10))
+        if push_start != -1:
+            markers.append((push_start, "push", 10))
+        if friction_start != -1:
+            markers.append((friction_start, "friction", 14))
+
+        markers.sort(key=lambda x: x[0])
+
+        # Extract content between markers
+        for i, (pos, name, header_len) in enumerate(markers):
+            start = pos + header_len
+            if i + 1 < len(markers):
+                end = markers[i + 1][0]
+            else:
+                end = len(response)
+
+            content = response[start:end].strip()
+
+            if name == "keep":
+                keep = content
+            elif name == "push":
+                push = content
+            elif name == "friction":
+                friction = content
+
+        # Fallback if no markers found
+        if not markers:
+            lines = response.strip().split('\n')
+            mid = len(lines) // 2
+            keep = '\n'.join(lines[:mid])
+            push = '\n'.join(lines[mid:])
+
+        return {"keep": keep, "push": push, "friction": friction}
+
+    def _fallback_compress(self, content: str, tier_index: int, prev_tier_context: str) -> dict:
+        """Fallback compression when Context agent unavailable.
+
+        Simple split by lines, extracts friction keywords.
+        """
+        lines = [l.strip() for l in content.split('\n') if l.strip()]
+
+        # Extract friction lines (errors, bugs, failures)
+        friction_keywords = ['error', 'bug', 'fail', 'block', 'retry', 'crash', 'broke', 'issue']
+        friction_lines = []
+        other_lines = []
+
+        for line in lines:
+            line_lower = line.lower()
+            if any(kw in line_lower for kw in friction_keywords):
+                friction_lines.append(line)
+            else:
+                other_lines.append(line)
+
+        # Split remaining 50/50
+        mid = len(other_lines) // 2
+        keep = '\n'.join(other_lines[:mid]) if mid > 0 else '\n'.join(other_lines)
+        push = '\n'.join(other_lines[mid:]) if mid > 0 else ""
+        friction = '\n'.join(friction_lines)
+
+        return {"keep": keep, "push": push, "friction": friction}
+
     def _trigger_history_tier(self, content: str, tier_index: int):
         """Trigger history tier system after memory compression (T309).
 
@@ -185,52 +349,81 @@ Focus on WHAT was decided/completed, not conversation details."""
         # Truncate content for Writer
         content_preview = content[:6000] if len(content) > 6000 else content
 
-        # Tier-specific prompts
+        # Tier-specific prompts with compression targets
         tier_prompts = {
-            "draft": """Write a session summary. Focus on:
-- What work was started/completed
-- Key decisions made
-- Problems encountered and resolved
-Keep it to 2-3 short paragraphs.""",
+            "draft": """COMPRESS raw hub messages into a session narrative.
 
-            "chapter": """Write an epoch summary covering multiple sessions. Focus on:
-- Major milestones achieved
-- Patterns in the work
-- How the project evolved
-Keep it to 3-4 paragraphs.""",
+Style: Journal entry - first person plural ("we"), informal but informative.
+Target: ~10% of input size (e.g., 10KB input → ~1KB output).
 
-            "book": """Write a project phase summary. This is a significant milestone. Focus on:
-- What this phase accomplished
-- Key architectural decisions
-- Lessons learned
-- Setup for next phase
-Keep it to 4-5 paragraphs.""",
+Include:
+- What was worked on and outcomes
+- Decisions made and rationale
+- Blockers hit and how resolved
+- Open threads for next session
 
-            "collection": """Write a portfolio overview covering multiple projects. Focus on:
-- Cross-project themes
-- Evolution of practices
-- Major accomplishments
-- Knowledge gained
-Keep it to 5-6 paragraphs, this is archival.""",
+Omit: Routine chatter, repeated status updates, raw technical dumps.""",
+
+            "chapter": """SYNTHESIZE multiple session drafts into an epoch narrative.
+
+Style: Project log - clear chronological flow, highlight cause-and-effect.
+Target: ~15% of input size (e.g., 50KB input → ~7KB output).
+
+Include:
+- Major milestones and deliverables
+- Evolution of approach over sessions
+- Recurring patterns (good and bad)
+- Key turning points
+
+Omit: Session-level minutiae, redundant summaries.""",
+
+            "book": """SYNTHESIZE chapters into a project phase chronicle.
+
+Style: Technical memoir - reflective, captures the journey and lessons.
+Target: ~15% of input size (e.g., 300KB input → ~45KB output).
+
+Include:
+- Phase objectives and whether achieved
+- Architectural decisions and trade-offs
+- What worked, what didn't, why
+- Team dynamics and process evolution
+- Foundation laid for future work
+
+This is a significant document - preserve important context.""",
+
+            "collection": """APPEND book summary to the project archive.
+
+Style: Historical record - factual, searchable, comprehensive.
+No compression target - this tier grows indefinitely.
+
+Include:
+- Book title/phase identifier
+- Time period covered
+- Key accomplishments bullet list
+- Lessons learned bullet list
+- Links to detailed book narrative
+
+This is the permanent project archive.""",
         }
 
         tier_name = tier.name
         tier_prompt = tier_prompts.get(tier_name, tier_prompts["draft"])
 
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
         prompt = f"""HISTORY NARRATIVE: {tier_name.upper()} #{compression_count}
+Date: {date_str}
+Input size: {len(content)} chars
 
 {tier_prompt}
 
-CONTENT TO NARRATE:
+===CONTENT TO NARRATE===
 {content_preview}
+===END CONTENT===
 
-FORMAT:
-# {tier_name.title()}: Entry {compression_count}
-
-[Your narrative here]
-
----
-*Recorded: {datetime.now().strftime("%Y-%m-%d")}*"""
+Output your narrative in markdown. Start with:
+# {tier_name.title()} {compression_count}
+"""
 
         try:
             self._notify_status("Writer", "working", f"Writing {tier_name} narrative...")

@@ -19,47 +19,45 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Callable, Literal
 
+from .paths import get_history_dir
+
 # Type definitions
 TierName = Literal["draft", "chapter", "book", "collection"]
 CompressionCallback = Callable[[str, "HistoryTier", int], Optional[str]]
 
-# Storage
+# Legacy paths (default/no project) - kept for backwards compatibility
 HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
 HISTORY_STATE_FILE = HISTORY_DIR / "tier_state.json"
 
-# Tier configuration
+# Tier configuration (character thresholds only - no count thresholds)
 TIER_CONFIG = {
     "draft": {
         "index": 0,
         "prefix": "draft",
-        "threshold_chars": 10_000,      # Compress when accumulated content exceeds
-        "threshold_count": None,         # Or when N items accumulate
+        "threshold_chars": 10_000,       # ~10KB raw messages → compress to ~1-2KB
         "promotes_to": "chapter",
-        "description": "Session-level narrative from raw messages",
+        "description": "Session-level narrative from raw hub messages",
     },
     "chapter": {
         "index": 1,
         "prefix": "chapter",
-        "threshold_chars": 50_000,
-        "threshold_count": 5,            # Or after 5 drafts
+        "threshold_chars": 50_000,       # ~50KB of drafts → compress to ~5-10KB
         "promotes_to": "book",
-        "description": "Multi-draft narrative covering an epoch",
+        "description": "Multi-session narrative covering an epoch of work",
     },
     "book": {
         "index": 2,
         "prefix": "book",
-        "threshold_chars": 200_000,
-        "threshold_count": 3,            # Or after 3 chapters
+        "threshold_chars": 300_000,      # ~300KB of chapters → compress to ~30-50KB
         "promotes_to": "collection",
-        "description": "Project phase narrative",
+        "description": "Major project phase narrative",
     },
     "collection": {
         "index": 3,
         "prefix": "collection",
-        "threshold_chars": 500_000,
-        "threshold_count": 5,            # Or after 5 books
-        "promotes_to": None,             # Top tier, no promotion
-        "description": "Cross-project narrative archive",
+        "threshold_chars": None,         # Final tier - grows indefinitely
+        "promotes_to": None,             # No promotion, this is the archive
+        "description": "Project archive - accumulates book summaries",
     },
 }
 
@@ -107,16 +105,10 @@ class HistoryTier:
 
     def needs_compression(self) -> bool:
         """Check if this tier should compress based on thresholds."""
-        cfg = self.config
-
-        # Check character threshold
-        if cfg["threshold_chars"] and self.size() > cfg["threshold_chars"]:
+        # Check character threshold (None = never auto-compress, e.g. collection tier)
+        threshold = self.config.get("threshold_chars")
+        if threshold and self.size() > threshold:
             return True
-
-        # Check count threshold
-        if cfg["threshold_count"] and self.item_count >= cfg["threshold_count"]:
-            return True
-
         return False
 
     def to_dict(self) -> dict:
@@ -145,6 +137,9 @@ class HistoryManager:
     """
     Manages the tiered history compression system.
 
+    T321: Supports project-aware paths. When project_name is set,
+    history data is stored in projects/<name>/history/ instead of data/history/.
+
     Trigger Flow:
     1. Raw messages accumulate in memory tier 0
     2. On memory compression, trigger Draft narrative
@@ -153,21 +148,40 @@ class HistoryManager:
     5. Books accumulate → trigger Collection narrative
     """
 
-    def __init__(self):
+    def __init__(self, project_name: Optional[str] = None):
+        self._project_name = project_name
+        self._history_dir = get_history_dir(project_name)
+        self._state_file = self._history_dir / "tier_state.json"
         self._ensure_dirs()
         self._tiers: dict[TierName, HistoryTier] = {}
         self._narrative_callback: Optional[CompressionCallback] = None
         self._load_state()
 
+    def set_project(self, project_name: Optional[str]):
+        """Switch to a different project's history storage.
+
+        Args:
+            project_name: Project folder name, or None for default.
+        """
+        if project_name == self._project_name:
+            return  # No change
+        self._project_name = project_name
+        self._history_dir = get_history_dir(project_name)
+        self._state_file = self._history_dir / "tier_state.json"
+        self._ensure_dirs()
+        self._tiers.clear()  # Clear tiers on project switch
+        self._load_state()
+        print(f"[History] Switched to project: {project_name or 'default'}")
+
     def _ensure_dirs(self):
         """Ensure history directory exists."""
-        HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+        self._history_dir.mkdir(parents=True, exist_ok=True)
 
     def _load_state(self):
         """Load tier state from disk."""
-        if HISTORY_STATE_FILE.exists():
+        if self._state_file.exists():
             try:
-                with open(HISTORY_STATE_FILE, encoding="utf-8") as f:
+                with open(self._state_file, encoding="utf-8") as f:
                     data = json.load(f)
                 for tier_name in TIER_ORDER:
                     if tier_name in data:
@@ -188,7 +202,7 @@ class HistoryManager:
     def _save_state(self):
         """Save tier state to disk."""
         data = {name: tier.to_dict() for name, tier in self._tiers.items()}
-        with open(HISTORY_STATE_FILE, "w", encoding="utf-8") as f:
+        with open(self._state_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
     def set_narrative_callback(self, callback: CompressionCallback):
@@ -202,6 +216,34 @@ class HistoryManager:
     def get_tier(self, name: TierName) -> HistoryTier:
         """Get a tier by name."""
         return self._tiers[name]
+
+    # ============ RAW ACCUMULATION ============
+
+    def accumulate_raw(self, entry: str):
+        """Accumulate raw hub message to Draft tier.
+
+        This is the entry point for History - raw hub messages flow here
+        independently from AC-Memory. When draft threshold is exceeded,
+        Writer compresses into narrative and pushes to chapter.
+
+        Args:
+            entry: Formatted hub message (timestamp + sender + content)
+        """
+        tier = self._tiers["draft"]
+
+        # Append to draft accumulation
+        if tier.accumulated_content:
+            tier.accumulated_content += "\n"
+        tier.accumulated_content += entry
+        tier.last_updated = datetime.now().isoformat()
+
+        # Save state after each append
+        self._save_state()
+
+        # Check if draft needs compression
+        if tier.needs_compression():
+            print(f"[History] Draft threshold exceeded ({tier.size()} chars), triggering compression")
+            self._compress_tier("draft")
 
     # ============ TRIGGERS ============
 
@@ -417,7 +459,7 @@ class HistoryManager:
         date_str = datetime.now().strftime("%Y-%m-%d")
         prefix = TIER_CONFIG[tier_name]["prefix"]
         filename = f"{prefix}_{date_str}_{count}.md"
-        filepath = HISTORY_DIR / filename
+        filepath = self._history_dir / filename
 
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(narrative)
@@ -431,12 +473,13 @@ class HistoryManager:
         stats = {}
         for name, tier in self._tiers.items():
             cfg = tier.config
+            threshold = cfg.get("threshold_chars")
             stats[name] = {
                 "size_chars": tier.size(),
                 "item_count": tier.item_count,
                 "compression_count": tier.compression_count,
-                "threshold_chars": cfg["threshold_chars"],
-                "threshold_count": cfg["threshold_count"],
+                "threshold_chars": threshold,
+                "utilization": f"{(tier.size() / threshold * 100):.1f}%" if threshold else "N/A",
                 "needs_compression": tier.needs_compression(),
                 "last_updated": tier.last_updated,
             }
@@ -446,7 +489,7 @@ class HistoryManager:
         """List saved narrative files."""
         narratives = []
 
-        for filepath in sorted(HISTORY_DIR.glob("*.md")):
+        for filepath in sorted(self._history_dir.glob("*.md")):
             name = filepath.stem
             parts = name.split("_")
 
