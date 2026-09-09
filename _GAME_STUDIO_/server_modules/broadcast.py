@@ -306,48 +306,26 @@ async def _projects_broadcast_loop():
 
 
 async def _memory_compression_loop():
-    """Check and run memory tier compression periodically.
+    """Broadcast memory stats periodically.
 
-    Monitors memory tiers and triggers compression based on:
-    - hot→warm: Entries older than 24 hours
-    - warm→cold: Entries older than 7 days OR warm.json > 500KB
-
-    Runs every 5 minutes to balance freshness vs overhead.
+    Note: Auto-compression happens in memory_manager.append() when
+    tier threshold is exceeded - no separate loop needed.
     """
     from studio.core.memory import memory_manager
 
     while True:
         try:
-            # Check compression triggers
-            triggers = memory_manager.check_compression_triggers()
-
-            if triggers:
-                print(f"[Memory] Compression triggers detected: {list(triggers.keys())}")
-                result = memory_manager.run_compression_cycle()
-
-                if result["hot_to_warm"] or result["warm_to_cold"]:
-                    # Broadcast memory stats update
-                    stats = memory_manager.get_tier_stats()
-                    data = json.dumps({
-                        "type": "memory_stats_update",
-                        "data": {
-                            "compressed": {
-                                "hot_to_warm": result["hot_to_warm"],
-                                "warm_to_cold": result["warm_to_cold"],
-                            },
-                            "stats": {
-                                "hot_count": stats["hot"]["count"],
-                                "warm_count": stats["warm"]["count"],
-                                "cold_count": stats["cold"]["count"],
-                            },
-                        }
-                    })
-                    await broadcast_to_clients(data)
-
+            if connections:
+                stats = memory_manager.get_stats()
+                data = json.dumps({
+                    "type": "memory_stats_update",
+                    "data": stats
+                })
+                await broadcast_to_clients(data)
         except Exception as e:
-            print(f"[Memory] Compression loop error: {e}")
+            print(f"[Memory] Stats broadcast error: {e}")
 
-        await asyncio.sleep(300)  # Check every 5 minutes
+        await asyncio.sleep(60)  # Update every minute
 
 
 def start_broadcast_loops(studio) -> list[asyncio.Task]:
