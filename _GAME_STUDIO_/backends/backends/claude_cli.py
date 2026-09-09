@@ -135,6 +135,11 @@ class ClaudeCLIBackend(Backend):
             cmd = ["claude", "-p", "-", "--output-format", "stream-json", "--verbose"]
             shell = False
 
+        # Add MCP server config for custom tools (create_task, acknowledge, etc.)
+        mcp_config_path = self.cwd / ".claude" / "settings.json"
+        if mcp_config_path.exists():
+            cmd.extend(["--mcp-config", str(mcp_config_path)])
+
         # Add permission flags based on agent role
         # BOSS gets restricted tools (architectural enforcement - cannot execute)
         # All other agents get full tool access
