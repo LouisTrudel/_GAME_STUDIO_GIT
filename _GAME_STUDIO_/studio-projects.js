@@ -1,5 +1,7 @@
 // Game Studio - Projects Module
 // Manages external project references
+//
+// T327: Supports URL-based project routing via ?project= param
 
 let projects = [];
 let activeProjectId = null;
@@ -7,16 +9,100 @@ let selectedProjectId = null;
 let showArchived = false;
 let currentDocTab = 'white_paper';
 
-// Fetch projects from API
+// T327: Sync URL param with project state
+function syncProjectFromUrl() {
+    const urlProjectId = getUrlProjectId();
+    if (urlProjectId && urlProjectId !== activeProjectId) {
+        // URL has different project - switch to it
+        setActiveProject(urlProjectId);
+    }
+}
+
+// T327: Update URL when project changes (without page reload)
+function updateUrlProject(projectId) {
+    const url = new URL(window.location);
+    if (projectId) {
+        url.searchParams.set('project', projectId);
+    } else {
+        url.searchParams.delete('project');
+    }
+    window.history.replaceState({}, '', url);
+}
+
+// Fetch projects from API (T327: syncs with URL param)
 async function fetchProjects() {
     try {
         const resp = await fetch(`${API_URL}/projects?include_archived=${showArchived}`);
         const data = await resp.json();
         projects = data.projects || [];
         activeProjectId = data.active_project_id;
+
+        // T327: Check if URL has a different project - sync backend to URL
+        const urlProjectId = getUrlProjectId();
+        if (urlProjectId && urlProjectId !== activeProjectId) {
+            // URL takes precedence - switch backend to match
+            console.log(`[Projects] URL project (${urlProjectId}) differs from active (${activeProjectId}), syncing...`);
+            await setActiveProject(urlProjectId);
+            return;  // setActiveProject will re-render
+        }
+
         renderProjects();
+        updateProjectSwitcher();
     } catch (e) {
         console.error('[Projects] Fetch error:', e);
+    }
+}
+
+// Update the project switcher dropdown in header
+function updateProjectSwitcher() {
+    const switcher = document.getElementById('projectSwitcher');
+    if (!switcher) return;
+
+    // Get active (non-archived) projects
+    const activeProjects = projects.filter(p => p.status === 'active');
+
+    // Build options: DEFAULT + all active projects
+    let options = '<option value="">DEFAULT</option>';
+    for (const p of activeProjects) {
+        const selected = p.id === activeProjectId ? 'selected' : '';
+        const name = p.name.length > 18 ? p.name.slice(0, 16) + '...' : p.name;
+        options += `<option value="${p.id}" ${selected}>${name}</option>`;
+    }
+    switcher.innerHTML = options;
+
+    // Visual indicator when a project is active
+    switcher.classList.toggle('has-project', !!activeProjectId);
+}
+
+// Handle project switcher change
+async function onProjectSwitcherChange() {
+    const switcher = document.getElementById('projectSwitcher');
+    const projectId = switcher.value;
+
+    if (projectId) {
+        await setActiveProject(projectId);
+    } else {
+        await clearActiveProject();
+    }
+}
+
+// Clear active project (switch to default) (T327: also clears URL, T329: reload Hub)
+async function clearActiveProject() {
+    try {
+        const resp = await fetch(`${API_URL}/projects/clear-active`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.error) {
+            alert(data.error);
+        } else {
+            activeProjectId = null;
+            updateUrlProject(null);  // T327: clear URL param
+            renderProjects();
+            renderProjectDetails();
+            updateProjectSwitcher();
+            reloadHubForProject();  // T329: clear + reload Hub messages
+        }
+    } catch (e) {
+        alert('Failed to clear active project');
     }
 }
 
@@ -213,7 +299,7 @@ async function loadProjectDocument(docType) {
     }
 }
 
-// Set active project
+// Set active project (T327: also updates URL, T329: reload Hub)
 async function setActiveProject(projectId) {
     try {
         const resp = await fetch(`${API_URL}/projects/${projectId}/set-active`, { method: 'POST' });
@@ -222,8 +308,11 @@ async function setActiveProject(projectId) {
             alert(data.error);
         } else {
             activeProjectId = projectId;
+            updateUrlProject(projectId);  // T327: sync URL
             renderProjects();
             renderProjectDetails();
+            updateProjectSwitcher();
+            reloadHubForProject();  // T329: clear + reload Hub messages
         }
     } catch (e) {
         alert('Failed to set active project');
@@ -372,6 +461,7 @@ function handleProjectsUpdate(data) {
     projects = data.projects || [];
     activeProjectId = data.active_project_id;
     renderProjects();
+    updateProjectSwitcher();
     // Re-render details if selected project was updated
     if (selectedProjectId && projects.find(p => p.id === selectedProjectId)) {
         renderProjectDetails();

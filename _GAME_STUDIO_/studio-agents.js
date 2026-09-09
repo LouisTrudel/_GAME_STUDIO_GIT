@@ -14,16 +14,29 @@ async function fetchRoles() {
     }
 }
 
-// Fetch history
+// Clear Hub messages (T329: for project switch)
+function clearHubMessages() {
+    if (messagesEl) {
+        messagesEl.innerHTML = '';
+    }
+}
+
+// Fetch history (T327: project-aware)
 async function fetchHistory() {
     try {
-        const res = await fetch(`${API_URL}/history`);
+        const res = await fetch(apiUrl('/history'));
         const history = await res.json();
         history.forEach(msg => addMessage(msg));
         log('wsLogs', `Loaded ${history.length} messages from history`, 'info');
     } catch (e) {
         log('wsLogs', `Failed to fetch history: ${e}`, 'error');
     }
+}
+
+// Reload Hub for new project context (T329)
+async function reloadHubForProject() {
+    clearHubMessages();
+    await fetchHistory();
 }
 
 // Render agent cards

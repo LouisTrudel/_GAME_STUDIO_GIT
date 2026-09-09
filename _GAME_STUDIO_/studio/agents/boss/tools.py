@@ -8,12 +8,19 @@ from studio.core.tasks import task_manager, TaskStatus
 from studio.core.hub import hub
 from studio.core.suggestions import suggestion_manager, VALID_CATEGORIES
 from studio.core.memory import memory_manager
-
-# Projects directory (for CONTEXT.md files)
-PROJECTS_DIR = Path(__file__).parent.parent.parent.parent / "projects"
+from studio.core.projects import project_manager
+from studio.routines.git_commit_routine import run_routine as git_commit_routine
 
 # Logs directory (for raw log search fallback)
 LOGS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "logs"
+
+
+def _get_active_project_context() -> str:
+    """Get active project path context for task descriptions."""
+    project = project_manager.get_active()
+    if project and project.path:
+        return f"[PROJECT_PATH] {project.path}"
+    return ""
 
 
 CREATE_TASK_SCHEMA = {
@@ -23,7 +30,6 @@ CREATE_TASK_SCHEMA = {
 Structure your task description for optimal output:
 [WHAT] Clear deliverable in imperative form
 [CONTEXT] Why this is needed (optional)
-[SKILLS] Recommended skills to load (e.g., :code/economy :code/roblox/server)
 [CONSTRAINTS] Must-haves, limits, rules (optional)""",
     "input_schema": {
         "type": "object",
@@ -80,6 +86,12 @@ def create_task(description: str = None, assignee: str = None, dependencies: lis
         else:
             assignee = assignee.capitalize()
 
+    # Inject active project path into description if not already present
+    # This ensures agents know where project files should be saved/read
+    project_ctx = _get_active_project_context()
+    if project_ctx and "[PROJECT_PATH]" not in desc:
+        desc = f"{desc} {project_ctx}"
+
     task = task_manager.create_task(desc, assignee, dependencies, backend=backend)
 
     # Post to hub with @mention
@@ -127,42 +139,6 @@ def get_task_status(task_id: str = None, include_completed: bool = False) -> str
             return task_manager.to_context_string()
         else:
             return task_manager.to_active_context_string()
-
-
-# ============ CONTEXT TOOLS ============
-
-READ_CONTEXT_SCHEMA = {
-    "name": "read_context",
-    "description": "Read a project's CONTEXT.md (shared brain). Contains cross-agent signals, decisions, and blockers. NOTE: This reads projects/<project_id>/CONTEXT.md only - NOT for reading studio/docs/ files.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "project_id": {
-                "type": "string",
-                "description": "Project folder name (e.g., 'default'). Reads projects/<project_id>/CONTEXT.md"
-            }
-        },
-        "required": []
-    }
-}
-
-
-def read_context(project_id: str = "default") -> str:
-    """Read the CONTEXT.md for a project."""
-    context_file = PROJECTS_DIR / project_id / "CONTEXT.md"
-
-    if not context_file.exists():
-        project_dir = PROJECTS_DIR / project_id
-        if not project_dir.exists():
-            available = [p.name for p in PROJECTS_DIR.iterdir() if p.is_dir() and not p.name.startswith("_")]
-            return f"Project '{project_id}' not found. Available: {', '.join(available) or 'none'}"
-        return f"No CONTEXT.md found for project '{project_id}'."
-
-    try:
-        content = context_file.read_text(encoding="utf-8")
-        return f"=== CONTEXT: {project_id} ===\n\n{content}"
-    except Exception as e:
-        return f"Error reading context: {e}"
 
 
 # ============ ACKNOWLEDGE TOOL ============
@@ -279,6 +255,50 @@ def create_suggestion(
         return f"Suggestion created: {suggestion.id} - {suggestion.title}"
     except ValueError as e:
         return f"Failed to create suggestion: {e}"
+
+
+# ============ GIT COMMIT TOOL ============
+
+GIT_COMMIT_SCHEMA = {
+    "name": "git_commit",
+    "description": "Commit and push all staged changes to git. Auto-generates a descriptive commit message based on changed files.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "auto_push": {
+                "type": "boolean",
+                "description": "Push to origin after commit (default: true)"
+            },
+            "message": {
+                "type": "string",
+                "description": "Custom commit message (optional, auto-generated if not provided)"
+            }
+        },
+        "required": []
+    }
+}
+
+
+def git_commit(auto_push: bool = True, message: str = None) -> str:
+    """Execute git commit routine."""
+    try:
+        result = git_commit_routine(auto_push=auto_push)
+
+        if result.get("error") and not result.get("committed"):
+            return f"Git commit skipped: {result['error']}"
+
+        summary = []
+        if result.get("committed"):
+            commit_line = result.get("commit_message", "").split("\n")[0]
+            summary.append(f"Committed: {commit_line}")
+        if result.get("pushed"):
+            summary.append("Pushed to origin")
+        elif result.get("committed") and result.get("error"):
+            summary.append(f"Push failed: {result['error']}")
+
+        return "\n".join(summary) if summary else "No changes to commit"
+    except Exception as e:
+        return f"Git commit failed: {e}"
 
 
 # ============ MEMORY TOOL ============
@@ -412,19 +432,19 @@ def _search_logs(query: str, max_results: int) -> str:
 TOOLS = [
     CREATE_TASK_SCHEMA,
     GET_TASK_STATUS_SCHEMA,
-    READ_CONTEXT_SCHEMA,
     ACKNOWLEDGE_SCHEMA,
     CREATE_SUGGESTION_SCHEMA,
     ADD_DISCUSSION_SCHEMA,
     RECALL_MEMORY_SCHEMA,
+    GIT_COMMIT_SCHEMA,
 ]
 
 HANDLERS = {
     "create_task": create_task,
     "get_task_status": get_task_status,
-    "read_context": read_context,
     "acknowledge": acknowledge,
     "create_suggestion": create_suggestion,
     "add_discussion": add_discussion,
     "recall_memory": recall_memory,
+    "git_commit": git_commit,
 }

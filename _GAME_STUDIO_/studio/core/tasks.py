@@ -16,6 +16,8 @@ from typing import Optional
 from pathlib import Path
 import json
 
+from .paths import get_base_path
+
 
 # Stale task threshold: if a task is IN_PROGRESS for longer than this, recover it
 STALE_TASK_MINUTES = 35  # 30 min timeout + 5 min grace
@@ -73,29 +75,44 @@ def _log_to_memory(task_id: str, task: "Task", outcome: str):
     except Exception as e:
         print(f"[Tasks] Failed to log to memory: {e}")
 
-TASKS_FILE = Path(__file__).parent.parent.parent / "data" / "tasks.json"
-ARCHIVE_FILE = Path(__file__).parent.parent.parent / "data" / "tasks_archive.json"
-DELIVERABLES_DIR = Path(__file__).parent.parent.parent / "data" / "deliverables"
+# Default paths (used when no project is active)
+# Actual paths are resolved dynamically via TaskManager._get_tasks_file() etc.
+DEFAULT_TASKS_FILE = Path(__file__).parent.parent.parent / "data" / "tasks.json"
+DEFAULT_ARCHIVE_FILE = Path(__file__).parent.parent.parent / "data" / "tasks_archive.json"
+DEFAULT_DELIVERABLES_DIR = Path(__file__).parent.parent.parent / "data" / "deliverables"
+
+# Legacy module-level paths for backwards compatibility
+# NOTE: These are deprecated - use task_manager methods instead
+TASKS_FILE = DEFAULT_TASKS_FILE
+ARCHIVE_FILE = DEFAULT_ARCHIVE_FILE
+DELIVERABLES_DIR = DEFAULT_DELIVERABLES_DIR
 
 
-def save_deliverable(task_id: str, content: str, description: str = "") -> bool:
+def save_deliverable(task_id: str, content: str, description: str = "", project_name: Optional[str] = None) -> bool:
     """
     Save task deliverable to data/deliverables/T###.md.
 
     Per T159 session memory architecture: preserve deliverable content permanently
     so important outputs aren't lost when hub_history rolls over.
 
+    T332: Project-aware paths - when project is active, saves to
+    projects/<project_id>/deliverables/T###.md
+
     Args:
         task_id: Task ID (e.g., "T163")
         content: The deliverable content (agent's response)
         description: Optional task description for the header
+        project_name: Optional project folder name for project-specific storage
 
     Returns:
         True if saved successfully, False otherwise
     """
     try:
-        DELIVERABLES_DIR.mkdir(parents=True, exist_ok=True)
-        filepath = DELIVERABLES_DIR / f"{task_id}.md"
+        # T332: Use project-aware path
+        base = get_base_path(project_name)
+        deliverables_dir = base / "deliverables"
+        deliverables_dir.mkdir(parents=True, exist_ok=True)
+        filepath = deliverables_dir / f"{task_id}.md"
 
         # Format with metadata header
         header = f"# {task_id} Deliverable\n\n"
@@ -415,41 +432,107 @@ class Task:
 
 
 class TaskManager:
-    """Manages task lifecycle and dependencies."""
+    """Manages task lifecycle and dependencies.
 
-    def __init__(self):
+    T332: Supports project-aware paths. When _project_name is set,
+    tasks are stored in projects/<name>/tasks.json instead of data/tasks.json.
+    """
+
+    def __init__(self, project_name: Optional[str] = None):
+        self._project_name = project_name
         self.tasks: dict[str, Task] = {}
         self._counter = 0
         self._load_tasks()
         # Reset any stale IN_PROGRESS tasks from previous crash
         self.reset_in_progress_tasks()
 
+    def _get_tasks_file(self) -> Path:
+        """Get tasks.json path for current project context.
+
+        T332: Routes to projects/<project_id>/tasks.json when project is active,
+        otherwise uses data/tasks.json.
+        """
+        base = get_base_path(self._project_name)
+        return base / "tasks.json"
+
+    def _get_archive_file(self) -> Path:
+        """Get tasks_archive.json path for current project context.
+
+        T332: Routes to projects/<project_id>/tasks_archive.json when project is active,
+        otherwise uses data/tasks_archive.json.
+        """
+        base = get_base_path(self._project_name)
+        return base / "tasks_archive.json"
+
+    def _get_deliverables_dir(self) -> Path:
+        """Get deliverables directory for current project context.
+
+        T332: Routes to projects/<project_id>/deliverables/ when project is active,
+        otherwise uses data/deliverables/.
+        """
+        base = get_base_path(self._project_name)
+        return base / "deliverables"
+
+    def set_project(self, project_name: Optional[str]):
+        """Switch to a different project's task storage.
+
+        T332: When user switches projects, this method:
+        1. Saves current tasks to current project path
+        2. Updates _project_name
+        3. Reloads tasks from new project path
+        4. Resets any stale IN_PROGRESS tasks
+
+        Args:
+            project_name: Project folder name (e.g., "P001"), or None for default.
+        """
+        if project_name == self._project_name:
+            return  # No change
+
+        # Save current tasks before switching (if any loaded)
+        if self.tasks:
+            self._save_tasks()
+
+        self._project_name = project_name
+        self.tasks.clear()
+        self._counter = 0
+        self._load_tasks()
+        self.reset_in_progress_tasks()
+        print(f"[Tasks] Switched to project: {project_name or 'default'}")
+
     def _load_tasks(self):
-        """Load tasks from file."""
-        if TASKS_FILE.exists():
+        """Load tasks from file.
+
+        T332: Uses project-aware path via _get_tasks_file().
+        """
+        tasks_file = self._get_tasks_file()
+        if tasks_file.exists():
             try:
-                with open(TASKS_FILE) as f:
+                with open(tasks_file) as f:
                     data = json.load(f)
                 for task_data in data.get("tasks", []):
                     task = Task.from_dict(task_data)
                     self.tasks[task.id] = task
                 self._counter = data.get("counter", 0)
-                print(f"[Tasks] Loaded {len(self.tasks)} tasks from history")
+                print(f"[Tasks] Loaded {len(self.tasks)} tasks from {tasks_file}")
             except Exception as e:
-                print(f"[Tasks] Failed to load history: {e}")
+                print(f"[Tasks] Failed to load from {tasks_file}: {e}")
 
     def _save_tasks(self):
-        """Save tasks to file."""
+        """Save tasks to file.
+
+        T332: Uses project-aware path via _get_tasks_file().
+        """
+        tasks_file = self._get_tasks_file()
         try:
-            TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            tasks_file.parent.mkdir(parents=True, exist_ok=True)
             data = {
                 "counter": self._counter,
                 "tasks": [t.to_dict() for t in self.tasks.values()]
             }
-            with open(TASKS_FILE, "w") as f:
+            with open(tasks_file, "w") as f:
                 json.dump(data, f, indent=2)
         except Exception as e:
-            print(f"[Tasks] Failed to save: {e}")
+            print(f"[Tasks] Failed to save to {tasks_file}: {e}")
 
     def create_task(
         self,
@@ -558,8 +641,8 @@ class TaskManager:
             self._save_tasks()
             # Track metrics
             _track_completed(task_id, task.assignee)
-            # T163: Save deliverable to data/deliverables/T###.md
-            save_deliverable(task_id, result, task.description)
+            # T163/T332: Save deliverable (project-aware path)
+            save_deliverable(task_id, result, task.description, self._project_name)
             # T248: Log to memory hot tier
             _log_to_memory(task_id, task, "success")
             return True
@@ -751,11 +834,15 @@ class TaskManager:
         return True
 
     def _is_in_archive(self, task_id: str) -> bool:
-        """Check if a task ID exists in the archive (completed)."""
-        if not ARCHIVE_FILE.exists():
+        """Check if a task ID exists in the archive (completed).
+
+        T332: Uses project-aware path via _get_archive_file().
+        """
+        archive_file = self._get_archive_file()
+        if not archive_file.exists():
             return False
         try:
-            with open(ARCHIVE_FILE, "r") as f:
+            with open(archive_file, "r") as f:
                 archive_data = json.load(f)
             return any(t.get("id") == task_id for t in archive_data)
         except (json.JSONDecodeError, IOError):
@@ -940,6 +1027,8 @@ class TaskManager:
         Archive completed tasks to reduce context size.
         Keeps the most recent `keep_recent` approved/failed tasks, archives the rest.
         Returns number of tasks archived.
+
+        T332: Uses project-aware path via _get_archive_file().
         """
         # Statuses to archive
         archive_statuses = {TaskStatus.APPROVED, TaskStatus.FAILED, TaskStatus.ERROR}
@@ -954,11 +1043,12 @@ class TaskManager:
         archivable.sort(key=lambda t: t.completed_at or t.created_at, reverse=True)
         to_archive = archivable[keep_recent:]
 
-        # Load existing archive
+        # Load existing archive (project-aware path)
+        archive_file = self._get_archive_file()
         archive_data = []
-        if ARCHIVE_FILE.exists():
+        if archive_file.exists():
             try:
-                with open(ARCHIVE_FILE, "r") as f:
+                with open(archive_file, "r") as f:
                     archive_data = json.load(f)
             except (json.JSONDecodeError, IOError):
                 archive_data = []
@@ -968,9 +1058,9 @@ class TaskManager:
             archive_data.append(task.to_archive_dict())
             del self.tasks[task.id]
 
-        # Save archive
-        ARCHIVE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(ARCHIVE_FILE, "w") as f:
+        # Save archive (project-aware path)
+        archive_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(archive_file, "w") as f:
             json.dump(archive_data, f, indent=2)
 
         # Save active tasks
@@ -980,12 +1070,16 @@ class TaskManager:
         return len(to_archive)
 
     def get_archive_stats(self) -> dict:
-        """Get stats about archived tasks (supports both old and compressed schema)."""
-        if not ARCHIVE_FILE.exists():
+        """Get stats about archived tasks (supports both old and compressed schema).
+
+        T332: Uses project-aware path via _get_archive_file().
+        """
+        archive_file = self._get_archive_file()
+        if not archive_file.exists():
             return {"archived_count": 0, "total_tokens": 0, "total_usd": 0.0}
 
         try:
-            with open(ARCHIVE_FILE, "r") as f:
+            with open(archive_file, "r") as f:
                 archive_data = json.load(f)
 
             total_tokens = 0

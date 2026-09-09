@@ -1,1 +1,10 @@
-{"name": "BOSS", "title": "Studio Coordinator", "backend": "claude-cli", "color": "#e74c3c"}
+{
+  "name": "BOSS",
+  "title": "Studio Coordinator",
+  "backend": "claude-cli",
+  "color": "#e74c3c",
+  "delegation_fixes": {
+    "primacy_identity": true,
+    "recency_bookend": true
+  }
+}

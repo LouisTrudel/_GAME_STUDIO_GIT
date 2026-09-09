@@ -231,11 +231,21 @@ class ProjectManager:
         if not project_path.exists():
             return {"content": "", "exists": False, "error": "Project folder not found", "truncated": False}
 
-        filename = "white_paper.md" if doc_type == "white_paper" else "roadmap.md"
-        doc_path = project_path / filename
+        # Support both naming conventions (whitepaper.md and white_paper.md)
+        if doc_type == "white_paper":
+            candidates = ["whitepaper.md", "white_paper.md"]
+        else:
+            candidates = ["roadmap.md"]
 
-        if not doc_path.exists():
-            return {"content": "", "exists": False, "error": f"No {filename} found", "truncated": False}
+        doc_path = None
+        for filename in candidates:
+            candidate_path = project_path / filename
+            if candidate_path.exists():
+                doc_path = candidate_path
+                break
+
+        if not doc_path:
+            return {"content": "", "exists": False, "error": f"No {candidates[0]} found", "truncated": False}
 
         try:
             size = doc_path.stat().st_size

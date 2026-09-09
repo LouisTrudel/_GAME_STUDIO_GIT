@@ -2,23 +2,35 @@
 WebSocket module - Real-time connection handling.
 
 Handles WebSocket connections, message routing, and live updates.
+
+T327: Supports project context via ?project= query param.
 """
 
 import asyncio
 import json
+from typing import Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 
 from studio.core.tasks import task_manager
 from studio.core.schedules import schedule_manager
+from studio.core.hub import hub
 
 from .broadcast import connections, agent_statuses, broadcast_to_clients
 
 
-async def websocket_endpoint(websocket: WebSocket, studio):
-    """WebSocket handler for real-time chat and updates."""
+async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[str] = None):
+    """WebSocket handler for real-time chat and updates.
+
+    T327: project_id from URL query param sets the active project context.
+    """
     await websocket.accept()
     connections.append(websocket)
+
+    # T327: Switch to project context if specified
+    if project_id:
+        hub.set_active_project(project_id)
+        print(f"[WS] Client connected with project context: {project_id}")
     print(f"Client connected. Total: {len(connections)}")
 
     # Send current tasks
@@ -51,8 +63,12 @@ async def websocket_endpoint(websocket: WebSocket, studio):
 
             if msg.get("type") == "user_message":
                 content = msg.get("content", "").strip()
+                msg_project = msg.get("project")  # T327: project from message
                 if content:
                     print(f"User: {content}")
+                    # T327: Switch project context if different
+                    if msg_project and msg_project != project_id:
+                        hub.set_active_project(msg_project)
                     await asyncio.to_thread(
                         studio.handle_user_message, content
                     )

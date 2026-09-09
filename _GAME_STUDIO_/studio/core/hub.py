@@ -14,10 +14,16 @@ from queue import Queue
 
 from .message_logger import message_logger
 from .memory import memory_manager
+from .history import history_manager
+from .projects import project_manager
+from .paths import get_base_path
+from .tasks import task_manager
 
 
-MESSAGES_FILE = Path(__file__).parent.parent.parent / "data" / "messages.json"
-SESSION_MEMORY_FILE = Path(__file__).parent.parent.parent / "data" / "session_memory.md"
+# T330: Default paths (used when no project is active)
+# Actual paths are resolved dynamically via _get_messages_file() and _get_session_memory_file()
+DEFAULT_MESSAGES_FILE = Path(__file__).parent.parent.parent / "data" / "messages.json"
+DEFAULT_SESSION_MEMORY_FILE = Path(__file__).parent.parent.parent / "data" / "session_memory.md"
 MAX_MESSAGES = 50  # Rolling buffer size per T159 spec
 # Messages older than this threshold get summarized
 SUMMARIZE_THRESHOLD = 20  # Keep last 20 raw, summarize older
@@ -60,8 +66,50 @@ class Hub:
         self._summarize_callback = None
         # Flag to prevent re-triggering summarization while in progress
         self._summarization_in_progress: bool = False
+        # Sync managers with persisted active project (T3xx: startup initialization)
+        self._sync_with_active_project()
         # Load saved history
         self._load_history()
+
+    def _sync_with_active_project(self):
+        """Sync memory/history/task managers with persisted active project on startup.
+
+        T3xx: When server restarts, project_manager loads active_project_id from disk,
+        but memory/history/task managers start at default paths. This method syncs them.
+        """
+        if project_manager.active_project_id:
+            project = project_manager.get(project_manager.active_project_id)
+            if project:
+                project_folder = project_manager.active_project_id
+                memory_manager.set_project(project_folder)
+                history_manager.set_project(project_folder)
+                task_manager.set_project(project_folder)
+                print(f"[Hub] Synced managers with persisted project: {project.name} ({project_folder})")
+
+    def _get_messages_file(self) -> Path:
+        """Get messages.json path for current project context.
+
+        T330: Routes to projects/<project_id>/data/messages.json when project is active,
+        otherwise uses data/messages.json.
+        """
+        project_id = project_manager.active_project_id
+        base = get_base_path(project_id)
+        # For projects, data lives in projects/<id>/data/
+        if project_id and project_id != "default":
+            return base / "data" / "messages.json"
+        return base / "messages.json"
+
+    def _get_session_memory_file(self) -> Path:
+        """Get session_memory.md path for current project context.
+
+        T330: Routes to projects/<project_id>/data/session_memory.md when project is active,
+        otherwise uses data/session_memory.md.
+        """
+        project_id = project_manager.active_project_id
+        base = get_base_path(project_id)
+        if project_id and project_id != "default":
+            return base / "data" / "session_memory.md"
+        return base / "session_memory.md"
 
     def set_summarize_callback(self, callback):
         """Set callback for Context agent summarization.
@@ -70,30 +118,104 @@ class Hub:
         """
         self._summarize_callback = callback
 
+    def set_active_project(self, project_id: str) -> bool:
+        """Set the active project and switch memory/history/messages/tasks paths.
+
+        T321: When user selects a project in Hub dropdown, this method:
+        1. Updates project_manager.active_project_id
+        2. Switches memory_manager to project-specific paths
+        3. Switches history_manager to project-specific paths
+        T330: Also reloads messages from project-specific messages.json
+        T332: Also switches task_manager to project-specific tasks.json
+
+        Args:
+            project_id: Project ID (e.g., "P001") or None for default.
+
+        Returns:
+            True if project was switched successfully.
+        """
+        if not project_id:
+            # Switch to default/no project
+            memory_manager.set_project(None)
+            history_manager.set_project(None)
+            task_manager.set_project(None)  # T332
+            project_manager.active_project_id = None
+            project_manager._save()
+            # T330: Reload messages from default path
+            self._load_history()
+            print("[Hub] Switched to default project (no project)")
+            return True
+
+        # Get project to extract folder name
+        project = project_manager.get(project_id)
+        if not project:
+            print(f"[Hub] Project not found: {project_id}")
+            return False
+
+        # Use project ID as folder name within projects/
+        project_folder = project_id
+
+        # Update project manager
+        if not project_manager.set_active(project_id):
+            return False
+
+        # Switch memory, history, and tasks managers (T332)
+        memory_manager.set_project(project_folder)
+        history_manager.set_project(project_folder)
+        task_manager.set_project(project_folder)
+
+        # T330: Reload messages from project-specific path
+        self._load_history()
+
+        print(f"[Hub] Switched to project: {project.name} ({project_id})")
+        return True
+
+    def get_active_project(self) -> Optional[dict]:
+        """Get the currently active project info.
+
+        Returns:
+            Project dict or None if no project is active.
+        """
+        project = project_manager.get_active()
+        return project.to_dict() if project else None
+
     def _load_history(self):
-        """Load message history from messages.json."""
-        if MESSAGES_FILE.exists():
+        """Load message history from messages.json.
+
+        T330: Uses project-aware path via _get_messages_file().
+        """
+        messages_file = self._get_messages_file()
+        if messages_file.exists():
             try:
-                with open(MESSAGES_FILE) as f:
+                with open(messages_file) as f:
                     data = json.load(f)
                 self.messages = [Message.from_dict(m) for m in data.get("messages", [])]
-                print(f"[Hub] Loaded {len(self.messages)} messages from messages.json")
+                print(f"[Hub] Loaded {len(self.messages)} messages from {messages_file}")
             except Exception as e:
-                print(f"[Hub] Failed to load messages.json: {e}")
+                print(f"[Hub] Failed to load {messages_file}: {e}")
+                self.messages = []
+        else:
+            # T330: Clear messages when switching to project with no history
+            self.messages = []
+            print(f"[Hub] No messages found at {messages_file}")
 
     def _save_history(self):
-        """Save message history to messages.json (rolling 50-message buffer)."""
+        """Save message history to messages.json (rolling 50-message buffer).
+
+        T330: Uses project-aware path via _get_messages_file().
+        """
+        messages_file = self._get_messages_file()
         try:
-            MESSAGES_FILE.parent.mkdir(parents=True, exist_ok=True)
+            messages_file.parent.mkdir(parents=True, exist_ok=True)
             messages_to_save = self.messages[-MAX_MESSAGES:]
             messages_data = {
                 "messages": [m.to_dict() for m in messages_to_save],
                 "count": len(messages_to_save),
             }
-            with open(MESSAGES_FILE, "w") as f:
+            with open(messages_file, "w") as f:
                 json.dump(messages_data, f, indent=2)
         except Exception as e:
-            print(f"[Hub] Failed to save history: {e}")
+            print(f"[Hub] Failed to save history to {messages_file}: {e}")
 
     def post(
         self,
@@ -107,9 +229,11 @@ class Hub:
         self.messages.append(msg)
         self._messages_since_summary += 1
 
-        # T259: Wire message into Tier 0 [A] accumulation (before compression check)
-        # This is the SOURCE data for the AB chain - minimal format for later compression
-        self._accumulate_to_tier0(msg, task_id)
+        # Feed raw messages to BOTH compression systems (parallel, independent):
+        # 1. AC-Memory: bullet points for agent recall (Context agent)
+        # 2. History: narrative prose for human reading (Writer agent)
+        self._accumulate_to_tier0(msg, task_id)      # AC-Memory
+        self._accumulate_to_history(msg, task_id)    # History
 
         # Trigger Context agent summarization at threshold (T164)
         # Guard against infinite loop: don't re-trigger while summarization is in progress (T197)
@@ -135,11 +259,10 @@ class Hub:
         return msg
 
     def _accumulate_to_tier0(self, msg: Message, task_id: Optional[str] = None):
-        """Append message summary to Tier 0 accumulated_a (T259).
+        """Append message summary to AC-Memory Tier 0.
 
-        This is the SOURCE data for the entire AB compression chain.
+        AC-Memory: Bullet points for agent recall (Context agent compresses).
         Format: minimal - timestamp + sender + key content (first 200 chars).
-        Tier 0 will compress when it exceeds threshold.
         """
         try:
             # Extract key content - first meaningful line, max 200 chars
@@ -153,14 +276,33 @@ class Hub:
                 entry += f" ({task_id})"
             entry += f": {key_content}"
 
-            # Append to tier 0 accumulated_a
-            memory_manager.append_to_tier(0, entry, {
-                "last_sender": msg.sender,
-                "last_task_id": task_id,
-            })
+            # Append to AC-Memory tier 0
+            memory_manager.append(0, entry)
         except Exception as e:
             # Non-fatal - don't break message posting if memory fails
-            print(f"[Hub] Tier 0 accumulation error (non-fatal): {e}")
+            print(f"[Hub] AC-Memory accumulation error (non-fatal): {e}")
+
+    def _accumulate_to_history(self, msg: Message, task_id: Optional[str] = None):
+        """Append message to History Draft tier.
+
+        History: Narrative prose for human reading (Writer agent compresses).
+        Format: fuller context for narrative generation.
+        """
+        try:
+            # Fuller format for narrative - include more content
+            timestamp = msg.timestamp.strftime("%H:%M")
+            content_preview = msg.content[:500] if len(msg.content) > 500 else msg.content
+
+            entry = f"[{timestamp}] {msg.sender}"
+            if task_id:
+                entry += f" (task {task_id})"
+            entry += f":\n{content_preview}"
+
+            # Append to History draft tier
+            history_manager.accumulate_raw(entry)
+        except Exception as e:
+            # Non-fatal - don't break message posting if history fails
+            print(f"[Hub] History accumulation error (non-fatal): {e}")
 
     def _trigger_summarization(self):
         """Trigger Context agent to update session_memory.md (T164).
@@ -201,15 +343,23 @@ class Hub:
             self._summarization_in_progress = False
 
     def _load_session_memory(self) -> str:
-        """Load current session_memory.md content."""
-        if SESSION_MEMORY_FILE.exists():
-            return SESSION_MEMORY_FILE.read_text(encoding="utf-8")
+        """Load current session_memory.md content.
+
+        T330: Uses project-aware path via _get_session_memory_file().
+        """
+        session_file = self._get_session_memory_file()
+        if session_file.exists():
+            return session_file.read_text(encoding="utf-8")
         return ""
 
     def _save_session_memory(self, content: str):
-        """Save updated session_memory.md."""
-        SESSION_MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True)
-        SESSION_MEMORY_FILE.write_text(content, encoding="utf-8")
+        """Save updated session_memory.md.
+
+        T330: Uses project-aware path via _get_session_memory_file().
+        """
+        session_file = self._get_session_memory_file()
+        session_file.parent.mkdir(parents=True, exist_ok=True)
+        session_file.write_text(content, encoding="utf-8")
 
     def get_pending(self) -> list[Message]:
         """Get all pending messages from outbox."""

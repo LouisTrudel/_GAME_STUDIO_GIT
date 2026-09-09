@@ -429,3 +429,22 @@ def create_gemini_research_schedule(interval_minutes: int = 30) -> Schedule:
         interval_seconds=interval_minutes * 60,
         script_module="studio.routines.gemini_research_routine",
     )
+
+
+def create_git_commit_schedule(interval_hours: int = 24) -> Schedule:
+    """Create automated git commit/push routine.
+
+    Runs daily (default) or on configured interval:
+    1. Checks for uncommitted changes
+    2. Stages all changes
+    3. Generates descriptive commit message
+    4. Commits and pushes to origin
+
+    Returns None if no changes to commit.
+    """
+    return schedule_manager.create_script(
+        name="Git Auto-Commit",
+        description="Stage, commit, and push changes to origin",
+        interval_seconds=interval_hours * 3600,
+        script_module="studio.routines.git_commit_routine",
+    )

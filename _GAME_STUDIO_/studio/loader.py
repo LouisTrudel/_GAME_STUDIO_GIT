@@ -25,6 +25,10 @@ AGENT_ROUTER_MAP = {
     "taxonomy": "taxonomy",
     "context": "context",
     "research": "research",
+    "image": "image",
+    "sound": "sound",
+    "video": "video",
+    "claude": None,  # Vanilla passthrough - no router skills
 }
 
 
@@ -36,8 +40,49 @@ def load_markdown(filepath: Path) -> str:
 
 
 def load_agent_role_md(name: str) -> str:
-    """Load agent role from markdown file."""
-    role_file = AGENTS_DIR / name.lower() / "role.md"
+    """Load agent role from markdown file.
+
+    For BOSS agent, applies delegation fixes (T324/T325) based on config:
+    - primacy_identity: Adds identity block at start (lines 1-5)
+    - recency_bookend: Adds final reminder at end
+    """
+    agent_dir = AGENTS_DIR / name.lower()
+    config = load_agent_config(name)
+
+    # Check for BOSS delegation fixes
+    fixes = config.get("delegation_fixes", {})
+    use_primacy = fixes.get("primacy_identity", False)
+    use_recency = fixes.get("recency_bookend", False)
+
+    # If any fixes enabled, use modular assembly
+    if use_primacy or use_recency:
+        parts = []
+
+        # Fix 1: Primacy identity at the very start
+        if use_primacy:
+            primacy_file = agent_dir / "fixes" / "primacy_identity.md"
+            if primacy_file.exists():
+                parts.append(load_markdown(primacy_file))
+
+        # Base role content
+        base_file = agent_dir / "role_base.md"
+        if base_file.exists():
+            parts.append(load_markdown(base_file))
+        else:
+            # Fallback to role.md if no role_base.md
+            role_file = agent_dir / "role.md"
+            parts.append(load_markdown(role_file))
+
+        # Fix 2: Recency bookend at the very end
+        if use_recency:
+            recency_file = agent_dir / "fixes" / "recency_bookend.md"
+            if recency_file.exists():
+                parts.append(load_markdown(recency_file))
+
+        return "\n\n".join(parts)
+
+    # Default: just load role.md
+    role_file = agent_dir / "role.md"
     return load_markdown(role_file)
 
 

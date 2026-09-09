@@ -2,6 +2,11 @@
 StudioAgent - Individual agent wrapper for the Game Studio.
 
 Each agent reads from the shared hub and uses task tools to communicate.
+
+Backend: "claude-cli" (uses Claude Code CLI with MCP tools)
+
+For custom tool enforcement, configure MCP server (mcp_server.py).
+Tools are enforced at protocol level via MCP, not prompt level.
 """
 
 import time
@@ -11,13 +16,8 @@ from backends import Agent
 from studio.core import hub, task_manager, TaskStatus
 from studio.loader import (
     AGENTS_DIR,
-    SKILLS_DIR,
     load_agent_role_md,
     load_agent_config,
-    load_agent_skills,
-    load_shared_skills,
-    load_router_skill,
-    load_markdown,
 )
 
 
@@ -31,21 +31,21 @@ class StudioAgent:
         self.name = config.get("name", name)
         self.title = config.get("title", "Agent")
         self.color = config.get("color", "#888")
-        self.model = config.get("model", "claude")  # Model ignored for CLI backend
+        self.model = config.get("model", "claude")
         self.is_boss = "boss" in name.lower()
+        self.is_vanilla = config.get("vanilla", False)
 
-        # Load role from markdown (store for T115 visibility)
+        # Override backend from config if specified
+        backend = config.get("backend", backend)
+
+        # Load role from markdown
         self._role_md = load_agent_role_md(name)
+        print(f"  [{self.name}] Loaded role.md: {len(self._role_md)} chars, is_vanilla={self.is_vanilla}")
 
-        # Load skills (store for T115 visibility)
-        self.skills = load_agent_skills(name)
-        self.shared_skills = load_shared_skills()
-
-        # Build system prompt from role + skills (store combined skills for T115)
-        self._combined_skills = self._build_skills_string()
+        # Build system prompt from role only (skills system removed)
         system_prompt = self._build_system_prompt(self._role_md)
 
-        # Load tool handlers (schemas now live in skill files, not injected)
+        # Load tool handlers (MCP server handles tool enforcement now)
         _, handlers = self._load_tools()
 
         self.agent = Agent(
@@ -53,98 +53,24 @@ class StudioAgent:
             system_prompt=system_prompt,
             backend=backend,
             model=self.model,
-            tools=[],  # Schemas in :_tools/* skills, loaded on demand
-            tool_handlers=handlers,  # Handlers still active for <tool> parsing
+            tools=[],
+            tool_handlers=handlers,
         )
-
-        print(f"  [{self.name}] Using backend: {backend}, {len(self.skills)} skills loaded")
-
-    def _build_skills_string(self) -> str:
-        """Build combined skills string for T115 visibility."""
-        parts = []
-
-        # Router skill
-        router = load_router_skill(self.name_raw)
-        if router:
-            parts.append(router)
-
-        # Core tool skills
-        tool_skills = self._get_core_tool_skills()
-        parts.extend(tool_skills)
-
-        # Shared skills
-        parts.extend(self.shared_skills)
-
-        # Agent-specific skills
-        parts.extend(self.skills)
-
-        return "\n\n---\n\n".join(parts)
+        print(f"  [{self.name}] Using backend: {backend}")
 
     def get_role_md(self) -> str:
-        """Get raw role.md content (T115)."""
+        """Get raw role.md content."""
         return self._role_md
 
     def get_skills_content(self) -> str:
-        """Get combined skills content (T115)."""
-        return self._combined_skills
+        """Get combined skills content - returns empty (skills system removed)."""
+        return ""
 
-    def _build_system_prompt(self, role_md: str, context_md: str = "") -> str:
-        """Build full system prompt with explicit section markers.
-
-        Order optimized for primacy/recency effects (T224):
-        skills → router → context → role
-
-        Skills at top = tools always accessible in context window.
-        Role at bottom = recency effect keeps identity/constraints fresh.
-        """
-        sections = []
-
-        # ## SKILLS - Core tool skills + shared + agent-specific
-        skill_parts = []
-        tool_skills = self._get_core_tool_skills()
-        skill_parts.extend(tool_skills)
-        skill_parts.extend(self.shared_skills)
-        skill_parts.extend(self.skills)
-        if skill_parts:
-            sections.append("## SKILLS\n\n" + "\n\n---\n\n".join(skill_parts))
-
-        # ## ROUTER - Skill loading navigation
-        router = load_router_skill(self.name_raw)
-        if router:
-            sections.append("## ROUTER\n\n" + router)
-
-        # ## CONTEXT - Dynamic context (injected at runtime via _build_full_prompt)
-        if context_md:
-            sections.append("## CONTEXT\n\n" + context_md)
-
-        # ## ROLE - Agent identity and constraints (recency = fresh in memory)
+    def _build_system_prompt(self, role_md: str) -> str:
+        """Build system prompt from role only."""
         if role_md:
-            sections.append("## ROLE\n\n" + role_md)
-
-        return "\n\n".join(sections)
-
-    def _get_core_tool_skills(self) -> list[str]:
-        """Load core tool skills for this agent type."""
-        tools_dir = SKILLS_DIR / "_tools"
-        tool_skills = []
-
-        if self.is_boss:
-            # BOSS needs: task management, context
-            tool_files = ["tasks.md", "context.md"]
-        else:
-            # Employees need: skill loading, files, context
-            tool_files = ["skills.md", "files.md", "context.md"]
-            # QA also needs QA-specific tools
-            if self.name == "QA":
-                tool_files.append("qa.md")
-
-        for filename in tool_files:
-            filepath = tools_dir / filename
-            if filepath.exists():
-                content = filepath.read_text(encoding="utf-8")
-                tool_skills.append(content)
-
-        return tool_skills
+            return "## ROLE\n\n" + role_md
+        return ""
 
     def _load_tools(self) -> tuple[list, dict]:
         """Load tools for this agent."""
@@ -206,8 +132,17 @@ class StudioAgent:
         """Build scoped context with section markers for user message.
 
         Uses ## CONTEXT and ## TASK markers for consistency with system prompt.
+        T356: Vanilla agents skip context injection - only get the trigger message.
         """
         sections = []
+
+        # T356: Vanilla agents get raw trigger only, no context injection
+        if self.is_vanilla:
+            print(f"  [{self.name}] VANILLA MODE - skipping context injection")
+            return trigger_message or "Respond appropriately."
+
+        # Debug: confirm non-vanilla path
+        print(f"  [{self.name}] Building context (is_vanilla={self.is_vanilla}, is_boss={self.is_boss})")
 
         # ## CONTEXT - Dynamic context (tasks, hub messages)
         context_md = self.get_context_md()

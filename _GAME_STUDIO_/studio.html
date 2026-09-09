@@ -9,6 +9,11 @@
 <body>
     <header>
         <h1>🎮 Game Studio</h1>
+        <div class="project-switcher">
+            <select id="projectSwitcher" onchange="onProjectSwitcherChange()">
+                <option value="">DEFAULT</option>
+            </select>
+        </div>
         <span class="status" id="status">Disconnected</span>
         <div class="auto-approve">
             <span>Auto-approve</span>

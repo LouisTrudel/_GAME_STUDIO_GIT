@@ -3,7 +3,13 @@ Core Agent class - multi-backend support for Claude, Gemini, Ollama.
 """
 
 from typing import Callable
-from .backends import GeminiBackend, AnthropicBackend, OllamaBackend, ClaudeCLIBackend, Backend
+from .backends import (
+    GeminiBackend,
+    AnthropicBackend,
+    OllamaBackend,
+    ClaudeCLIBackend,
+    Backend,
+)
 
 
 class Agent:
@@ -11,10 +17,13 @@ class Agent:
     A conversational agent with pluggable LLM backends.
 
     Backends:
-    - "claude-cli" (uses Claude Pro subscription via CLI)
+    - "claude-cli" (uses Claude Pro subscription via CLI + MCP tools)
     - "gemini" (free tier limited)
     - "anthropic" (requires API credits)
     - "ollama" (free, local)
+
+    For custom tools, configure MCP server (mcp_server.py) - tools are enforced
+    at protocol level, not backend level.
     """
 
     BACKENDS = {

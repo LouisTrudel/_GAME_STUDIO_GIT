@@ -2,6 +2,9 @@
 Routes module - REST API endpoints.
 
 All HTTP endpoints for the Game Studio server.
+
+T327: Many endpoints accept optional ?project= query param for project context.
+When provided, operations use project-specific paths instead of default.
 """
 
 import os
@@ -9,8 +12,9 @@ import subprocess
 import asyncio
 import time
 from pathlib import Path
+from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
 from studio.core.hub import hub
@@ -21,9 +25,18 @@ from studio.core.projects import project_manager
 from studio.core.studio_metrics import get_session_tokens, reset_session_tokens
 from studio.core.memory import memory_manager
 from studio.studio import load_agent_role, load_agent_config, get_all_agent_names
-from studio.loader import SKILLS_DIR
 
 from .broadcast import _compute_agent_stats
+
+
+def _switch_project_context(project_id: Optional[str]):
+    """Switch to project context if specified.
+
+    T327: Helper to switch memory/history paths based on project param.
+    No-op if project_id is None (uses current/default context).
+    """
+    if project_id:
+        hub.set_active_project(project_id)
 
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -50,12 +63,6 @@ def register_routes(app: FastAPI):
         """Get all agent roles with their info."""
         result = {}
 
-        # Get shared skill names from _tools folder
-        tools_dir = SKILLS_DIR / "_tools"
-        shared_skills = []
-        if tools_dir.exists():
-            shared_skills = [f.stem for f in tools_dir.glob("*.md")]
-
         for name in get_all_agent_names():
             role = load_agent_role(name)
             config = load_agent_config(name)
@@ -71,7 +78,6 @@ def register_routes(app: FastAPI):
                 "model": config.get("model", "claude-cli"),
                 "is_boss": role.get("is_boss", False),
                 "tools": tools,
-                "skills": shared_skills,
             }
         return result
 
@@ -101,8 +107,12 @@ def register_routes(app: FastAPI):
     # ============ HUB ============
 
     @app.get("/api/history")
-    async def get_history():
-        """Get message history."""
+    async def get_history(project: Optional[str] = Query(None)):
+        """Get message history.
+
+        T327: Accepts optional ?project= param to switch context first.
+        """
+        _switch_project_context(project)
         return [m.to_dict() for m in hub.get_history()]
 
     # ============ TASKS ============
@@ -638,10 +648,21 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
 
     @app.post("/api/projects/{project_id}/set-active")
     async def set_active_project(project_id: str):
-        """Set the active project."""
-        if project_manager.set_active(project_id):
-            return {"status": "ok", "active_project_id": project_id}
+        """Set the active project and switch memory/history paths (T321)."""
+        if hub.set_active_project(project_id):
+            project = project_manager.get(project_id)
+            return {
+                "status": "ok",
+                "active_project_id": project_id,
+                "project_name": project.name if project else None,
+            }
         return {"error": "Project not found or archived"}
+
+    @app.post("/api/projects/clear-active")
+    async def clear_active_project():
+        """Clear active project, switch to default memory/history paths (T321)."""
+        hub.set_active_project(None)
+        return {"status": "ok", "active_project_id": None}
 
     @app.post("/api/projects/{project_id}/archive")
     async def archive_project(project_id: str):

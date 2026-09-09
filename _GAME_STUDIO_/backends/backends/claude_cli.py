@@ -48,15 +48,22 @@ class ClaudeCLIBackend(Backend):
         self.last_error_message = None
 
     def _build_prompt(self, messages: list[dict], system_prompt: str, tools: list[dict] = None) -> str:
-        """Build the full prompt with system context, tools, and conversation."""
+        """Build the full prompt with system context and conversation.
+
+        Note: Tool schemas are no longer injected into the prompt.
+        The ClaudeCLIBackend relies on Claude Code's native MCP tools.
+        For custom app tools, use InstructorBackend instead which enforces
+        structured output via Pydantic models.
+        """
         prompt_parts = []
 
-        # Add system prompt (shortened for CLI)
-        prompt_parts.append(f"SYSTEM: {system_prompt[:2000]}")
+        # Add full system prompt (no truncation)
+        if system_prompt:
+            prompt_parts.append(f"SYSTEM:\n{system_prompt}")
 
-        # Add tool descriptions if provided
-        if tools:
-            prompt_parts.append(self._format_tools_description(tools))
+        # Note: tools parameter is ignored - Claude CLI uses MCP tools natively
+        # Custom tool schemas were previously injected here with <tool> tag syntax
+        # That system has been replaced by InstructorBackend for guaranteed structure
 
         # Add conversation history (last message only to keep it short)
         if messages:
@@ -65,24 +72,6 @@ class ClaudeCLIBackend(Backend):
 
         prompt_parts.append("\nRespond concisely:")
         return "\n".join(prompt_parts)
-
-    def _format_tools_description(self, tools: list[dict]) -> str:
-        """Format tool definitions into prompt-ready description."""
-        tool_desc = "\n\n## Available Tools\n"
-        for tool in tools:
-            tool_desc += f"\n### {tool['name']}\n{tool['description']}\n"
-            if 'input_schema' in tool:
-                schema = tool['input_schema']
-                props = schema.get('properties', {})
-                required = schema.get('required', [])
-                if props:
-                    tool_desc += "Parameters:\n"
-                    for param, details in props.items():
-                        req = " (required)" if param in required else ""
-                        desc = details.get('description', '')
-                        tool_desc += f"  - {param}{req}: {desc}\n"
-        tool_desc += "\n**To use a tool, output:**\n```\n<tool>tool_name</tool>\n<params>{\"param\": \"value\"}</params>\n```"
-        return tool_desc
 
     def chat(
         self,
@@ -98,6 +87,12 @@ class ClaudeCLIBackend(Backend):
 
         full_prompt = self._build_prompt(messages, system_prompt, tools)
         self._prompt_text = full_prompt
+
+        # Debug: Show what's actually being sent
+        print(f"  [Claude CLI] Prompt length: {len(full_prompt)} chars")
+        print(f"  [Claude CLI] System prompt length: {len(system_prompt) if system_prompt else 0} chars")
+        if system_prompt and len(system_prompt) > 100:
+            print(f"  [Claude CLI] System prompt preview: {system_prompt[:150]}...")
 
         try:
             import tempfile
@@ -116,9 +111,8 @@ class ClaudeCLIBackend(Backend):
             except Exception:
                 pass
 
-            # Handle tool calls if we have handlers
-            if tool_handlers:
-                response = self._handle_tool_calls(response, tool_handlers)
+            # Note: <tool> tag handling removed - use InstructorBackend for custom tools
+            # Claude CLI uses native MCP tools which are handled by Claude Code itself
 
             return response
 
@@ -391,40 +385,6 @@ class ClaudeCLIBackend(Backend):
             return "No response from Claude CLI (empty output)"
 
         return result_text
-
-    def _handle_tool_calls(self, response: str, handlers: dict) -> str:
-        """Parse and execute tool calls from response."""
-        import re
-
-        # Find tool calls with proper JSON extraction (handles nested braces)
-        tool_pattern = r'<tool>(\w+)</tool>\s*<params>(.*?)</params>'
-        matches = re.findall(tool_pattern, response, re.DOTALL)
-
-        if not matches:
-            return response
-
-        results = []
-        for tool_name, params_str in matches:
-            if tool_name in handlers:
-                try:
-                    # Clean up the params string (remove extra whitespace, newlines)
-                    params_str = params_str.strip()
-                    params = json.loads(params_str)
-                    result = handlers[tool_name](**params)
-                    results.append(f"[{tool_name}]: {result}")
-                except json.JSONDecodeError as e:
-                    results.append(f"[{tool_name}]: JSON parse error - {e}")
-                except Exception as e:
-                    results.append(f"[{tool_name}]: Error - {e}")
-            else:
-                results.append(f"[{tool_name}]: Unknown tool")
-
-        clean_response = re.sub(tool_pattern, '', response).strip()
-        if results:
-            clean_response += "\n\nTool results:\n" + "\n".join(results)
-
-        return clean_response
-
 
     def get_quality_metrics(self) -> dict:
         """Return quality metrics from the last chat call for task tracking."""

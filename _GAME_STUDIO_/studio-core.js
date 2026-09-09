@@ -4,6 +4,29 @@
 const WS_URL = 'ws://127.0.0.1:8000/ws';
 const API_URL = 'http://127.0.0.1:8000/api';
 
+// T327: URL-based project routing
+// Extract ?project= from URL for project context
+function getUrlProjectId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('project') || null;
+}
+
+// Build API URL with project context
+function apiUrl(endpoint, extraParams = {}) {
+    const projectId = getUrlProjectId();
+    const params = new URLSearchParams(extraParams);
+    if (projectId) {
+        params.set('project', projectId);
+    }
+    const queryString = params.toString();
+    return queryString ? `${API_URL}${endpoint}?${queryString}` : `${API_URL}${endpoint}`;
+}
+
+// Get current project ID (from URL)
+function getCurrentProjectId() {
+    return getUrlProjectId();
+}
+
 // Global state
 let ws = null;
 let roles = {};
@@ -90,11 +113,13 @@ function highlightMentions(text) {
     return text.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
 }
 
-// WebSocket connection
+// WebSocket connection (T327: include project in WS URL)
 function connect() {
     wsConnectAttempt++;
-    console.log('[WS] Connecting to', WS_URL, '(attempt #' + wsConnectAttempt + ')');
-    ws = new WebSocket(WS_URL);
+    const projectId = getUrlProjectId();
+    const wsUrl = projectId ? `${WS_URL}?project=${projectId}` : WS_URL;
+    console.log('[WS] Connecting to', wsUrl, '(attempt #' + wsConnectAttempt + ')');
+    ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
         console.log('[WS] Connection OPEN at', new Date().toISOString());
@@ -182,7 +207,7 @@ function connect() {
     };
 }
 
-// Send message
+// Send message (T327: include project context)
 function sendMessage() {
     const content = inputEl.value.trim();
     if (!content || !ws) return;
@@ -193,7 +218,8 @@ function sendMessage() {
         timestamp: new Date().toISOString()
     });
 
-    ws.send(JSON.stringify({ type: 'user_message', content }));
+    const projectId = getUrlProjectId();
+    ws.send(JSON.stringify({ type: 'user_message', content, project: projectId }));
     inputEl.value = '';
     showThinking('BOSS');
     log('apiLogs', `Sent: ${content.substring(0, 50)}...`, 'info');
@@ -230,6 +256,8 @@ function initApp() {
     console.log('[INIT] Game Studio frontend starting...');
     console.log('[INIT] WS_URL:', WS_URL);
     console.log('[INIT] API_URL:', API_URL);
+    const projectId = getUrlProjectId();
+    console.log('[INIT] Project context:', projectId || 'default (no ?project= param)');
 
     // Event listeners
     sendBtn.onclick = sendMessage;

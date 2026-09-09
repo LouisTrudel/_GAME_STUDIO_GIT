@@ -53,55 +53,6 @@ def count_tokens(path: str = None, text: str = None) -> str:
     return f"~{token_estimate} tokens | {char_count} chars | {line_count} lines"
 
 
-LIST_SKILLS_SCHEMA = {
-    "name": "list_skills",
-    "description": "List all available skills in a category or all categories.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "category": {
-                "type": "string",
-                "description": "Skill category to list (e.g., 'code', 'design'). Omit for all."
-            }
-        }
-    }
-}
-
-
-def list_skills(category: str = None) -> str:
-    """List skills in the skills directory."""
-    skills_dir = PROJECT_ROOT / "studio" / "skills"
-
-    if not skills_dir.exists():
-        return "Skills directory not found"
-
-    results = []
-
-    if category:
-        cat_dir = skills_dir / category
-        if not cat_dir.exists():
-            return f"Category not found: {category}"
-        categories = [cat_dir]
-    else:
-        categories = [d for d in skills_dir.iterdir() if d.is_dir() and not d.name.startswith('_')]
-
-    for cat_dir in sorted(categories):
-        cat_name = cat_dir.name
-        skills = list(cat_dir.glob("**/*.md"))
-        if skills:
-            results.append(f"\n## {cat_name}")
-            for skill in sorted(skills):
-                rel_path = skill.relative_to(skills_dir)
-                size = skill.stat().st_size
-                tokens = size // 4
-                results.append(f"  - {rel_path} (~{tokens} tokens)")
-
-    if not results:
-        return "No skills found"
-
-    return "Available skills:" + "".join(results)
-
-
 LIST_ROLES_SCHEMA = {
     "name": "list_roles",
     "description": "List all agent role.md files with token counts.",
@@ -136,10 +87,14 @@ def list_roles() -> str:
 
 UPDATE_SESSION_MEMORY_SCHEMA = {
     "name": "update_session_memory",
-    "description": "Update session_memory.md with cumulative session summary. Called at 50-message intervals.",
+    "description": "Update session_memory.md with cumulative session summary. Called at 50-message intervals. Use 'content' for raw markdown OR structured params (session_overview, active_context, etc).",
     "input_schema": {
         "type": "object",
         "properties": {
+            "content": {
+                "type": "string",
+                "description": "Raw markdown content to write directly (overrides all other params if provided)"
+            },
             "session_overview": {
                 "type": "string",
                 "description": "Current session focus and objectives (bullet points)"
@@ -165,22 +120,39 @@ UPDATE_SESSION_MEMORY_SCHEMA = {
                 "items": {"type": "string"},
                 "description": "Significant deliverables (max 15)"
             }
-        },
-        "required": ["session_overview", "active_context"]
+        }
     }
 }
 
 
 def update_session_memory(
-    session_overview: str,
-    active_context: str,
+    content: str = None,
+    session_overview: str = None,
+    active_context: str = None,
     key_decisions: list = None,
     completed_milestones: list = None
 ) -> str:
     """Update session_memory.md with cumulative summary (T164).
 
-    Generates markdown from structured input to maintain consistent format.
+    Two modes:
+    - content: Raw markdown written directly (simple override)
+    - structured: session_overview + active_context build formatted markdown
+
+    Backward compatible: structured params still work as before.
     """
+    # Mode 1: Raw content override
+    if content:
+        SESSION_MEMORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        SESSION_MEMORY_FILE.write_text(content, encoding="utf-8")
+        # Extract first line for commit message
+        first_line = content.split('\n')[0].strip('#- •').strip()[:72]
+        _auto_commit_session_memory(first_line or "memory update")
+        return f"Session memory updated ({len(content)} chars) [raw content mode]"
+
+    # Mode 2: Structured params (original behavior)
+    if not session_overview or not active_context:
+        return "Error: Provide 'content' OR both 'session_overview' and 'active_context'"
+
     key_decisions = key_decisions or []
     completed_milestones = completed_milestones or []
 
@@ -283,14 +255,12 @@ def _auto_commit_session_memory(summary: str) -> None:
 # Tool bundle
 TOOLS = [
     COUNT_TOKENS_SCHEMA,
-    LIST_SKILLS_SCHEMA,
     LIST_ROLES_SCHEMA,
     UPDATE_SESSION_MEMORY_SCHEMA,
 ]
 
 HANDLERS = {
     "count_tokens": count_tokens,
-    "list_skills": list_skills,
     "list_roles": list_roles,
     "update_session_memory": update_session_memory,
 }

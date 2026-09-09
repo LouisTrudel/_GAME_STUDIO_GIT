@@ -75,9 +75,12 @@ logger.info("Studio server initialized")
 
 
 @app.websocket("/ws")
-async def ws_endpoint(websocket: WebSocket):
-    """WebSocket for real-time chat."""
-    await websocket_endpoint(websocket, studio)
+async def ws_endpoint(websocket: WebSocket, project: str = None):
+    """WebSocket for real-time chat.
+
+    T327: Accepts optional ?project= query param for project context.
+    """
+    await websocket_endpoint(websocket, studio, project)
 
 
 if __name__ == "__main__":
