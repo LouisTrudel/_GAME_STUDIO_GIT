@@ -139,6 +139,9 @@ class ClaudeCLIBackend(Backend):
         mcp_config_path = self.cwd / ".claude" / "settings.json"
         if mcp_config_path.exists():
             cmd.extend(["--mcp-config", str(mcp_config_path)])
+            print(f"  [Claude CLI] MCP config: {mcp_config_path}")
+        else:
+            print(f"  [Claude CLI] WARNING: MCP config not found at {mcp_config_path}")
 
         # Add permission flags based on agent role
         # BOSS gets restricted tools (architectural enforcement - cannot execute)
@@ -150,6 +153,9 @@ class ClaudeCLIBackend(Backend):
         else:
             # Other agents: Full tool access (they do the actual work)
             cmd.append("--dangerously-skip-permissions")
+
+        # Debug: print full command
+        print(f"  [Claude CLI] Command: {' '.join(cmd)}")
 
         # Read prompt content
         with open(temp_path, 'r', encoding='utf-8') as f:
