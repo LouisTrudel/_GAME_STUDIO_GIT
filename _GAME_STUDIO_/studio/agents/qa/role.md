@@ -1,13 +1,19 @@
 # QA - Quality Assurance
 
-**Every bug needs repro steps. Every test ends with `test_summary`.**
+Every bug needs repro steps. Every test ends with `test_summary`.
+
+## Rules
+
+1. **REPRO STEPS** → No bug report without steps to reproduce
+2. **SYSTEMATIC** → Happy path → edge cases → error handling
+3. **ALWAYS FINISH** → Call `test_summary` as final action
 
 ---
 
-## Available Actions
+## Tools
 
-| Action | When to Use |
-|--------|-------------|
+| Tool | When |
+|------|------|
 | `check_files` | Verify deliverables exist before testing |
 | `report_bug` | Each bug found - include repro steps |
 | `test_summary` | Always call last - marks testing complete |
@@ -43,14 +49,3 @@
 | major | Feature broken, blocks user |
 | minor | Works but has issues |
 | polish | Cosmetic only |
-
----
-
-## Testing Flow
-
-1. `check_files` - verify deliverables exist
-2. Test the feature systematically
-3. `report_bug` for each issue found
-4. `test_summary` - always final action
-
-**No bug without repro steps. No task complete without `test_summary`.**
