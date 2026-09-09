@@ -64,9 +64,6 @@ class Studio:
 
         self.boss = self.agents.get("BOSS")
 
-        # Wire up session memory summarization callback (T164)
-        hub.set_summarize_callback(self._summarize_session_memory)
-
         # Wire up AC-Memory compression callback - Context agent compacts tiers
         # AC-Memory: bullet points, infinite tiers, for agent recall
         memory_manager.set_compress_callback(self._compress_with_context_agent)
@@ -93,56 +90,6 @@ class Studio:
         """Notify agent status change."""
         if self.status_callback:
             self.status_callback(agent_name, status, activity)
-
-    def _summarize_session_memory(self, messages: list[dict], current_summary: str) -> Optional[str]:
-        """Summarize messages into session_memory.md via Context agent (T164).
-
-        This is called by Hub when message count reaches 50.
-        Invokes Context agent with a summarization prompt.
-
-        Args:
-            messages: Last 50 messages as dicts
-            current_summary: Current session_memory.md content
-
-        Returns:
-            New session_memory.md content, or None on failure
-        """
-        context_agent = self.agents.get("Context")
-        if not context_agent:
-            print("[Studio] Context agent not found for summarization")
-            return None
-
-        # Build summarization prompt
-        messages_text = "\n".join(
-            f"[{m.get('sender', '?')}]: {m.get('content', '')[:200]}"
-            for m in messages
-        )
-
-        prompt = f"""SUMMARIZE SESSION for session_memory.md update.
-
-CURRENT SESSION MEMORY:
-{current_summary[:2000] if current_summary else "(empty)"}
-
-RECENT 50 MESSAGES:
-{messages_text}
-
-INSTRUCTIONS:
-1. Analyze the messages for key decisions, completed work, and active context
-2. Use update_session_memory tool to write the cumulative summary
-3. Preserve important decisions from current summary, add new ones
-4. Keep milestones list growing (max 15 most significant)
-5. Update active context to reflect current state
-
-Focus on WHAT was decided/completed, not conversation details."""
-
-        try:
-            self._notify_status("Context", "working", "Updating session memory...")
-            response = context_agent.respond(prompt)
-            self._notify_status("Context", "idle", "")
-            return response
-        except Exception as e:
-            print(f"[Studio] Session summarization failed: {e}")
-            return None
 
     def _compress_with_context_agent(self, content: str, tier_index: int, prev_tier_context: str) -> dict:
         """Compact tier content via Context agent with compress → classify → split.
@@ -327,15 +274,15 @@ CONSTRAINTS:
                 phase_summary=content
             )
 
-    def _generate_tier_narrative(self, content: str, tier, compression_count: int) -> Optional[str]:
-        """Generate narrative for history tier via Writer (T309).
+    def _generate_tier_narrative(self, content: str, tier_name: str, compression_count: int) -> Optional[str]:
+        """Generate narrative for history tier via Writer.
 
         Called by HistoryManager during tier compression. Writer transforms
         accumulated tier content into narrative prose.
 
         Args:
             content: The tier content to narrate
-            tier: The HistoryTier being compressed
+            tier_name: Name of tier being compressed (draft, chapter, book, collection)
             compression_count: How many times this tier has been compressed
 
         Returns:
@@ -406,7 +353,6 @@ Include:
 This is the permanent project archive.""",
         }
 
-        tier_name = tier.name
         tier_prompt = tier_prompts.get(tier_name, tier_prompts["draft"])
 
         date_str = datetime.now().strftime("%Y-%m-%d")

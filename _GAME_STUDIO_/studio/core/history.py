@@ -1,514 +1,292 @@
 """
-History Compression Tiers - Draft → Chapter → Book → Collection
+History: Narrative Compression Tiers (Draft → Chapter → Book → Collection)
 
-T309: Writer produces narratives at each tier. This module defines the tier
-structure, trigger conditions, and storage patterns for compressed history.
+Simple markdown-based tiered history with Writer-generated narratives.
 
-Tier Hierarchy:
-- Draft: Session-level narrative (triggers: session end, time gap)
-- Chapter: Multi-draft narrative (triggers: N drafts, epoch end, project milestone)
-- Book: Project phase narrative (triggers: phase complete, major milestone)
-- Collection: Cross-project narrative (triggers: multiple books, portfolio review)
+Structure:
+  history/
+  ├── draft.md      ← Current session (raw accumulation)
+  ├── chapter.md    ← Compressed drafts (epoch narrative)
+  ├── book.md       ← Compressed chapters (phase narrative)
+  └── collection.md ← Final archive (grows indefinitely)
 
-Storage: data/history/{tier_prefix}_{date}_{count}.md
+Flow:
+  Hub chat → draft grows → threshold → Writer narrates →
+  narrative replaces draft, summary appends to chapter → ...
 """
 
-import json
-from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Callable, Literal
 
 from .paths import get_history_dir
 
-# Type definitions
+# Tier names
 TierName = Literal["draft", "chapter", "book", "collection"]
-CompressionCallback = Callable[[str, "HistoryTier", int], Optional[str]]
+TIER_ORDER = ["draft", "chapter", "book", "collection"]
 
-# Legacy paths (default/no project) - kept for backwards compatibility
-HISTORY_DIR = Path(__file__).parent.parent.parent / "data" / "history"
-HISTORY_STATE_FILE = HISTORY_DIR / "tier_state.json"
+# Narrative callback type
+# Takes: content, tier_name, compression_count
+# Returns: narrative string
+NarrativeCallback = Callable[[str, str, int], Optional[str]]
 
-# Tier configuration (character thresholds only - no count thresholds)
+# Tier configuration
 TIER_CONFIG = {
     "draft": {
-        "index": 0,
-        "prefix": "draft",
-        "threshold_chars": 10_000,       # ~10KB raw messages → compress to ~1-2KB
-        "promotes_to": "chapter",
-        "description": "Session-level narrative from raw hub messages",
+        "file": "draft.md",
+        "threshold": 10_000,       # ~10KB raw → compress to ~1-2KB
+        "next": "chapter",
     },
     "chapter": {
-        "index": 1,
-        "prefix": "chapter",
-        "threshold_chars": 50_000,       # ~50KB of drafts → compress to ~5-10KB
-        "promotes_to": "book",
-        "description": "Multi-session narrative covering an epoch of work",
+        "file": "chapter.md",
+        "threshold": 50_000,       # ~50KB drafts → compress to ~5-10KB
+        "next": "book",
     },
     "book": {
-        "index": 2,
-        "prefix": "book",
-        "threshold_chars": 300_000,      # ~300KB of chapters → compress to ~30-50KB
-        "promotes_to": "collection",
-        "description": "Major project phase narrative",
+        "file": "book.md",
+        "threshold": 300_000,      # ~300KB chapters → compress to ~30-50KB
+        "next": "collection",
     },
     "collection": {
-        "index": 3,
-        "prefix": "collection",
-        "threshold_chars": None,         # Final tier - grows indefinitely
-        "promotes_to": None,             # No promotion, this is the archive
-        "description": "Project archive - accumulates book summaries",
+        "file": "collection.md",
+        "threshold": None,         # Final tier, grows indefinitely
+        "next": None,
     },
 }
 
-TIER_ORDER = ["draft", "chapter", "book", "collection"]
-
-
-@dataclass
-class HistoryTier:
-    """
-    Represents a single tier in the history compression hierarchy.
-
-    Each tier accumulates content until a trigger condition is met,
-    then compresses via Writer and promotes summary to the next tier.
-    """
-    name: TierName
-    accumulated_content: str = ""
-    item_count: int = 0  # Number of items (drafts/chapters/etc) accumulated
-    compression_count: int = 0  # How many times this tier has been compressed
-    last_updated: Optional[str] = None
-    metadata: dict = field(default_factory=dict)
-
-    @property
-    def config(self) -> dict:
-        """Get this tier's configuration."""
-        return TIER_CONFIG[self.name]
-
-    @property
-    def index(self) -> int:
-        """Get this tier's index (0=draft, 1=chapter, etc)."""
-        return self.config["index"]
-
-    @property
-    def prefix(self) -> str:
-        """Get filename prefix for this tier."""
-        return self.config["prefix"]
-
-    @property
-    def promotes_to(self) -> Optional[TierName]:
-        """Get the next tier this promotes to."""
-        return self.config["promotes_to"]
-
-    def size(self) -> int:
-        """Return size of accumulated content in characters."""
-        return len(self.accumulated_content)
-
-    def needs_compression(self) -> bool:
-        """Check if this tier should compress based on thresholds."""
-        # Check character threshold (None = never auto-compress, e.g. collection tier)
-        threshold = self.config.get("threshold_chars")
-        if threshold and self.size() > threshold:
-            return True
-        return False
-
-    def to_dict(self) -> dict:
-        return {
-            "name": self.name,
-            "accumulated_content": self.accumulated_content,
-            "item_count": self.item_count,
-            "compression_count": self.compression_count,
-            "last_updated": self.last_updated,
-            "metadata": self.metadata,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "HistoryTier":
-        return cls(
-            name=data["name"],
-            accumulated_content=data.get("accumulated_content", ""),
-            item_count=data.get("item_count", 0),
-            compression_count=data.get("compression_count", 0),
-            last_updated=data.get("last_updated"),
-            metadata=data.get("metadata", {}),
-        )
-
 
 class HistoryManager:
-    """
-    Manages the tiered history compression system.
+    """Simple markdown-based tiered history with narrative compression.
 
-    T321: Supports project-aware paths. When project_name is set,
-    history data is stored in projects/<name>/history/ instead of data/history/.
-
-    Trigger Flow:
-    1. Raw messages accumulate in memory tier 0
-    2. On memory compression, trigger Draft narrative
-    3. Drafts accumulate → trigger Chapter narrative
-    4. Chapters accumulate → trigger Book narrative
-    5. Books accumulate → trigger Collection narrative
+    Each tier is a single .md file. Content accumulates until threshold,
+    then Writer generates a narrative: narrative replaces file, summary
+    appends to next tier.
     """
 
     def __init__(self, project_name: Optional[str] = None):
         self._project_name = project_name
         self._history_dir = get_history_dir(project_name)
-        self._state_file = self._history_dir / "tier_state.json"
         self._ensure_dirs()
-        self._tiers: dict[TierName, HistoryTier] = {}
-        self._narrative_callback: Optional[CompressionCallback] = None
-        self._load_state()
+        self._narrative_callback: Optional[NarrativeCallback] = None
+        self._compression_counts: dict[str, int] = {}
+        self._load_counts()
 
     def set_project(self, project_name: Optional[str]):
-        """Switch to a different project's history storage.
-
-        Args:
-            project_name: Project folder name, or None for default.
-        """
+        """Switch to a different project's history."""
         if project_name == self._project_name:
-            return  # No change
+            return
         self._project_name = project_name
         self._history_dir = get_history_dir(project_name)
-        self._state_file = self._history_dir / "tier_state.json"
+        self._compression_counts.clear()
         self._ensure_dirs()
-        self._tiers.clear()  # Clear tiers on project switch
-        self._load_state()
+        self._load_counts()
         print(f"[History] Switched to project: {project_name or 'default'}")
+
+    def set_narrative_callback(self, callback: NarrativeCallback):
+        """Set callback for Writer narrative generation."""
+        self._narrative_callback = callback
 
     def _ensure_dirs(self):
         """Ensure history directory exists."""
         self._history_dir.mkdir(parents=True, exist_ok=True)
 
-    def _load_state(self):
-        """Load tier state from disk."""
-        if self._state_file.exists():
+    def _tier_path(self, tier: TierName) -> Path:
+        """Get file path for a tier."""
+        return self._history_dir / TIER_CONFIG[tier]["file"]
+
+    def _counts_path(self) -> Path:
+        """Path to compression counts file."""
+        return self._history_dir / ".counts"
+
+    def _load_counts(self):
+        """Load compression counts from disk."""
+        path = self._counts_path()
+        if path.exists():
             try:
-                with open(self._state_file, encoding="utf-8") as f:
-                    data = json.load(f)
-                for tier_name in TIER_ORDER:
-                    if tier_name in data:
-                        self._tiers[tier_name] = HistoryTier.from_dict(data[tier_name])
-                    else:
-                        self._tiers[tier_name] = HistoryTier(name=tier_name)
-            except (json.JSONDecodeError, IOError) as e:
-                print(f"[History] Failed to load state: {e}")
-                self._init_empty_tiers()
+                for line in path.read_text().strip().split('\n'):
+                    if ':' in line:
+                        tier, count = line.split(':')
+                        self._compression_counts[tier.strip()] = int(count.strip())
+            except:
+                pass
+
+    def _save_counts(self):
+        """Save compression counts to disk."""
+        path = self._counts_path()
+        lines = [f"{tier}:{count}" for tier, count in self._compression_counts.items()]
+        path.write_text('\n'.join(lines))
+
+    # ============ READ/WRITE ============
+
+    def get_tier(self, tier: TierName) -> str:
+        """Get content of a tier. Returns empty string if not exists."""
+        filepath = self._tier_path(tier)
+        if filepath.exists():
+            return filepath.read_text(encoding="utf-8")
+        return ""
+
+    def _write_tier(self, tier: TierName, content: str):
+        """Write content to a tier file."""
+        filepath = self._tier_path(tier)
+        filepath.write_text(content, encoding="utf-8")
+
+    def _append_tier(self, tier: TierName, content: str):
+        """Append content to a tier file."""
+        existing = self.get_tier(tier)
+
+        if existing:
+            new_content = existing + "\n\n---\n\n" + content
         else:
-            self._init_empty_tiers()
+            new_content = content
 
-    def _init_empty_tiers(self):
-        """Initialize empty tiers."""
-        for tier_name in TIER_ORDER:
-            self._tiers[tier_name] = HistoryTier(name=tier_name)
+        self._write_tier(tier, new_content)
 
-    def _save_state(self):
-        """Save tier state to disk."""
-        data = {name: tier.to_dict() for name, tier in self._tiers.items()}
-        with open(self._state_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+    def tier_size(self, tier: TierName) -> int:
+        """Get size of a tier in characters."""
+        return len(self.get_tier(tier))
 
-    def set_narrative_callback(self, callback: CompressionCallback):
-        """Set callback for Writer-based narrative generation.
+    def tier_threshold(self, tier: TierName) -> Optional[int]:
+        """Get threshold for a tier."""
+        return TIER_CONFIG[tier]["threshold"]
 
-        Args:
-            callback: Function(content: str, tier: HistoryTier, compression_count: int) -> narrative: str
-        """
-        self._narrative_callback = callback
+    def tier_needs_compression(self, tier: TierName) -> bool:
+        """Check if tier exceeds threshold."""
+        threshold = self.tier_threshold(tier)
+        if threshold is None:
+            return False
+        return self.tier_size(tier) > threshold
 
-    def get_tier(self, name: TierName) -> HistoryTier:
-        """Get a tier by name."""
-        return self._tiers[name]
+    # ============ ACCUMULATE (main entry point) ============
 
-    # ============ RAW ACCUMULATION ============
+    def accumulate(self, content: str):
+        """Accumulate raw content to draft tier. Auto-compresses if needed."""
+        self._append_tier("draft", content)
+        size = self.tier_size("draft")
+        print(f"[History] Appended to draft, size: {size}")
 
-    def accumulate_raw(self, entry: str):
-        """Accumulate raw hub message to Draft tier.
+        # Auto-compress if needed
+        if self.tier_needs_compression("draft"):
+            threshold = self.tier_threshold("draft")
+            print(f"[History] Draft exceeded threshold ({size}/{threshold}), compressing...")
+            self.compress_tier("draft")
 
-        This is the entry point for History - raw hub messages flow here
-        independently from AC-Memory. When draft threshold is exceeded,
-        Writer compresses into narrative and pushes to chapter.
+    # ============ COMPRESSION ============
 
-        Args:
-            entry: Formatted hub message (timestamp + sender + content)
-        """
-        tier = self._tiers["draft"]
+    def compress_tier(self, tier: TierName) -> bool:
+        """Compress a tier via Writer narrative."""
+        content = self.get_tier(tier)
+        if not content:
+            return False
 
-        # Append to draft accumulation
-        if tier.accumulated_content:
-            tier.accumulated_content += "\n"
-        tier.accumulated_content += entry
-        tier.last_updated = datetime.now().isoformat()
+        config = TIER_CONFIG[tier]
+        next_tier = config["next"]
 
-        # Save state after each append
-        self._save_state()
+        # Get compression count
+        count = self._compression_counts.get(tier, 0) + 1
+        self._compression_counts[tier] = count
+        self._save_counts()
 
-        # Check if draft needs compression
-        if tier.needs_compression():
-            print(f"[History] Draft threshold exceeded ({tier.size()} chars), triggering compression")
-            self._compress_tier("draft")
-
-    # ============ TRIGGERS ============
-
-    def trigger_draft(self, content: str, source: str = "memory_compression"):
-        """
-        Trigger Draft tier - called when memory tier 0 compresses.
-
-        This is the entry point: raw session content becomes a Draft narrative.
-
-        Args:
-            content: The compressed memory content
-            source: What triggered this (memory_compression, session_end, manual)
-        """
-        print(f"[History] Draft trigger from {source} ({len(content)} chars)")
-
-        tier = self._tiers["draft"]
-
-        # Generate narrative via Writer callback
+        # Generate narrative via callback or fallback
         if self._narrative_callback:
             try:
-                narrative = self._narrative_callback(content, tier, tier.compression_count + 1)
-                if narrative:
-                    self._save_narrative("draft", narrative, tier.compression_count + 1)
-                    tier.compression_count += 1
-
-                    # Append summary to chapter tier for accumulation
-                    self._append_to_tier("chapter", narrative, source="draft")
+                narrative = self._narrative_callback(content, tier, count)
             except Exception as e:
-                print(f"[History] Draft narrative failed: {e}")
-                # Fallback: still accumulate raw content to chapter
-                self._append_to_tier("chapter", content, source="draft_raw")
+                print(f"[History] Narrative callback failed: {e}")
+                narrative = self._fallback_compress(content, tier, count)
         else:
-            print("[History] No narrative callback, accumulating raw content")
-            self._append_to_tier("chapter", content, source="draft_raw")
+            narrative = self._fallback_compress(content, tier, count)
 
-        tier.last_updated = datetime.now().isoformat()
-        self._save_state()
+        if not narrative:
+            narrative = self._fallback_compress(content, tier, count)
 
-        # Check if chapter tier needs compression
-        self._check_and_compress("chapter")
+        # Replace current tier with narrative
+        self._write_tier(tier, narrative)
+        print(f"[History] {tier} compressed: {len(narrative)} chars (entry #{count})")
 
-    def trigger_session_end(self, session_summary: str = None):
-        """
-        Trigger Draft on session end.
+        # Append summary to next tier
+        if next_tier:
+            timestamp = datetime.now().strftime("%Y-%m-%d")
+            # Extract first paragraph as summary for next tier
+            summary = self._extract_summary(narrative)
+            entry = f"[{timestamp}] {tier.title()} #{count}:\n{summary}"
+            self._append_tier(next_tier, entry)
 
-        Called when user explicitly ends session or after long inactivity.
-        """
-        if session_summary:
-            self.trigger_draft(session_summary, source="session_end")
-        else:
-            # If no summary provided, check if draft tier has pending content
-            tier = self._tiers["draft"]
-            if tier.accumulated_content:
-                self.trigger_draft(tier.accumulated_content, source="session_end_flush")
+            # Check if next tier needs compression (cascade)
+            if self.tier_needs_compression(next_tier):
+                print(f"[History] {next_tier} needs compression, cascading...")
+                self.compress_tier(next_tier)
 
-    def trigger_epoch_end(self, epoch_summary: str):
-        """
-        Trigger Chapter compression on epoch end.
+        return True
 
-        Called when memory system completes an epoch (tier 1 compression).
-        """
-        print(f"[History] Epoch end trigger ({len(epoch_summary)} chars)")
-        self._force_compress("chapter", epoch_summary, source="epoch_end")
+    def _extract_summary(self, narrative: str) -> str:
+        """Extract first ~500 chars as summary for next tier."""
+        # Skip header lines
+        lines = narrative.strip().split('\n')
+        content_lines = []
+        for line in lines:
+            if line.startswith('#'):
+                continue
+            if line.strip():
+                content_lines.append(line)
+            if len('\n'.join(content_lines)) > 500:
+                break
 
-    def trigger_phase_complete(self, phase_name: str, phase_summary: str):
-        """
-        Trigger Book compression on project phase completion.
+        summary = '\n'.join(content_lines)[:500]
+        if len(narrative) > len(summary):
+            summary += "..."
+        return summary
 
-        Called when a significant project milestone is reached.
+    def _fallback_compress(self, content: str, tier: str, count: int) -> str:
+        """Simple compression when Writer unavailable."""
+        lines = content.strip().split('\n')
 
-        Args:
-            phase_name: Name of the completed phase (e.g., "MVP", "Beta")
-            phase_summary: Summary of what was accomplished
-        """
-        print(f"[History] Phase complete: {phase_name}")
-
-        # Add phase metadata
-        tier = self._tiers["book"]
-        tier.metadata["last_phase"] = phase_name
-
-        self._force_compress("book", phase_summary, source=f"phase:{phase_name}")
-
-    def trigger_portfolio_review(self, projects: list[str] = None):
-        """
-        Trigger Collection compression for cross-project review.
-
-        Called manually or on significant portfolio events.
-        """
-        print(f"[History] Portfolio review trigger")
-        tier = self._tiers["collection"]
-
-        if projects:
-            tier.metadata["projects"] = projects
-
-        if tier.accumulated_content:
-            self._force_compress("collection", tier.accumulated_content, source="portfolio_review")
-
-    # ============ INTERNAL ============
-
-    def _append_to_tier(self, tier_name: TierName, content: str, source: str = None):
-        """Append content to a tier's accumulation buffer."""
-        tier = self._tiers[tier_name]
-
-        # Add separator if content exists
-        if tier.accumulated_content:
-            tier.accumulated_content += "\n\n---\n\n"
-
-        # Add timestamp and source
-        timestamp = datetime.now().isoformat()
-        header = f"[{timestamp}]"
-        if source:
-            header += f" ({source})"
-
-        tier.accumulated_content += f"{header}\n{content}"
-        tier.item_count += 1
-        tier.last_updated = timestamp
-
-        print(f"[History] Appended to {tier_name}: {len(content)} chars, "
-              f"total {tier.size()} chars, {tier.item_count} items")
-
-        self._save_state()
-
-    def _check_and_compress(self, tier_name: TierName):
-        """Check if tier needs compression and compress if so."""
-        tier = self._tiers[tier_name]
-
-        if not tier.needs_compression():
-            return
-
-        print(f"[History] {tier_name} needs compression "
-              f"({tier.size()} chars, {tier.item_count} items)")
-
-        self._compress_tier(tier_name)
-
-    def _force_compress(self, tier_name: TierName, content: str, source: str):
-        """Force compression of a tier with given content."""
-        tier = self._tiers[tier_name]
-
-        # Append content first
-        if content:
-            self._append_to_tier(tier_name, content, source)
-
-        # Then compress
-        self._compress_tier(tier_name)
-
-    def _compress_tier(self, tier_name: TierName):
-        """Compress a tier: generate narrative, save, promote to next tier."""
-        tier = self._tiers[tier_name]
-
-        if not tier.accumulated_content:
-            print(f"[History] {tier_name} has no content to compress")
-            return
-
-        content = tier.accumulated_content
-
-        # Generate narrative via callback
-        if self._narrative_callback:
-            try:
-                narrative = self._narrative_callback(content, tier, tier.compression_count + 1)
-                if narrative:
-                    self._save_narrative(tier_name, narrative, tier.compression_count + 1)
-                    output = narrative
-                else:
-                    output = self._fallback_compress(content, tier_name)
-            except Exception as e:
-                print(f"[History] {tier_name} narrative failed: {e}")
-                output = self._fallback_compress(content, tier_name)
-        else:
-            output = self._fallback_compress(content, tier_name)
-
-        tier.compression_count += 1
-
-        # Clear accumulated content
-        tier.accumulated_content = ""
-        tier.item_count = 0
-        tier.last_updated = datetime.now().isoformat()
-
-        # Promote to next tier if exists
-        if tier.promotes_to:
-            self._append_to_tier(tier.promotes_to, output, source=tier_name)
-            # Check if next tier now needs compression (cascade)
-            self._check_and_compress(tier.promotes_to)
-
-        self._save_state()
-
-    def _fallback_compress(self, content: str, tier_name: str) -> str:
-        """Fallback compression when Writer callback unavailable."""
-        lines = content.split('\n')
+        # Extract key lines
         key_lines = []
-
-        # Extract meaningful lines
         keywords = ['completed', 'decision', 'milestone', 'implemented',
-                    'created', 'fixed', 'approved', '→', 'task', 'feature']
+                    'created', 'fixed', 'shipped', 'task', 'feature']
 
         for line in lines:
             line_lower = line.lower()
-            if any(kw in line_lower for kw in keywords) or line.startswith('['):
+            if any(kw in line_lower for kw in keywords):
                 key_lines.append(line.strip())
 
-        # Deduplicate and limit
+        # Dedupe
         seen = set()
-        unique_lines = []
+        unique = []
         for line in key_lines:
             if line not in seen and len(line) > 10:
                 seen.add(line)
-                unique_lines.append(line)
+                unique.append(line)
 
-        return f"[{tier_name} fallback compression - {len(lines)} lines → {len(unique_lines)} key lines]\n" + \
-               '\n'.join(unique_lines[:100])
-
-    def _save_narrative(self, tier_name: str, narrative: str, count: int):
-        """Save a narrative to the history directory."""
-        date_str = datetime.now().strftime("%Y-%m-%d")
-        prefix = TIER_CONFIG[tier_name]["prefix"]
-        filename = f"{prefix}_{date_str}_{count}.md"
-        filepath = self._history_dir / filename
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(narrative)
-
-        print(f"[History] Saved {tier_name} narrative: {filename}")
+        date = datetime.now().strftime("%Y-%m-%d")
+        return f"# {tier.title()} #{count}\n\n*{date}*\n\n" + '\n'.join(unique[:50])
 
     # ============ QUERIES ============
 
+    def get_recent(self, tier: TierName = "draft", max_chars: int = 2000) -> str:
+        """Get last N chars from a tier."""
+        content = self.get_tier(tier)
+        return content[-max_chars:] if content else ""
+
     def get_stats(self) -> dict:
-        """Get statistics for all tiers."""
+        """Get stats for all tiers."""
         stats = {}
-        for name, tier in self._tiers.items():
-            cfg = tier.config
-            threshold = cfg.get("threshold_chars")
-            stats[name] = {
-                "size_chars": tier.size(),
-                "item_count": tier.item_count,
-                "compression_count": tier.compression_count,
-                "threshold_chars": threshold,
-                "utilization": f"{(tier.size() / threshold * 100):.1f}%" if threshold else "N/A",
-                "needs_compression": tier.needs_compression(),
-                "last_updated": tier.last_updated,
+
+        for tier in TIER_ORDER:
+            size = self.tier_size(tier)
+            threshold = self.tier_threshold(tier)
+            count = self._compression_counts.get(tier, 0)
+
+            stats[tier] = {
+                "size": size,
+                "threshold": threshold,
+                "utilization": f"{(size / threshold) * 100:.1f}%" if threshold else "N/A",
+                "needs_compression": self.tier_needs_compression(tier),
+                "compression_count": count,
             }
+
         return stats
 
-    def list_narratives(self, tier_name: TierName = None) -> list[dict]:
-        """List saved narrative files."""
-        narratives = []
 
-        for filepath in sorted(self._history_dir.glob("*.md")):
-            name = filepath.stem
-            parts = name.split("_")
-
-            if len(parts) >= 3:
-                prefix = parts[0]
-                # Match tier if specified
-                if tier_name and prefix != TIER_CONFIG[tier_name]["prefix"]:
-                    continue
-
-                narratives.append({
-                    "filename": filepath.name,
-                    "tier": prefix,
-                    "date": parts[1] if len(parts) > 1 else None,
-                    "count": parts[2] if len(parts) > 2 else None,
-                    "size": filepath.stat().st_size,
-                })
-
-        return narratives
-
-
-# Global history manager
+# Global instance
 history_manager = HistoryManager()

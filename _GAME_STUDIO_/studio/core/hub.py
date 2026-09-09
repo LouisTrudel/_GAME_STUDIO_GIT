@@ -21,14 +21,8 @@ from .tasks import task_manager
 
 
 # T330: Default paths (used when no project is active)
-# Actual paths are resolved dynamically via _get_messages_file() and _get_session_memory_file()
 DEFAULT_MESSAGES_FILE = Path(__file__).parent.parent.parent / "data" / "messages.json"
-DEFAULT_SESSION_MEMORY_FILE = Path(__file__).parent.parent.parent / "data" / "session_memory.md"
 MAX_MESSAGES = 50  # Rolling buffer size per T159 spec
-# Messages older than this threshold get summarized
-SUMMARIZE_THRESHOLD = 20  # Keep last 20 raw, summarize older
-# Trigger Context agent summarization at this threshold
-SUMMARIZE_TRIGGER = 50
 
 
 @dataclass
@@ -60,12 +54,6 @@ class Hub:
         self.messages: list[Message] = []
         # Queue for new messages to broadcast
         self.outbox: Queue = Queue()
-        # Track message count since last summarization
-        self._messages_since_summary: int = 0
-        # Callback for triggering summarization (set by Studio)
-        self._summarize_callback = None
-        # Flag to prevent re-triggering summarization while in progress
-        self._summarization_in_progress: bool = False
         # Sync managers with persisted active project (T3xx: startup initialization)
         self._sync_with_active_project()
         # Load saved history
@@ -98,25 +86,6 @@ class Hub:
         if project_id and project_id != "default":
             return base / "data" / "messages.json"
         return base / "messages.json"
-
-    def _get_session_memory_file(self) -> Path:
-        """Get session_memory.md path for current project context.
-
-        T330: Routes to projects/<project_id>/data/session_memory.md when project is active,
-        otherwise uses data/session_memory.md.
-        """
-        project_id = project_manager.active_project_id
-        base = get_base_path(project_id)
-        if project_id and project_id != "default":
-            return base / "data" / "session_memory.md"
-        return base / "session_memory.md"
-
-    def set_summarize_callback(self, callback):
-        """Set callback for Context agent summarization.
-
-        callback(messages: list[dict], current_summary: str) -> str (new summary)
-        """
-        self._summarize_callback = callback
 
     def set_active_project(self, project_id: str) -> bool:
         """Set the active project and switch memory/history/messages/tasks paths.
@@ -227,20 +196,12 @@ class Hub:
         """Post a message to the hub."""
         msg = Message(sender=sender, content=content)
         self.messages.append(msg)
-        self._messages_since_summary += 1
 
         # Feed raw messages to BOTH compression systems (parallel, independent):
         # 1. AC-Memory: bullet points for agent recall (Context agent)
         # 2. History: narrative prose for human reading (Writer agent)
         self._accumulate_to_tier0(msg, task_id)      # AC-Memory
         self._accumulate_to_history(msg, task_id)    # History
-
-        # Trigger Context agent summarization at threshold (T164)
-        # Guard against infinite loop: don't re-trigger while summarization is in progress (T197)
-        if (self._messages_since_summary >= SUMMARIZE_TRIGGER
-            and self._summarize_callback
-            and not self._summarization_in_progress):
-            self._trigger_summarization()
 
         # Trim to max buffer size
         if len(self.messages) > MAX_MESSAGES:
@@ -299,67 +260,10 @@ class Hub:
             entry += f":\n{content_preview}"
 
             # Append to History draft tier
-            history_manager.accumulate_raw(entry)
+            history_manager.accumulate(entry)
         except Exception as e:
             # Non-fatal - don't break message posting if history fails
             print(f"[Hub] History accumulation error (non-fatal): {e}")
-
-    def _trigger_summarization(self):
-        """Trigger Context agent to update session_memory.md (T164).
-
-        Called when message count hits SUMMARIZE_TRIGGER (50).
-        Passes current messages + existing summary to Context agent.
-
-        T197 fix: Uses _summarization_in_progress flag to prevent infinite loop
-        where Context agent responses trigger more summarizations.
-        """
-        if not self._summarize_callback:
-            return
-
-        # Prevent re-entry (T197)
-        if self._summarization_in_progress:
-            return
-
-        try:
-            self._summarization_in_progress = True
-
-            # Prepare context for summarization
-            messages_data = [m.to_dict() for m in self.messages[-SUMMARIZE_TRIGGER:]]
-            current_summary = self._load_session_memory()
-
-            print(f"[Hub] Triggering session memory update ({len(messages_data)} messages)")
-
-            # Call Context agent (blocking call)
-            new_summary = self._summarize_callback(messages_data, current_summary)
-
-            if new_summary:
-                self._save_session_memory(new_summary)
-                self._messages_since_summary = 0
-                print(f"[Hub] Session memory updated ({len(new_summary)} chars)")
-
-        except Exception as e:
-            print(f"[Hub] Summarization failed: {e}")
-        finally:
-            self._summarization_in_progress = False
-
-    def _load_session_memory(self) -> str:
-        """Load current session_memory.md content.
-
-        T330: Uses project-aware path via _get_session_memory_file().
-        """
-        session_file = self._get_session_memory_file()
-        if session_file.exists():
-            return session_file.read_text(encoding="utf-8")
-        return ""
-
-    def _save_session_memory(self, content: str):
-        """Save updated session_memory.md.
-
-        T330: Uses project-aware path via _get_session_memory_file().
-        """
-        session_file = self._get_session_memory_file()
-        session_file.parent.mkdir(parents=True, exist_ok=True)
-        session_file.write_text(content, encoding="utf-8")
 
     def get_pending(self) -> list[Message]:
         """Get all pending messages from outbox."""
@@ -390,43 +294,63 @@ class Hub:
             lines.append(self._get_boss_purpose_block())
             limit = 15  # Reduced from 20 - BOSS needs overview, not details
 
-        # Inject session_memory.md content (T165: cumulative summary)
-        # Primary source: session_memory.md (Context agent maintains this)
-        # Fallback: AC-Memory tier 0 recent content (T272: unified context model)
-        session_memory = self._load_session_memory()
-        if session_memory:
-            lines.append(f"SESSION MEMORY:\n{session_memory}\n---\n")
-        else:
-            # Fallback to AC-Memory tier 0 recent content
-            tier0_recent = memory_manager.get_recent(tier_index=0, max_chars=1500)
-            if tier0_recent:
-                lines.append(f"SESSION CONTEXT (from memory tier 0):\n{tier0_recent}\n---\n")
+        # Inject AC-Memory tier 1 for historical context
+        # Tier 1 contains compressed summaries from tier 0 (Context agent compresses)
+        # Deprecates session_memory.md which had quality issues
+        tier1_content = memory_manager.get_recent(index=1, max_chars=3000)
+        if tier1_content:
+            lines.append(f"MEMORY (compressed history):\n{tier1_content}\n---\n")
 
-        # Add recent messages (last 20 per T165 spec)
+        # Add recent messages
         recent = self.messages[-limit:]
         lines.append("RECENT MESSAGES:")
+
+        # Noise senders to skip entirely
+        skip_senders = {"System", "TEST", "test_sender"}
+
         for msg in recent:
+            # Skip noise
+            if msg.sender in skip_senders:
+                continue
+
             prefix = "YOU" if msg.sender == agent_name else msg.sender
             content = msg.content
 
-            # BOSS gets truncated agent messages (not user, not own messages)
-            if agent_name == "BOSS" and msg.sender not in ("user", "BOSS"):
-                content = self._truncate_for_boss(content)
+            # BOSS gets ALL messages truncated to save tokens
+            if agent_name == "BOSS":
+                if msg.sender == "user":
+                    # User messages: more context, 300 chars
+                    content = self._truncate_message(content, max_chars=300)
+                elif msg.sender == agent_name:
+                    # Own messages: medium context, 200 chars
+                    content = self._truncate_message(content, max_chars=200)
+                else:
+                    # Agent messages: minimal, 100 chars
+                    content = self._truncate_message(content, max_chars=100)
 
             lines.append(f"[{prefix}]: {content}")
         return "\n".join(lines)
 
-    def _truncate_for_boss(self, content: str) -> str:
-        """Truncate agent output to first line, max 100 chars.
+    def _truncate_message(self, content: str, max_chars: int = 100) -> str:
+        """Truncate message content smartly.
 
-        Preserves just enough to confirm task completion without details.
+        - Takes first line if short enough
+        - Otherwise truncates to max_chars
+        - Adds (truncated) indicator if content was cut
         """
+        # Get first line
         first_line = content.split("\n")[0].strip()
-        if len(first_line) > 100:
-            return first_line[:97] + "..."
-        elif len(first_line) < len(content):
-            return first_line + "  (truncated)"
-        return first_line
+
+        # If first line fits and is the whole message, return as-is
+        if len(first_line) <= max_chars and len(first_line) == len(content.strip()):
+            return first_line
+
+        # If first line fits but there's more content
+        if len(first_line) <= max_chars:
+            return first_line + "  ..."
+
+        # First line too long, truncate it
+        return first_line[:max_chars - 3] + "..."
 
     def _get_boss_purpose_block(self) -> str:
         """Return studio purpose statement for BOSS context.
