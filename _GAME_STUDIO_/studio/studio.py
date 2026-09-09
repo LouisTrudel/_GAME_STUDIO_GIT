@@ -118,46 +118,42 @@ class Studio:
 
         prompt = f"""AC-MEMORY COMPACTION: Tier {tier_index}
 
-TASK: Compress, classify, and split this tier's content.
-
-STEP 1 - COMPRESS
-Summarize the raw content into concise bullet points. Each bullet = ONE of:
-- A decision made
-- A task status (created/active/completed/failed)
-- An important outcome
-- Active context needed for current work
-- A friction event (error, bug, blocker, retry, failure, problem)
-
-STEP 2 - CLASSIFY
-Mark each bullet point:
-- [ACTIVE] = Ongoing, unresolved, needed for current context
-- [DONE] = Completed, resolved, historical
-- [FRICTION] = Error, bug, blocker, failure, problem (resolved or not)
-
-STEP 3 - OUTPUT (use exact headers)
-
-===KEEP===
-(All [ACTIVE] points - stay in tier {tier_index})
-
-===PUSH===
-(All [DONE] points - move to tier {tier_index + 1})
-
-===FRICTION===
-(All [FRICTION] points - tracked separately for pattern analysis)
-Format: [RESOLVED] or [UNRESOLVED] prefix + description
-
-REFERENCE - Tier {tier_index - 1} context:
+## Reference (Tier {tier_index - 1})
 {prev_preview}
 
-CONTENT TO COMPRESS ({len(content)} chars):
+## Content to Compress ({len(content)} chars)
 {content_preview}
 
-CONSTRAINTS:
-- COMPRESS first - don't copy raw text, summarize
-- Maximum 60% KEEP (prevents tier bloat)
-- When uncertain, older = DONE
-- FRICTION items are important - capture all errors, bugs, blockers, retries
-- Bullet points only, no prose"""
+---
+
+## Classification
+
+| Tag | Meaning | Destination |
+|-----|---------|-------------|
+| [ACTIVE] | Ongoing, needed now | ===KEEP=== (stays tier {tier_index}) |
+| [DONE] | Completed, historical | ===PUSH=== (moves tier {tier_index + 1}) |
+| [FRICTION] | Error, bug, blocker | ===FRICTION=== (tracked separately) |
+
+## Constraints
+
+- Summarize into bullets, don't copy raw text
+- Max 60% KEEP (older = DONE when uncertain)
+- FRICTION: prefix with [RESOLVED] or [UNRESOLVED]
+
+## Output Format
+
+===KEEP===
+- [ACTIVE] bullet points
+
+===PUSH===
+- [DONE] bullet points
+
+===FRICTION===
+- [RESOLVED/UNRESOLVED] bullet points
+
+---
+
+Compress the content above into classified bullet points. Output ===KEEP===, ===PUSH===, ===FRICTION=== sections."""
 
         try:
             self._notify_status("Context", "working", f"Compacting tier {tier_index}...")
