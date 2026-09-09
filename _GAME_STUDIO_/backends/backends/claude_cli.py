@@ -144,15 +144,13 @@ class ClaudeCLIBackend(Backend):
             print(f"  [Claude CLI] WARNING: MCP config not found at {mcp_config_path}")
 
         # Add permission flags based on agent role
-        # BOSS gets restricted tools (architectural enforcement - cannot execute)
-        # All other agents get full tool access
+        # All agents need --dangerously-skip-permissions to use MCP tools
+        # BOSS also gets --disallowedTools to block execution tools
+        cmd.append("--dangerously-skip-permissions")
+
         if self.agent_name == "BOSS":
-            # BOSS: Use --disallowedTools to block execution tools
-            # This is architectural enforcement - BOSS delegates, never executes
+            # BOSS: Block execution tools (architectural enforcement - delegates, never executes)
             cmd.extend(["--disallowedTools", "Edit,Write,Bash,MultiEdit,NotebookEdit"])
-        else:
-            # Other agents: Full tool access (they do the actual work)
-            cmd.append("--dangerously-skip-permissions")
 
         # Debug: print full command
         print(f"  [Claude CLI] Command: {' '.join(cmd)}")
