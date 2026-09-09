@@ -21,6 +21,25 @@ from studio.loader import (
 )
 
 
+def _truncate_for_hub(response: str, max_chars: int = 300) -> str:
+    """Truncate agent response for hub chat.
+
+    Full deliverables go to files - hub just needs confirmation/summary.
+    Takes first paragraph or max_chars, whichever is shorter.
+    Output tokens cost 5x input - keep hub responses minimal.
+    """
+    if len(response) <= max_chars:
+        return response
+
+    # Try to find first paragraph break
+    first_para_end = response.find("\n\n")
+    if first_para_end > 0 and first_para_end <= max_chars:
+        return response[:first_para_end] + "  ..."
+
+    # Otherwise truncate at max_chars
+    return response[:max_chars].rsplit(" ", 1)[0] + "  ..."
+
+
 class StudioAgent:
     """An agent that reads/writes to the shared hub and uses task tools."""
 
@@ -177,7 +196,8 @@ class StudioAgent:
             tokens_out = usage.get("total_output_tokens", 0)
             print(f"[{self.name}] Done. ({elapsed:.1f}s, {tokens_in}+{tokens_out} tokens)")
 
-            hub.post(self.name, response)
+            # Post truncated summary to hub (full deliverable saved to file separately)
+            hub.post(self.name, _truncate_for_hub(response))
             return response
 
         except Exception as e:
