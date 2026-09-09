@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "game-studio": {
+      "command": "python",
+      "args": ["C:/Users/lou/__MY_WORK__/_GAME_STUDIO_GIT/_GAME_STUDIO_/mcp_server.py"]
+    }
+  }
+}

@@ -360,26 +360,6 @@ async def list_roles() -> str:
     return handler()
 
 
-@mcp.tool()
-async def update_session_memory(
-    content: Annotated[Optional[str], Field(description="Raw markdown content to write directly (overrides all other params if provided)")] = None,
-    session_overview: Annotated[Optional[str], Field(description="Current session focus and objectives (bullet points)")] = None,
-    active_context: Annotated[Optional[str], Field(description="In-flight work, blockers, pending items (bullet points)")] = None,
-    key_decisions: Annotated[Optional[list[dict]], Field(description="Architectural choices [{decision, rationale, task}, ...] (max 10)")] = None,
-    completed_milestones: Annotated[Optional[list[str]], Field(description="Significant deliverables (max 15)")] = None,
-) -> str:
-    """Update session_memory.md with cumulative session summary.
-
-    Called at 50-message intervals. Use 'content' for raw markdown OR structured params.
-    """
-    from studio.agents.context.tools import update_session_memory as handler
-    return handler(
-        content=content,
-        session_overview=session_overview,
-        active_context=active_context,
-        key_decisions=key_decisions,
-        completed_milestones=completed_milestones
-    )
 
 
 # =============================================================================
