@@ -225,6 +225,11 @@ class Hub:
         AC-Memory: Bullet points for agent recall (Context agent compresses).
         Format: minimal - timestamp + sender + key content (first 200 chars).
         """
+        # Skip Context/Writer messages - they ARE the compression output, not input
+        # This prevents infinite loops where compression output triggers more compression
+        if msg.sender in ("Context", "Writer"):
+            return
+
         try:
             # Extract key content - first meaningful line, max 200 chars
             content_lines = msg.content.strip().split('\n')
@@ -249,6 +254,11 @@ class Hub:
         History: Narrative prose for human reading (Writer agent compresses).
         Format: fuller context for narrative generation.
         """
+        # Skip Writer/Context messages - they ARE the compression output, not input
+        # This prevents infinite loops where Writer output triggers more compression
+        if msg.sender in ("Writer", "Context"):
+            return
+
         try:
             # Fuller format for narrative - include more content
             timestamp = msg.timestamp.strftime("%H:%M")
