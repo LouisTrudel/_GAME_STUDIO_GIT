@@ -279,8 +279,7 @@ class Hub:
     def get_context_for_agent(self, agent_name: str, limit: int = 20) -> str:
         """Format recent messages as context for an agent (T165).
 
-        Injects session_memory.md + last 20 messages for full context.
-        Session memory provides cumulative summary of older exchanges.
+        Injects AC-Memory tiers + last N messages for full context.
 
         For BOSS:
         - Injects studio purpose statement for strategic context
@@ -367,26 +366,6 @@ class Hub:
         return """# THE STUDIO
 An abstract self-improving agent fleet that delegates tasks, accumulates data, and refines its skill library to ship fully working complex projects. Optimizes AI output quality per token through dynamic context injection.
 """
-
-    def summarize_old_messages(self) -> bool:
-        """
-        DEPRECATED: Use AC-Memory compression via memory_manager instead.
-
-        T272: This method now only trims in-memory messages.
-        Context compression is handled by AC-Memory in memory.py.
-        """
-        if len(self.messages) <= SUMMARIZE_THRESHOLD:
-            return False  # Not enough to trim
-
-        # Just trim old messages from in-memory list
-        # AC-Memory handles actual compression via _accumulate_to_tier0()
-        old_count = len(self.messages) - SUMMARIZE_THRESHOLD
-        self.messages = self.messages[-SUMMARIZE_THRESHOLD:]
-        self._save_history()
-
-        print(f"[Hub] Trimmed {old_count} old messages, kept {len(self.messages)} recent (AC-Memory handles compression)")
-        return True
-
 
 # Global hub instance
 hub = Hub()

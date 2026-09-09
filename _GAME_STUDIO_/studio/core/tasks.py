@@ -92,8 +92,7 @@ def save_deliverable(task_id: str, content: str, description: str = "", project_
     """
     Save task deliverable to data/deliverables/T###.md.
 
-    Per T159 session memory architecture: preserve deliverable content permanently
-    so important outputs aren't lost when hub_history rolls over.
+    Preserves deliverable content permanently for reference and training data.
 
     T332: Project-aware paths - when project is active, saves to
     projects/<project_id>/deliverables/T###.md

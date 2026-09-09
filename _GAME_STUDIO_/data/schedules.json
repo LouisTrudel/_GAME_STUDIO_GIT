@@ -1,5 +1,5 @@
 {
-  "counter": 2,
+  "counter": 3,
   "schedules": [
     {
       "id": "SCH001",
@@ -8,7 +8,7 @@
       "interval_seconds": 86400,
       "interval_human": "1d",
       "schedule_type": "tasks",
-      "status": "active",
+      "status": "paused",
       "last_run": "2026-09-07T09:57:42.156331",
       "next_run": "2026-09-08T09:57:42.156331",
       "run_count": 4,
@@ -26,6 +26,19 @@
         "T304",
         "T305"
       ]
+    },
+    {
+      "id": "SCH002",
+      "name": "Git Auto-Commit",
+      "description": "Automatically commit and push all changes to git with auto-generated commit message",
+      "interval_seconds": 86400,
+      "interval_human": "1d",
+      "schedule_type": "script",
+      "status": "paused",
+      "last_run": "2026-09-07T19:12:38.963742",
+      "next_run": "2026-09-08T19:12:38.963742",
+      "run_count": 1,
+      "script_module": null
     }
   ]
 }

@@ -565,7 +565,13 @@ Output your narrative in markdown. Start with:
         trigger = f"""TASK {task.id}:
 {task.description}
 
-Do this task and respond with your deliverable. Your response will be saved as the task result."""
+Respond in this format:
+DONE: [one sentence summary of what you did]
+- [key change/finding 1]
+- [key change/finding 2]
+- [etc]
+
+[Then your actual work: code, analysis, spec, or whatever the task requires]"""
 
         # T226: Build structured prompt with explicit section markers
         # Order optimized for primacy/recency effects (T224):
@@ -707,9 +713,8 @@ Do this task and respond with your deliverable. Your response will be saved as t
                 task_description=task.description if task else None,
             )
 
-        # Archive old tasks and summarize old messages to keep context small
+        # Archive old tasks to keep context small
         task_manager.archive_old_tasks(keep_recent=10)
-        hub.summarize_old_messages()
 
         # T258: Trigger AB compression cascade on memory tiers
         try:

@@ -7,6 +7,7 @@
       "Bash(python server.py:*)",
       "Bash(timeout:*)",
       "WebSearch",
+      "WebFetch",
       "WebFetch(domain:ai.google.dev)",
       "WebFetch(domain:firebase.google.com)",
       "WebFetch(domain:gist.github.com)",
@@ -17,7 +18,13 @@
       "Bash(taskkill:*)",
       "Bash(cmd //c \"taskkill /PID 44776 /F\")",
       "Bash(dir:*)",
-      "Bash(cmd /c \"tree /F /A\")"
+      "Bash(cmd /c \"tree /F /A\")",
+      "Bash(if not exist \"C:\\\\Users\\\\lou\\\\__MY_WORK__\\\\_GAME_STUDIO_GIT\\\\_GAME_STUDIO_\\\\projects\\\\_template\" mkdir \"C:\\\\Users\\\\lou\\\\__MY_WORK__\\\\_GAME_STUDIO_GIT\\\\_GAME_STUDIO_\\\\projects\\\\_template\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRefactor tools to skills, add CONTEXT.md pattern, improve agent autonomy\n\nTools refactor:\n- Move tool schemas from code injection to skill files \\(_tools/*.md\\)\n- Auto-load core tools per agent type for reliability\n- Fix claude_cli.py bug where empty tools skipped handler execution\n\nCONTEXT.md shared brain:\n- Add per-project CONTEXT.md for cross-agent coordination\n- Add read_context and signal_agent tools\n- Create projects/_template and projects/default\n\nTask improvements:\n- Add claimed_by/claimed_at fields for ownership tracking\n- Add stale task recovery \\(>35 min resets to READY\\)\n- Update task.md docs\n\nAgent autonomy:\n- All agents now execute autonomously \\(no asking for permission\\)\n- Programmer: reuse-first approach, code organization rules\n- Designer/Artist/Writer/QA/Context/Taxonomy: autonomous with documented assumptions\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(cmd /c \"type server.py\")",
+      "Bash(node --check:*)"
     ]
   }
 }

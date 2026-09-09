@@ -231,6 +231,4698 @@
       "task_id": "T022",
       "assignee": "Context",
       "timestamp": "2026-09-04T10:06:19.739336"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T022",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T13:26:01.829422"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T016",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T13:26:25.375855"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T017",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T13:26:50.923821"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T018",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T13:27:17.269117"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T019",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T13:27:42.702115"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T020",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T13:28:06.200957"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T021",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T13:28:27.924236"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T023",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-04T13:41:10.833749"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T023",
+      "assignee": "Taxonomy",
+      "reason": "TIMEOUT: Agent response timed out after 30s (max retries exceeded)",
+      "timestamp": "2026-09-04T13:45:27.834274"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T024",
+      "assignee": "taxonomy",
+      "timestamp": "2026-09-04T13:54:38.290747"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T025",
+      "assignee": "designer",
+      "timestamp": "2026-09-04T13:54:38.301750"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T026",
+      "assignee": "programmer",
+      "timestamp": "2026-09-04T13:54:38.309752"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T001",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T16:04:07.267400"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T002",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T16:13:35.853570"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T004",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:13:46.868052"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T003",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:15:40.194228"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T005",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T16:22:30.649661"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T006",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:22:30.657664"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T007",
+      "assignee": "Artist",
+      "timestamp": "2026-09-04T16:22:30.666666"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T008",
+      "assignee": "Writer",
+      "timestamp": "2026-09-04T16:22:30.674667"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T009",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T16:22:30.682670"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T010",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:22:30.690674"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T011",
+      "assignee": "Writer",
+      "timestamp": "2026-09-04T16:22:30.699677"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T012",
+      "assignee": "QA",
+      "timestamp": "2026-09-04T16:22:30.707678"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T013",
+      "assignee": "QA",
+      "timestamp": "2026-09-04T16:22:30.715680"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T014",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:22:30.725080"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T007",
+      "assignee": "Artist",
+      "timestamp": "2026-09-04T16:23:37.957547"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T005",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T16:23:52.036824"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T006",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:24:09.058602"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T008",
+      "assignee": "Writer",
+      "timestamp": "2026-09-04T16:24:11.090071"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T009",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T16:24:37.238565"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T010",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:24:45.260773"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T011",
+      "assignee": "Writer",
+      "timestamp": "2026-09-04T16:24:56.283328"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T012",
+      "assignee": "QA",
+      "timestamp": "2026-09-04T16:25:07.331170"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T013",
+      "assignee": "QA",
+      "timestamp": "2026-09-04T16:25:57.510981"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T014",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T16:26:17.569871"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T018",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T17:55:32.779435"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T015",
+      "assignee": "Research",
+      "timestamp": "2026-09-04T17:56:29.006530"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T016",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T17:57:19.137905"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T017",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T17:57:57.253003"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T020",
+      "assignee": "Research",
+      "timestamp": "2026-09-04T18:03:46.314708"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T020",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T18:03:52.283650"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T020",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T18:35:14.607738"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T021",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T18:35:14.633134"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T022",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T18:35:14.655708"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T020",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T18:38:21.757121"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T021",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T18:40:24.029610"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T022",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T18:40:56.153718"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T023",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:03:47.837395"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T023",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:06:34.269637"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T024",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:10:10.012671"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T024",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:10:44.774825"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T025",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:11:34.145980"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T025",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:11:55.008187"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T026",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T19:15:20.643673"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T027",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:15:20.666678"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T028",
+      "assignee": "QA",
+      "timestamp": "2026-09-04T19:15:20.693684"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T026",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T19:16:02.684269"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T029",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:17:50.333879"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T027",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:18:17.122605"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T028",
+      "assignee": "QA",
+      "timestamp": "2026-09-04T19:19:34.383415"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T029",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:19:34.409420"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T030",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T19:57:38.070704"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T030",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:02:12.164020"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T031",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:08:52.251788"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T031",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:09:53.544563"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T032",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:12:04.455980"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T032",
+      "assignee": "Programmer",
+      "reason": "Task description too short: '...'",
+      "timestamp": "2026-09-04T20:12:05.083208"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T033",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T20:13:18.353102"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T033",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T20:13:57.375625"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T034",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T20:15:09.239428"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T034",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T20:15:40.516866"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T035",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T20:17:23.854809"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T035",
+      "assignee": "Context",
+      "timestamp": "2026-09-04T20:17:56.937456"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T036",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-04T20:30:18.177894"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T036",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-04T20:31:59.805587"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T037",
+      "assignee": "Research",
+      "timestamp": "2026-09-04T20:40:34.909199"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T037",
+      "assignee": "Research",
+      "timestamp": "2026-09-04T20:41:56.020794"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T038",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:44:52.088548"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T039",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:44:52.115555"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T040",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:44:52.141560"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T038",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:46:12.572665"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T039",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:50:45.281595"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T041",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:52:46.908949"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T040",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:53:02.506853"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T042",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-04T20:56:17.939724"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T041",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:56:19.900551"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T042",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-04T20:57:55.198136"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T043",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T20:59:19.396700"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T044",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T21:02:24.594127"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T044",
+      "assignee": "Designer",
+      "timestamp": "2026-09-04T21:03:44.042517"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T043",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T21:04:49.276497"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T045",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-04T21:05:48.235657"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T046",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T09:20:12.904300"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T046",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T09:23:54.210703"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T047",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T09:29:43.405530"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T047",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T09:30:17.705068"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T048",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T09:31:36.704441"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T049",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T09:55:43.118363"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T050",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T09:55:43.139368"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T051",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T09:56:00.276857"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T049",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T09:56:35.294510"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T051",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T09:57:07.394000"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T050",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T09:58:30.649333"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T052",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:02:29.025445"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T053",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:11:47.651302"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T054",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T10:11:47.672311"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T053",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:14:16.775777"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T055",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:14:25.952414"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T055",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:14:56.937784"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T054",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T10:15:20.050755"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T056",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T10:19:40.647275"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T057",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:19:40.669280"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T056",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T10:20:27.859951"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T057",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:20:29.901876"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T058",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T10:22:35.540050"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T058",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T10:22:58.007608"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T059",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:23:45.944184"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T059",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:24:59.279025"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T060",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:45:16.931523"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T060",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:45:39.340717"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T061",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:51:33.686784"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T062",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T10:51:33.718791"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T063",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T10:51:33.750800"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T063",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T10:51:59.528934"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T062",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T10:52:22.599515"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T061",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:53:18.781151"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T064",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:54:20.598629"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T064",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T10:55:53.277918"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T065",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T12:06:20.140039"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T065",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T12:08:18.376454"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T066",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T12:28:34.292603"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T066",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T12:31:30.818009"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T067",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T12:32:04.412084"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T068",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T12:32:04.423087"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T067",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T12:34:00.702465"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T068",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T12:40:21.811591"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T069",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T13:34:35.427800"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T070",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T13:34:35.439802"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T069",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T13:37:34.432430"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T070",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T13:39:09.753138"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T071",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:16:24.152867"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T071",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:20:13.528718"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T072",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:22:20.725590"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T073",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:23:38.830993"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T074",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:27:24.181972"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T072",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:30:03.918395"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T073",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:30:42.084099"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T074",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:32:41.361936"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T075",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T14:59:36.077811"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T075",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T15:00:07.650605"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T076",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T16:58:05.706086"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T076",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T16:59:54.663780"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T077",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:13:18.255150"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T078",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T17:13:18.281158"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T078",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T17:14:51.105723"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T077",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:16:08.202556"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T079",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:16:59.023210"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T080",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:16:59.052155"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T081",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:16:59.082795"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T079",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:19:09.535329"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T082",
+      "assignee": "QA",
+      "timestamp": "2026-09-05T17:20:47.714856"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T080",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:21:38.862542"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T081",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:23:47.154540"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T082",
+      "assignee": "QA",
+      "timestamp": "2026-09-05T17:24:16.262911"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T083",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:27:03.574701"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T084",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:27:03.599708"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T083",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:27:29.524666"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T084",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:27:55.612664"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T085",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T17:30:43.079600"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T086",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T17:30:43.106578"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T086",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T17:31:59.995194"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T085",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T17:32:41.142311"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T087",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:43:12.486293"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T087",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:46:34.386342"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T088",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:53:24.199848"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T088",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T17:54:02.894234"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T089",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T18:11:06.617969"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T089",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T18:11:53.792566"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T090",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T18:13:15.222983"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T090",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T18:13:58.121258"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T091",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T18:15:56.248939"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T091",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T18:16:47.459860"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T092",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T18:27:00.383068"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T092",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T18:29:22.999430"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T093",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:08:37.701645"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T093",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:09:58.785888"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T094",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T19:14:09.010756"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T095",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:14:09.040763"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T096",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:14:09.068263"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T094",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T19:15:18.411678"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T095",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:17:14.715233"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T097",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:18:39.346745"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T096",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:19:19.924715"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T097",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:20:13.040193"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T098",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:36:20.924815"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T098",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:41:16.291036"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T099",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T19:43:39.409178"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T099",
+      "assignee": "Designer",
+      "timestamp": "2026-09-05T19:44:41.797620"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T100",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:47:28.236099"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T100",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T19:47:55.193809"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T101",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T20:15:07.843681"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T101",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T20:15:53.623103"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T102",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T20:31:37.131181"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T102",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T20:32:08.838197"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T103",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T20:32:42.663190"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T103",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T20:33:52.143188"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T104",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T20:36:03.821328"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T104",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T20:37:05.701341"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T105",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T21:22:11.005048"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T105",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T21:24:21.571881"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T106",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:34:05.113642"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T107",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:34:05.139648"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T108",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:35:12.908344"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T106",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:36:51.211644"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T107",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:38:23.569306"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T108",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:40:19.782438"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T109",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T21:42:45.630425"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T110",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:42:45.643428"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T109",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-05T21:44:43.395464"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T110",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:50:01.104358"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T111",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:55:24.688282"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T111",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T21:57:05.162410"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T112",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T22:15:08.579487"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T112",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T22:18:17.910199"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T113",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T22:19:49.636786"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T113",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T22:20:37.876683"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T114",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T22:22:10.042922"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T114",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T22:24:48.291067"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T115",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T22:38:49.154780"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T115",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T22:43:09.539159"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T116",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T22:44:05.788963"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T116",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T22:45:16.795718"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T117",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:28:29.642609"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T118",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:28:29.680618"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T119",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:28:29.715625"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T120",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:28:29.758634"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T121",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:28:29.796643"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T122",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:28:29.834331"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T123",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:28:29.869730"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T124",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T23:28:29.906738"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T125",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T23:28:29.939746"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T117",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:29:58.552308"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T118",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:31:15.701479"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T119",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:32:30.019544"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T120",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:33:59.249195"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T121",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:35:37.528300"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T124",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T23:36:27.731863"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T122",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:37:36.054082"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T126",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T23:37:43.912456"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T127",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T23:39:43.293536"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T123",
+      "assignee": "Research",
+      "timestamp": "2026-09-05T23:40:07.422479"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T127",
+      "assignee": "Context",
+      "timestamp": "2026-09-05T23:42:06.774461"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T126",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-05T23:42:41.839222"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T128",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:04:04.924111"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T129",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:04:04.952117"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T130",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:12:19.944631"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T131",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:12:19.970354"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T130",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:13:21.586600"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T131",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:14:17.821377"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T132",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:18:14.233555"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T133",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:18:14.261560"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T134",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:00.367584"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T135",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:00.396591"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T136",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:00.425493"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T137",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:00.451499"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T138",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:00.477514"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T139",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:00.506436"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T132",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:10.521418"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T133",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:19:42.620411"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T140",
+      "assignee": "Research",
+      "timestamp": "2026-09-06T00:20:47.706707"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T134",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:21:40.914614"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T141",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T00:26:35.358150"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T141",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T00:27:37.750277"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T142",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T00:30:27.234553"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T142",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T00:32:45.576541"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T143",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T00:34:53.649490"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T143",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T00:42:06.090946"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T144",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:46:16.928693"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T145",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T00:46:16.956699"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T146",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:47:35.544995"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T145",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T00:47:40.925361"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T144",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:47:46.032281"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T147",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:25.522310"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T148",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:25.553317"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T149",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:25.582324"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T150",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:25.610329"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T151",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:25.642963"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T152",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:25.670969"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T153",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:47.214463"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T154",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:47.243470"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T155",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:47.269477"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T156",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:47.299205"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T157",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:47.327212"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T158",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:48:47.353217"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T146",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:49:03.364639"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T147",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:49:53.594965"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T148",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:50:49.808186"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T149",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:51:36.953373"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T150",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:52:42.148027"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T151",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:53:26.285447"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T152",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:54:37.450869"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T153",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:55:45.643887"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T154",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:56:56.926148"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T155",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:57:53.114127"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T156",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:58:55.286215"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T157",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T00:59:45.414119"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T159",
+      "assignee": "Research",
+      "timestamp": "2026-09-06T01:00:22.396347"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T159",
+      "assignee": "Research",
+      "timestamp": "2026-09-06T01:01:25.660728"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T160",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:14:43.428668"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T161",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:14:43.457162"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T162",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:14:43.484675"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T163",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:14:43.514681"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T164",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:14:43.547689"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T165",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:14:43.575696"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T166",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T01:14:43.608702"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T160",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:15:31.107857"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T161",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:16:54.441764"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T162",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:17:47.610851"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T163",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:18:52.850699"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T164",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:21:37.375458"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T165",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:22:24.548596"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T166",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T01:23:41.684166"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T167",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:27:50.404591"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T168",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:27:50.433598"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T169",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:27:50.461605"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T170",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T01:27:50.492611"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T170",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T01:28:13.302157"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T171",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:28:52.776800"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T172",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T01:30:10.085690"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T173",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:30:10.115697"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T167",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:30:56.656294"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T172",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T01:31:16.783101"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T168",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:33:37.160608"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T174",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:35:42.001893"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T169",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:35:45.523487"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T171",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:39:00.010646"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T173",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:40:05.169337"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T174",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:41:40.412817"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T175",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:54:36.453808"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T175",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:55:31.290185"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T176",
+      "assignee": "Research",
+      "timestamp": "2026-09-06T01:56:07.574678"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T177",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:57:45.192491"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T177",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T01:58:01.801690"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T176",
+      "assignee": "Research",
+      "timestamp": "2026-09-06T01:58:18.903083"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T178",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T02:07:17.509462"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T178",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T02:08:59.994807"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T179",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:17:46.045705"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T179",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:19:20.996781"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T180",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:20:26.526797"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T180",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:27:32.132873"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T181",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:29:27.835510"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T181",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:31:55.039763"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T182",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T10:34:46.976674"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T182",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T10:35:23.461761"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T183",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:38:02.348619"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T184",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:38:02.379626"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T183",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:39:52.334689"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T184",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:40:24.519175"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T185",
+      "assignee": "Raw",
+      "timestamp": "2026-09-06T10:43:17.915431"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T186",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:44:52.582359"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T186",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T10:46:32.604125"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T185",
+      "assignee": "Raw",
+      "reason": "RATE_LIMIT: Rate limited. Wait a minute and try again. (max retries exceeded)",
+      "timestamp": "2026-09-06T11:01:44.628600"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T187",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:14:35.349196"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T187",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:15:35.077999"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T188",
+      "assignee": "Raw",
+      "timestamp": "2026-09-06T11:17:29.541164"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T188",
+      "assignee": "Raw",
+      "reason": "Task description too short: 'Say hello'",
+      "timestamp": "2026-09-06T11:17:31.293298"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T189",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:18:41.502167"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T189",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:20:14.561637"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T190",
+      "assignee": "Raw",
+      "timestamp": "2026-09-06T11:20:31.832846"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T190",
+      "assignee": "Raw",
+      "reason": "RATE_LIMIT: Rate limited. Wait a minute and try again. (max retries exceeded)",
+      "timestamp": "2026-09-06T11:20:40.782525"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T191",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:25:01.984114"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T191",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:25:57.568786"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T192",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T11:42:29.456801"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T192",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T11:43:24.845511"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T193",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:47:30.567360"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T194",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:47:30.599367"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T195",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:47:30.631622"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T196",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:47:30.663378"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T193",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:49:44.765807"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T194",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:50:25.983786"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T195",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:50:58.240446"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T196",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:57:03.577907"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T197",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:57:08.073861"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T197",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T11:58:37.881384"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T198",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:09:07.310407"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T198",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:10:22.670402"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T199",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:28:30.961939"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T200",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T12:28:30.996701"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T200",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T12:28:53.168010"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T199",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:30:34.451594"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T201",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:42:43.151130"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T202",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T12:42:43.192021"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T203",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:43:24.774855"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T204",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:43:24.809863"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T202",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T12:43:25.445144"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T201",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:43:57.631036"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T205",
+      "assignee": "Research",
+      "timestamp": "2026-09-06T12:44:38.916380"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T203",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:45:46.976259"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T205",
+      "assignee": "Research",
+      "timestamp": "2026-09-06T12:46:34.293387"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T204",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T12:46:34.394410"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T206",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T13:12:05.245619"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T206",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T13:13:03.415672"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T207",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T16:30:09.501645"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T207",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T16:31:01.317967"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T208",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T16:35:43.084095"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T209",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T16:36:30.800244"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T208",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T16:37:39.275158"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T210",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T16:38:28.413975"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T209",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T16:38:29.534205"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T210",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T16:38:52.644068"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T211",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T16:50:19.743373"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T212",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T16:50:48.556916"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T213",
+      "assignee": "Writer",
+      "timestamp": "2026-09-06T16:51:01.203949"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T214",
+      "assignee": "Writer",
+      "timestamp": "2026-09-06T16:51:01.226179"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T211",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T16:51:03.349948"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T213",
+      "assignee": "Writer",
+      "timestamp": "2026-09-06T16:51:38.531366"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T214",
+      "assignee": "Writer",
+      "timestamp": "2026-09-06T16:52:34.728615"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T212",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T16:52:42.867379"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T215",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T16:57:25.600093"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T215",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T16:58:05.683658"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T216",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T16:59:11.127571"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T217",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T16:59:11.152577"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T218",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T16:59:11.182583"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T216",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T17:00:25.015717"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T217",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T17:01:48.306597"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T218",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T17:03:47.607291"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T219",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T17:09:41.457787"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T219",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T17:10:40.662639"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T220",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T17:18:52.469740"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T220",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-06T17:19:12.635004"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T221",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T17:44:03.815974"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T221",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T17:44:25.781508"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T222",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:04:13.942990"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T222",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:05:14.206861"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T223",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:05:49.551014"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T223",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:06:15.398040"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T224",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:34:22.295768"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T224",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:35:22.664581"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T225",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T18:50:01.068558"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T226",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T18:50:01.104045"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T227",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T18:50:01.136455"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T225",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T18:50:51.424478"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T228",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:52:26.294618"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T228",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T18:52:52.795597"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T226",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T18:52:55.845074"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T227",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T18:54:16.257272"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T229",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T19:14:40.310638"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T229",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T19:16:22.768775"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T230",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T20:33:40.109023"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T230",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T20:34:30.908780"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T231",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T20:46:05.847273"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T231",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T20:46:55.272789"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T232",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:49:02.906733"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T233",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:49:02.978900"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T234",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T20:49:03.016909"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T232",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:49:38.847594"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T233",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:50:14.033360"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T234",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T20:52:37.567229"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T235",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:54:01.141769"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T235",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:55:35.963386"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T236",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:56:25.480577"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T236",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T20:57:49.404841"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T237",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T22:41:06.489052"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T238",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T22:41:06.525061"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T239",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T22:41:06.611082"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T240",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T22:41:06.649091"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T241",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T22:41:06.685099"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T242",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T22:41:06.717106"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T237",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T22:42:12.318608"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T243",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:02:51.044110"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T243",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:03:54.803528"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T244",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T23:05:20.924742"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T244",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T23:05:51.591244"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T245",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:06:37.880938"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T245",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:07:31.833501"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T246",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:09:05.539121"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T247",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:09:05.573129"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T248",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:09:05.607136"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T249",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T23:09:05.644774"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T250",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:09:05.678428"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T251",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T23:09:05.713303"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T246",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:09:39.764172"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T247",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:10:14.872428"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T249",
+      "assignee": "Context",
+      "timestamp": "2026-09-06T23:11:32.029116"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T248",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:13:52.428211"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T250",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:15:18.743289"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T251",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T23:17:27.267695"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T252",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:19:09.156369"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T253",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:19:09.191626"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T254",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T23:19:09.226586"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T252",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:19:46.614919"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T253",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:20:54.757527"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T254",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T23:21:44.959182"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T255",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T23:47:41.755090"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T255",
+      "assignee": "Designer",
+      "timestamp": "2026-09-06T23:48:32.565327"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T256",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:55:06.757525"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T257",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:55:06.791534"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T258",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:55:06.826540"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T259",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:55:06.863549"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T260",
+      "assignee": "QA",
+      "timestamp": "2026-09-06T23:55:06.898627"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T256",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:56:40.892192"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T257",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:58:19.281370"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T258",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-06T23:59:03.431829"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T259",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:00:35.715645"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T260",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T00:04:14.400223"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T261",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T00:13:16.520202"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T261",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T00:13:31.926700"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T262",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:14:24.274827"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T262",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:15:33.347963"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T263",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T00:27:47.222321"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T263",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T00:27:57.483212"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T264",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T00:30:55.990912"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T265",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:30:56.013917"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T264",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T00:31:47.145661"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T265",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:33:25.483343"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T266",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T00:41:11.152057"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T266",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T00:41:45.659200"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T267",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T00:43:02.217076"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T268",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:44:35.249330"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T269",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:44:35.263440"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T267",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T00:44:49.073312"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T268",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:44:57.136470"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T269",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:45:17.283877"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T270",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T00:47:06.348729"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T270",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T00:48:16.530740"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T271",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T00:49:53.245219"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T272",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:49:53.267223"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T271",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T00:50:53.903175"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T272",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T00:54:38.593354"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T273",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T01:00:39.612642"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T274",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T01:11:28.876304"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T274",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T01:12:35.837456"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T275",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:14:02.219420"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T275",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:16:49.663208"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T276",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T01:20:06.545408"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T276",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T01:22:21.363256"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T277",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:26:19.187083"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T277",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:27:13.502161"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T278",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:27:27.567613"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T278",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:29:02.753093"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T279",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:34:42.899551"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T279",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:37:41.014755"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T280",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:40:16.887298"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T280",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T01:42:21.686326"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T281",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T01:54:26.470579"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T281",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T01:55:37.013615"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T282",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T02:02:39.626036"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T283",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T02:02:39.650041"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T283",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T02:03:51.156341"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T282",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T02:05:17.381251"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T284",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:07:37.155090"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T285",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:07:37.181736"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T284",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:09:42.127611"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T285",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:11:59.513838"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T286",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T08:18:53.463363"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T286",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T08:19:28.599033"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T287",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T08:19:48.866938"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T288",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:22:11.386520"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T289",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T08:22:50.825538"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T288",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:23:02.090771"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T289",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T08:23:22.181737"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T290",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:39:34.378559"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T291",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:39:34.407781"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T290",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:40:40.167743"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T291",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:42:24.370653"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T292",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:46:09.925330"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T293",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:46:09.954336"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T294",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T08:47:07.274744"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T292",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:48:35.274741"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T293",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:50:16.553873"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T295",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:51:49.961759"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T294",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T08:51:51.863194"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T295",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T08:53:27.507580"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T296",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:07:05.201560"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T297",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:07:05.235188"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T296",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:09:05.870660"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T297",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:10:11.048673"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T298",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:10:27.630533"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T299",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:10:27.660540"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T298",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:11:27.399745"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T299",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:13:08.692029"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T300",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:21:12.019283"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T300",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:24:38.910783"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T301",
+      "assignee": "Research",
+      "timestamp": "2026-09-07T09:28:51.777960"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T302",
+      "assignee": "BOSS",
+      "timestamp": "2026-09-07T09:28:51.793963"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T301",
+      "assignee": "Research",
+      "timestamp": "2026-09-07T09:29:52.443225"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T303",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:56:13.198344"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T303",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:56:42.274884"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T304",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T09:57:42.138249"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T305",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T09:57:42.152331"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T304",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T10:00:15.765957"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T305",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:00:59.803691"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T306",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:29:02.514129"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T307",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:29:02.542309"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T308",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:33:58.025408"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T306",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:34:35.472282"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T307",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:35:54.974262"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T308",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:36:27.111149"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T309",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:44:21.176886"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T309",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:48:38.766906"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T310",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T10:55:57.318495"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T311",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:57:01.266954"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T310",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T10:57:02.040253"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T311",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T10:58:52.286348"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T312",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T11:20:44.598789"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T312",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T11:21:34.981790"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T313",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T11:24:16.791495"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T313",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T11:28:58.322305"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T314",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T17:07:19.265601"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T315",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T17:07:19.296608"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T315",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T17:08:17.491201"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T314",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T17:08:25.545662"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T316",
+      "assignee": "Research",
+      "timestamp": "2026-09-07T17:19:28.231241"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T316",
+      "assignee": "Research",
+      "timestamp": "2026-09-07T17:21:01.393878"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T317",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T17:25:38.239069"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T317",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T17:26:27.135613"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T318",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T17:42:19.309171"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T319",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T17:43:05.747911"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T318",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T17:43:30.272487"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T319",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T17:45:20.971270"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T320",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T17:50:41.610542"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T320",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T17:51:25.665502"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T321",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:01:20.190535"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T321",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:06:22.531844"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T322",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:10:25.815913"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T322",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:11:54.227518"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T323",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T18:11:57.915452"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T323",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T18:12:58.321046"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T324",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T18:24:02.397727"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T324",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T18:25:24.634536"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T325",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:30:27.324590"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T325",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:33:38.692038"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T326",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T18:41:30.246270"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T327",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:41:30.275583"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T328",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T18:41:30.307442"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T326",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T18:42:31.929006"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T327",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:47:37.628863"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T328",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T18:48:33.707196"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T329",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:52:58.586598"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T329",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:54:13.548595"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T330",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:56:09.578593"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T330",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T18:57:50.629226"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T331",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T19:32:15.951494"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T331",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T19:32:52.098316"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T332",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T19:33:38.483527"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T332",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T19:36:18.994958"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T333",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T19:37:01.507487"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T333",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T19:37:50.257538"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T334",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:09:16.846357"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T334",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:09:59.397035"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T335",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T20:16:57.175240"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T335",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T20:17:40.635305"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T336",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T20:24:20.266925"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T337",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T20:24:20.299932"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T338",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T20:24:20.333940"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T338",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T20:25:06.584041"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T336",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T20:25:26.655049"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T337",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T20:25:43.753006"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T339",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T20:40:47.944898"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T339",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T20:41:25.904610"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T340",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T20:44:43.501412"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T340",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T20:45:30.512023"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T341",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:48:33.889409"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T341",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:49:20.170514"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T342",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:51:15.661534"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T342",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:52:30.927028"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T343",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:54:45.475198"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T344",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:54:45.502534"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T343",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:55:10.008173"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T344",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T20:57:54.384057"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T001",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T21:08:43.679119"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T001",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T21:09:42.091398"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T002",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T21:11:31.049320"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T002",
+      "assignee": "Writer",
+      "timestamp": "2026-09-07T21:11:52.411626"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T003",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T21:16:58.481004"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T003",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T21:17:57.170776"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T004",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:27:59.830567"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T005",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:27:59.865844"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T006",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:27:59.898551"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T007",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:27:59.932559"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T008",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:27:59.967547"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T009",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.003918"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T010",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.041529"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T011",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:28:00.076208"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T012",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.113216"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T013",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.149225"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T014",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.185233"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T015",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:28:00.221241"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T016",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.255844"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T017",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.290356"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T018",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:00.326364"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T019",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:28:00.362312"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T020",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:24.821244"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T021",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:24.862258"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T022",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:24.900889"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T023",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:28:24.938898"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T024",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:24.973906"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T025",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:25.010914"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T026",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:25.047922"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T027",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:28:25.082435"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T028",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:28:25.115443"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T029",
+      "assignee": "Artist",
+      "timestamp": "2026-09-07T21:28:25.149450"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T030",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T21:28:25.184458"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T031",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:28:25.223467"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T032",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:28:25.258475"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T004",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:29:35.772341"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T005",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:31:14.419382"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T006",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:33:46.713964"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T007",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:35:06.977280"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T008",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:36:36.155755"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T009",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:38:20.444525"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T010",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:40:46.788543"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T011",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:44:01.360934"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T012",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:46:18.763579"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T013",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:48:15.119041"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T014",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:50:20.420996"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T033",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:51:55.921304"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T015",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:51:58.798109"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T016",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:52:58.083466"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T017",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:53:54.324149"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T018",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T21:56:56.871497"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T019",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T21:57:59.089760"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T024",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:00:52.535804"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T020",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:04:19.182468"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T021",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:07:36.628818"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T022",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:11:30.247098"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T023",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T22:12:41.413407"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T025",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:15:10.673598"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T026",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:19:10.258002"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T027",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:21:39.517517"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T033",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:22:17.600154"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T034",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:22:36.934731"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T035",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:22:36.971740"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T036",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:22:37.005747"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T028",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T22:22:39.020106"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T034",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:23:14.108564"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T035",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:24:01.215106"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T029",
+      "assignee": "Artist",
+      "timestamp": "2026-09-07T22:24:03.235959"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T030",
+      "assignee": "Designer",
+      "timestamp": "2026-09-07T22:25:02.337451"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T031",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T22:26:40.641105"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T036",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T22:27:27.785473"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T032",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T22:27:53.897340"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T037",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T22:54:40.901644"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T037",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T22:56:22.912825"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T038",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T23:04:25.661264"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T038",
+      "assignee": "Context",
+      "timestamp": "2026-09-07T23:07:58.506458"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T345",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T23:23:44.747667"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T346",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T23:23:44.785176"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T347",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T23:23:44.824582"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T348",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:23:44.863592"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T349",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:23:44.903600"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T350",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:23:44.943609"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T351",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T23:23:44.986619"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T345",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T23:24:58.989770"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T348",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:25:52.131268"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T346",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T23:26:24.297230"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T349",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:27:02.452032"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T347",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-07T23:28:04.653385"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T350",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:30:55.111093"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T352",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:31:49.522273"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T351",
+      "assignee": "QA",
+      "timestamp": "2026-09-07T23:31:51.268048"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T352",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-07T23:32:50.424235"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T353",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-08T15:15:29.957496"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T354",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T15:15:29.982502"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T355",
+      "assignee": "QA",
+      "timestamp": "2026-09-08T15:15:30.002857"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T353",
+      "assignee": "Taxonomy",
+      "timestamp": "2026-09-08T15:16:54.996898"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T354",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T15:17:39.145585"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T356",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T15:19:00.901391"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T357",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T15:19:00.920396"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T355",
+      "assignee": "QA",
+      "timestamp": "2026-09-08T15:19:01.662434"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T356",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T15:20:27.933042"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T357",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T15:20:57.098094"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T358",
+      "assignee": "Context",
+      "timestamp": "2026-09-08T16:20:12.285347"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T358",
+      "assignee": "Context",
+      "timestamp": "2026-09-08T16:21:09.493281"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T359",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T16:25:28.942622"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T359",
+      "assignee": "Programmer",
+      "timestamp": "2026-09-08T16:28:17.429052"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T360",
+      "assignee": "Research",
+      "timestamp": "2026-09-08T16:31:39.152983"
+    },
+    {
+      "type": "task_failed",
+      "task_id": "T360",
+      "assignee": "Research",
+      "reason": "Task description too short: '...'",
+      "timestamp": "2026-09-08T16:31:41.770351"
+    },
+    {
+      "type": "task_created",
+      "task_id": "T361",
+      "assignee": "Research",
+      "timestamp": "2026-09-08T16:32:37.327440"
+    },
+    {
+      "type": "task_completed",
+      "task_id": "T361",
+      "assignee": "Research",
+      "timestamp": "2026-09-08T16:34:01.142810"
     }
   ],
   "by_day": {
@@ -273,45 +4965,293 @@
       }
     },
     "2026-09-04": {
-      "tasks_created": 10,
-      "tasks_completed": 1,
+      "tasks_created": 51,
+      "tasks_completed": 51,
       "tasks_rejected": 0,
-      "tasks_failed": 2,
+      "tasks_failed": 4,
       "by_agent": {
         "Programmer": {
-          "created": 2,
-          "completed": 1,
+          "created": 22,
+          "completed": 23,
           "rejected": 0,
-          "failed": 1
+          "failed": 2
         },
         "Designer": {
-          "created": 1,
-          "completed": 0,
+          "created": 5,
+          "completed": 4,
           "rejected": 0,
           "failed": 1
         },
         "Context": {
-          "created": 7,
+          "created": 10,
+          "completed": 14,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Taxonomy": {
+          "created": 3,
+          "completed": 2,
+          "rejected": 0,
+          "failed": 1
+        },
+        "taxonomy": {
+          "created": 1,
           "completed": 0,
           "rejected": 0,
           "failed": 0
+        },
+        "designer": {
+          "created": 1,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0
+        },
+        "programmer": {
+          "created": 1,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Artist": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Writer": {
+          "created": 2,
+          "completed": 2,
+          "rejected": 0,
+          "failed": 0
+        },
+        "QA": {
+          "created": 3,
+          "completed": 3,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Research": {
+          "created": 2,
+          "completed": 2,
+          "rejected": 0,
+          "failed": 0
+        }
+      }
+    },
+    "2026-09-05": {
+      "tasks_created": 82,
+      "tasks_completed": 79,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "by_agent": {
+        "Programmer": {
+          "created": 50,
+          "completed": 47,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Context": {
+          "created": 5,
+          "completed": 5,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Designer": {
+          "created": 6,
+          "completed": 6,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Taxonomy": {
+          "created": 6,
+          "completed": 6,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Research": {
+          "created": 14,
+          "completed": 14,
+          "rejected": 0,
+          "failed": 0
+        },
+        "QA": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        }
+      }
+    },
+    "2026-09-06": {
+      "tasks_created": 133,
+      "tasks_completed": 114,
+      "tasks_rejected": 0,
+      "tasks_failed": 3,
+      "by_agent": {
+        "Context": {
+          "created": 36,
+          "completed": 27,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Research": {
+          "created": 4,
+          "completed": 3,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Programmer": {
+          "created": 64,
+          "completed": 60,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Taxonomy": {
+          "created": 5,
+          "completed": 5,
+          "rejected": 0,
+          "failed": 0
+        },
+        "QA": {
+          "created": 15,
+          "completed": 13,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Designer": {
+          "created": 4,
+          "completed": 4,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Raw": {
+          "created": 3,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 3
+        },
+        "Writer": {
+          "created": 2,
+          "completed": 2,
+          "rejected": 0,
+          "failed": 0
+        }
+      }
+    },
+    "2026-09-07": {
+      "tasks_created": 130,
+      "tasks_completed": 129,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "by_agent": {
+        "Programmer": {
+          "created": 73,
+          "completed": 74,
+          "rejected": 0,
+          "failed": 0
+        },
+        "QA": {
+          "created": 21,
+          "completed": 21,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Designer": {
+          "created": 8,
+          "completed": 8,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Context": {
+          "created": 9,
+          "completed": 8,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Writer": {
+          "created": 9,
+          "completed": 9,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Research": {
+          "created": 2,
+          "completed": 2,
+          "rejected": 0,
+          "failed": 0
+        },
+        "BOSS": {
+          "created": 1,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Taxonomy": {
+          "created": 6,
+          "completed": 6,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Artist": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        }
+      }
+    },
+    "2026-09-08": {
+      "tasks_created": 9,
+      "tasks_completed": 8,
+      "tasks_rejected": 0,
+      "tasks_failed": 1,
+      "by_agent": {
+        "Taxonomy": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Programmer": {
+          "created": 4,
+          "completed": 4,
+          "rejected": 0,
+          "failed": 0
+        },
+        "QA": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Context": {
+          "created": 1,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 0
+        },
+        "Research": {
+          "created": 2,
+          "completed": 1,
+          "rejected": 0,
+          "failed": 1
         }
       }
     }
   },
   "by_agent": {
     "Programmer": {
-      "tasks_assigned": 11,
-      "tasks_completed": 8,
+      "tasks_assigned": 222,
+      "tasks_completed": 215,
       "tasks_rejected": 0,
-      "tasks_failed": 3,
+      "tasks_failed": 4,
       "total_revisions": 0,
       "qa_approvals": 0,
       "qa_rejections": 0
     },
     "Designer": {
-      "tasks_assigned": 2,
-      "tasks_completed": 1,
+      "tasks_assigned": 24,
+      "tasks_completed": 23,
       "tasks_rejected": 0,
       "tasks_failed": 1,
       "total_revisions": 0,
@@ -319,8 +5259,8 @@
       "qa_rejections": 0
     },
     "Artist": {
-      "tasks_assigned": 1,
-      "tasks_completed": 1,
+      "tasks_assigned": 3,
+      "tasks_completed": 3,
       "tasks_rejected": 0,
       "tasks_failed": 0,
       "total_revisions": 0,
@@ -328,8 +5268,8 @@
       "qa_rejections": 0
     },
     "Writer": {
-      "tasks_assigned": 1,
-      "tasks_completed": 1,
+      "tasks_assigned": 14,
+      "tasks_completed": 14,
       "tasks_rejected": 0,
       "tasks_failed": 0,
       "total_revisions": 0,
@@ -346,7 +5286,79 @@
       "qa_rejections": 0
     },
     "Context": {
-      "tasks_assigned": 7,
+      "tasks_assigned": 61,
+      "tasks_completed": 55,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Taxonomy": {
+      "tasks_assigned": 21,
+      "tasks_completed": 20,
+      "tasks_rejected": 0,
+      "tasks_failed": 1,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "taxonomy": {
+      "tasks_assigned": 1,
+      "tasks_completed": 0,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "designer": {
+      "tasks_assigned": 1,
+      "tasks_completed": 0,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "programmer": {
+      "tasks_assigned": 1,
+      "tasks_completed": 0,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "QA": {
+      "tasks_assigned": 41,
+      "tasks_completed": 39,
+      "tasks_rejected": 0,
+      "tasks_failed": 0,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Research": {
+      "tasks_assigned": 24,
+      "tasks_completed": 22,
+      "tasks_rejected": 0,
+      "tasks_failed": 1,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "Raw": {
+      "tasks_assigned": 3,
+      "tasks_completed": 0,
+      "tasks_rejected": 0,
+      "tasks_failed": 3,
+      "total_revisions": 0,
+      "qa_approvals": 0,
+      "qa_rejections": 0
+    },
+    "BOSS": {
+      "tasks_assigned": 1,
       "tasks_completed": 0,
       "tasks_rejected": 0,
       "tasks_failed": 0,

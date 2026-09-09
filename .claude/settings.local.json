@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"\\\\?\\\\C:\\\\Users\\\\lou\\\\__MY_WORK__\\\\_GAME_STUDIO_GIT\\\\_GAME_STUDIO_\\\\nul\")",
+      "Bash(cmd.exe:*)",
+      "Bash(test:*)",
+      "Bash(python:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(del \"C:\\\\Users\\\\lou\\\\__MY_WORK__\\\\_GAME_STUDIO_GIT\\\\_GAME_STUDIO_\\\\backends\\\\backends\\\\instructor_tools.py\" \"C:\\\\Users\\\\lou\\\\__MY_WORK__\\\\_GAME_STUDIO_GIT\\\\_GAME_STUDIO_\\\\backends\\\\backends\\\\instructor_integration.py\")",
+      "WebSearch",
+      "WebFetch(domain:py.sdk.modelcontextprotocol.io)",
+      "WebFetch(domain:scrapfly.io)",
+      "WebFetch(domain:gofastmcp.com)",
+      "Bash(dir:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nDual compression: AC-Memory + History with auto-compress & refined Writer prompts\n\n- AC-Memory: auto-compress on append\\(\\) when threshold exceeded \\(was missing\\)\n- History: auto-save state in accumulate_raw\\(\\), simplified to char thresholds only\n- Writer prompts: tier-specific compression targets \\(10-15%\\), proper style guidance\n- Fixed: default tier_0 was at 197% without compressing\n- Removed count thresholds - chars only to avoid parsing errors\n- Collection tier now grows indefinitely \\(final archive, no promotion\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRefactor memory/history to clean markdown structure\n\n- Memory: tier0.md, tier1.md, tier2.md... \\(infinite tiers\\)\n- History: draft.md, chapter.md, book.md, collection.md\n- Removed dated files, JSON storage, compression_logs\n- Hub injects AC-Memory tier 1 for agent context \\(deprecates session_memory.md\\)\n- BOSS context: message truncation \\(user=300, self=200, agents=100 chars\\)\n- Filters noise senders \\(System, TEST\\) from context\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd memory/history test data\n\n- tier0.md: Raw message accumulation\n- tier1.md: Sample compressed session summary\n- draft.md: Raw history accumulation\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
+    ]
+  }
+}

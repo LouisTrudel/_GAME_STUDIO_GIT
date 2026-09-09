@@ -25,18 +25,35 @@ def _truncate_for_hub(response: str, max_chars: int = 300) -> str:
     """Truncate agent response for hub chat.
 
     Full deliverables go to files - hub just needs confirmation/summary.
-    Takes first paragraph or max_chars, whichever is shorter.
+    Extracts DONE: line + bullets if present, otherwise first paragraph.
     Output tokens cost 5x input - keep hub responses minimal.
     """
     if len(response) <= max_chars:
         return response
 
-    # Try to find first paragraph break
+    # Try to extract DONE: summary + bullet points
+    lines = response.split('\n')
+    summary_lines = []
+    for line in lines:
+        stripped = line.strip()
+        # Capture DONE: line and bullet points
+        if stripped.startswith('DONE:') or stripped.startswith('- '):
+            summary_lines.append(stripped)
+        # Stop at empty line after bullets (start of actual work)
+        elif summary_lines and not stripped:
+            break
+
+    if summary_lines:
+        result = '\n'.join(summary_lines)
+        if len(result) <= max_chars:
+            return result
+
+    # Fallback: first paragraph
     first_para_end = response.find("\n\n")
     if first_para_end > 0 and first_para_end <= max_chars:
         return response[:first_para_end] + "  ..."
 
-    # Otherwise truncate at max_chars
+    # Last resort: truncate at max_chars
     return response[:max_chars].rsplit(" ", 1)[0] + "  ..."
 
 
@@ -135,15 +152,8 @@ class StudioAgent:
             parts.append(f"RECENT MESSAGES:\n{context}")
             task_context = task_manager.to_active_context_string()
             parts.append(task_context)
-        else:
-            my_tasks = task_manager.get_agent_tasks(self.name)
-            if my_tasks:
-                task_lines = [f"YOUR TASKS ({self.name}):"]
-                for task in my_tasks:
-                    task_lines.append(f"  [{task.id}] {task.status.value}: {task.description}")
-                parts.append("\n".join(task_lines))
-            else:
-                parts.append("You have no assigned tasks.")
+        # Non-BOSS agents get no extra context - they work on one task at a time
+        # Full task details come in ## TASK section
 
         return "\n\n".join(parts)
 
@@ -196,8 +206,8 @@ class StudioAgent:
             tokens_out = usage.get("total_output_tokens", 0)
             print(f"[{self.name}] Done. ({elapsed:.1f}s, {tokens_in}+{tokens_out} tokens)")
 
-            # Post truncated summary to hub (full deliverable saved to file separately)
-            hub.post(self.name, _truncate_for_hub(response))
+            # Post full response to hub (truncation happens when injecting into agent context)
+            hub.post(self.name, response)
             return response
 
         except Exception as e:
