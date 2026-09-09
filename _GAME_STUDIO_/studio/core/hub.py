@@ -294,12 +294,19 @@ class Hub:
             lines.append(self._get_boss_purpose_block())
             limit = 15  # Reduced from 20 - BOSS needs overview, not details
 
-        # Inject AC-Memory tier 1 for historical context
-        # Tier 1 contains compressed summaries from tier 0 (Context agent compresses)
-        # Deprecates session_memory.md which had quality issues
-        tier1_content = memory_manager.get_recent(index=1, max_chars=3000)
-        if tier1_content:
-            lines.append(f"MEMORY (compressed history):\n{tier1_content}\n---\n")
+        # Inject AC-Memory tiers for historical context
+        # Tier 1: recent compressed history, Tier 2: older compressed history
+        # Input tokens are cheap (5x less than output) - inject full context
+        tier1 = memory_manager.get_tier(1)
+        tier2 = memory_manager.get_tier(2)
+        if tier1 or tier2:
+            memory_block = "MEMORY:\n"
+            if tier1:
+                memory_block += tier1 + "\n"
+            if tier2:
+                memory_block += "\n---\n" + tier2 + "\n"
+            memory_block += "---\n"
+            lines.append(memory_block)
 
         # Add recent messages
         recent = self.messages[-limit:]
