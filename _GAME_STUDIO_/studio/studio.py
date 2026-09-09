@@ -562,16 +562,17 @@ Output your narrative in markdown. Start with:
         Returns (full_prompt, trigger, context_metrics).
         """
         # Build clean prompt - agent just needs to do the work
-        trigger = f"""TASK {task.id}:
-{task.description}
+        # Output format first, then task (WHAT at end = highest recall)
+        trigger = f"""Output format:
+DONE: [one sentence summary]
+- [key point 1]
+- [key point 2]
+[Then your actual work]
 
-Respond in this format:
-DONE: [one sentence summary of what you did]
-- [key change/finding 1]
-- [key change/finding 2]
-- [etc]
+---
 
-[Then your actual work: code, analysis, spec, or whatever the task requires]"""
+TASK {task.id}:
+{task.description}"""
 
         # T226: Build structured prompt with explicit section markers
         # Order optimized for primacy/recency effects (T224):
