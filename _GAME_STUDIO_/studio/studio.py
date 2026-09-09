@@ -294,78 +294,52 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
 
         # Tier-specific prompts with compression targets
         tier_prompts = {
-            "draft": """COMPRESS raw hub messages into a session narrative.
+            "draft": """| Aspect | Value |
+|--------|-------|
+| Style | Journal, "we", informal |
+| Target | ~10% of input |
+| Include | Work done, decisions, blockers resolved, open threads |
+| Omit | Chatter, repeated status, raw dumps |""",
 
-Style: Journal entry - first person plural ("we"), informal but informative.
-Target: ~10% of input size (e.g., 10KB input → ~1KB output).
+            "chapter": """| Aspect | Value |
+|--------|-------|
+| Style | Project log, chronological, cause-effect |
+| Target | ~15% of input |
+| Include | Milestones, approach evolution, patterns, turning points |
+| Omit | Session minutiae, redundant summaries |""",
 
-Include:
-- What was worked on and outcomes
-- Decisions made and rationale
-- Blockers hit and how resolved
-- Open threads for next session
+            "book": """| Aspect | Value |
+|--------|-------|
+| Style | Technical memoir, reflective |
+| Target | ~15% of input |
+| Include | Phase objectives, architecture decisions, lessons, what worked/didn't |
+| Omit | Chapter-level details already captured |""",
 
-Omit: Routine chatter, repeated status updates, raw technical dumps.""",
-
-            "chapter": """SYNTHESIZE multiple session drafts into an epoch narrative.
-
-Style: Project log - clear chronological flow, highlight cause-and-effect.
-Target: ~15% of input size (e.g., 50KB input → ~7KB output).
-
-Include:
-- Major milestones and deliverables
-- Evolution of approach over sessions
-- Recurring patterns (good and bad)
-- Key turning points
-
-Omit: Session-level minutiae, redundant summaries.""",
-
-            "book": """SYNTHESIZE chapters into a project phase chronicle.
-
-Style: Technical memoir - reflective, captures the journey and lessons.
-Target: ~15% of input size (e.g., 300KB input → ~45KB output).
-
-Include:
-- Phase objectives and whether achieved
-- Architectural decisions and trade-offs
-- What worked, what didn't, why
-- Team dynamics and process evolution
-- Foundation laid for future work
-
-This is a significant document - preserve important context.""",
-
-            "collection": """APPEND book summary to the project archive.
-
-Style: Historical record - factual, searchable, comprehensive.
-No compression target - this tier grows indefinitely.
-
-Include:
-- Book title/phase identifier
-- Time period covered
-- Key accomplishments bullet list
-- Lessons learned bullet list
-- Links to detailed book narrative
-
-This is the permanent project archive.""",
+            "collection": """| Aspect | Value |
+|--------|-------|
+| Style | Historical record, factual, searchable |
+| Target | No limit (permanent archive) |
+| Include | Phase ID, time period, accomplishments, lessons, links to books |
+| Omit | Nothing - this is the permanent record |""",
         }
 
         tier_prompt = tier_prompts.get(tier_name, tier_prompts["draft"])
 
         date_str = datetime.now().strftime("%Y-%m-%d")
 
-        prompt = f"""HISTORY NARRATIVE: {tier_name.upper()} #{compression_count}
-Date: {date_str}
-Input size: {len(content)} chars
+        prompt = f"""HISTORY NARRATIVE: {tier_name.upper()} #{compression_count} | {date_str} | {len(content)} chars
 
+## Content
+{content_preview}
+
+---
+
+## Specs
 {tier_prompt}
 
-===CONTENT TO NARRATE===
-{content_preview}
-===END CONTENT===
+---
 
-Output your narrative in markdown. Start with:
-# {tier_name.title()} {compression_count}
-"""
+Write narrative as markdown. Start with `# {tier_name.title()} {compression_count}`"""
 
         try:
             self._notify_status("Writer", "working", f"Writing {tier_name} narrative...")
