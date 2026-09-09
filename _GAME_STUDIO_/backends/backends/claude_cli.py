@@ -111,8 +111,9 @@ class ClaudeCLIBackend(Backend):
             except Exception:
                 pass
 
-            # Note: <tool> tag handling removed - use InstructorBackend for custom tools
-            # Claude CLI uses native MCP tools which are handled by Claude Code itself
+            # Parse and execute <tool> tags if present (BOSS uses text-based tool syntax)
+            if tool_handlers and "<tool>" in response:
+                response = self._execute_tool_tags(response, tool_handlers)
 
             return response
 
@@ -385,6 +386,51 @@ class ClaudeCLIBackend(Backend):
             return "No response from Claude CLI (empty output)"
 
         return result_text
+
+    def _execute_tool_tags(self, response: str, tool_handlers: dict) -> str:
+        """Parse and execute <tool> tags in response text.
+
+        BOSS outputs tool calls as text syntax when MCP isn't available:
+        <tool>create_task</tool>
+        <params>{"description": "...", "assignee": "Programmer"}</params>
+
+        This method parses those tags, executes the handlers, and returns
+        a cleaned response with tool results appended.
+        """
+        import re
+
+        # Pattern to match <tool>name</tool> followed by <params>json</params>
+        pattern = r'<tool>(\w+)</tool>\s*<params>(.*?)</params>'
+        matches = re.findall(pattern, response, re.DOTALL)
+
+        if not matches:
+            return response
+
+        results = []
+        for tool_name, params_str in matches:
+            handler = tool_handlers.get(tool_name)
+            if not handler:
+                results.append(f"[Tool '{tool_name}' not found]")
+                continue
+
+            try:
+                params = json.loads(params_str) if params_str.strip() else {}
+                result = handler(**params)
+                results.append(f"[{tool_name}]: {result}")
+                self._tool_use_count = getattr(self, '_tool_use_count', 0) + 1
+            except json.JSONDecodeError as e:
+                results.append(f"[{tool_name} params error]: {e}")
+                self.last_tool_errors.append(f"{tool_name}: invalid JSON")
+            except Exception as e:
+                results.append(f"[{tool_name} error]: {e}")
+                self.last_tool_errors.append(f"{tool_name}: {e}")
+
+        # Strip tool tags from response and append results
+        cleaned = re.sub(pattern, '', response, flags=re.DOTALL).strip()
+        if results:
+            cleaned += "\n\n---\nTool Results:\n" + "\n".join(results)
+
+        return cleaned
 
     def get_quality_metrics(self) -> dict:
         """Return quality metrics from the last chat call for task tracking."""
