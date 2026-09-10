@@ -102,6 +102,22 @@ class PersistentClaudeCLI(Backend):
         self.last_duration_ms = 0
         self.last_num_turns = 0
         self.last_cache_creation_tokens = 0
+        self._streaming_input_tokens = 0
+        self._streaming_output_tokens = 0
+
+    def _broadcast_live_tokens(self, input_tokens: int, output_tokens: int):
+        """Broadcast live token count during streaming."""
+        self._streaming_input_tokens += input_tokens
+        self._streaming_output_tokens += output_tokens
+        try:
+            from server_modules.broadcast import broadcast_live_tokens_sync
+            broadcast_live_tokens_sync(
+                self.agent_name,
+                self._streaming_input_tokens,
+                self._streaming_output_tokens
+            )
+        except ImportError:
+            pass  # Server not running (e.g., CLI mode)
         self.last_cache_read_tokens = 0
         self.last_is_error = False
         self.last_error_message = None
@@ -391,7 +407,11 @@ class PersistentClaudeCLI(Backend):
                     text_content.append(block.get("text", ""))
             usage = message.get("usage", {})
             if usage.get("input_tokens"):
-                self._log_step("reasoning", usage.get("input_tokens", 0), usage.get("output_tokens", 0))
+                input_t = usage.get("input_tokens", 0)
+                output_t = usage.get("output_tokens", 0)
+                self._log_step("reasoning", input_t, output_t)
+                # Broadcast live tokens during streaming
+                self._broadcast_live_tokens(input_t, output_t)
 
         elif event_type == "content_block_delta":
             delta = event.get("delta", {})

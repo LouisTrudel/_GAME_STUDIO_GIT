@@ -70,6 +70,26 @@ def broadcast_thinking_sync(agent: str | None):
         asyncio.run_coroutine_threadsafe(_do_broadcast_thinking(agent), main_loop)
 
 
+def broadcast_live_tokens_sync(agent: str, input_tokens: int, output_tokens: int):
+    """Broadcast live token update during streaming (called from sync code)."""
+    if main_loop is not None:
+        asyncio.run_coroutine_threadsafe(
+            _do_broadcast_live_tokens(agent, input_tokens, output_tokens),
+            main_loop
+        )
+
+
+async def _do_broadcast_live_tokens(agent: str, input_tokens: int, output_tokens: int):
+    """Broadcast live token count to clients."""
+    data = json.dumps({
+        "type": "live_tokens",
+        "agent": agent,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+    })
+    await broadcast_to_clients(data)
+
+
 async def _broadcast_agent_statuses():
     """Broadcast all agent statuses to connected clients."""
     with _agent_statuses_lock:
