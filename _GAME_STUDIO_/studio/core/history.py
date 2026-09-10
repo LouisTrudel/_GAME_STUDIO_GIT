@@ -330,6 +330,29 @@ class HistoryManager:
         content = self.get_tier(tier)
         return content[-max_chars:] if content else ""
 
+    def search(self, query: str) -> list[dict]:
+        """Search across all history tiers for query matches."""
+        results = []
+        query_lower = query.lower()
+
+        for tier in TIER_ORDER:
+            content = self.get_tier(tier)
+            if not content:
+                continue
+
+            if query_lower in content.lower():
+                idx = content.lower().find(query_lower)
+                start = max(0, idx - 100)
+                end = min(len(content), idx + 200)
+
+                results.append({
+                    "tier": tier,
+                    "snippet": f"...{content[start:end]}...",
+                    "size": len(content),
+                })
+
+        return results
+
     def get_stats(self) -> dict:
         """Get stats for all tiers."""
         stats = {}

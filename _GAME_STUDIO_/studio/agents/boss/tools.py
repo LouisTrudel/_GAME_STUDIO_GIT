@@ -8,6 +8,7 @@ from studio.core.tasks import task_manager, TaskStatus
 from studio.core.hub import hub
 from studio.core.suggestions import suggestion_manager, VALID_CATEGORIES
 from studio.core.memory import memory_manager
+from studio.core.history import history_manager
 from studio.core.projects import project_manager
 from studio.routines.git_commit_routine import run_routine as git_commit_routine
 
@@ -331,41 +332,58 @@ Falls back to raw logs if no tier matches. Call with no query to see recent memo
 
 
 def recall_memory(query: str = "", max_results: int = 5, search_logs: bool = True) -> str:
-    """Search memory tiers for relevant context.
+    """Search both AC-Memory (bullets) and History (narrative) for context.
 
-    Tier structure:
-    - Tier 0: Raw session buffer
-    - Tier 1-2: Injected into prompts (Recent/Archive)
-    - Tier 3-10: Reference only (searchable, not auto-injected)
+    AC-Memory: Tier 0-2 injected, Tier 3-10 reference only
+    History: draft → chapter → book → collection (narrative tiers)
 
-    Empty query returns recent tier 0 content.
+    Empty query returns recent content from both systems.
     """
     query = (query or "").strip()
+    lines = []
 
-    # Handle empty query - return recent tier 0 content
+    # Handle empty query - return recent from both systems
     if len(query) < 2:
-        recent = memory_manager.get_recent(index=0, max_chars=2000)
-        if recent:
-            lines = ["=== MEMORY RECALL (Tier 0 - recent) ==="]
-            lines.append(f"Showing most recent entries\n")
-            lines.append(recent)
-            return "\n".join(lines)
-        else:
-            return "No recent memories in Tier 0. Memory is empty."
+        lines.append("=== RECENT MEMORY ===\n")
 
-    # Search across all tiers using AC-Memory (tier0-2 injected, tier3+ reference)
-    results = memory_manager.search(query, max_tiers=10)
+        # AC-Memory recent
+        ac_recent = memory_manager.get_recent(index=0, max_chars=1000)
+        if ac_recent:
+            lines.append("[AC-Memory - Tier 0]")
+            lines.append(ac_recent)
+            lines.append("")
 
-    if results:
-        lines = ["=== MEMORY RECALL ==="]
-        lines.append(f"Query: '{query}' | {len(results)} result(s)\n")
+        # History recent
+        hist_recent = history_manager.get_recent("draft", max_chars=1000)
+        if hist_recent:
+            lines.append("[History - Draft]")
+            lines.append(hist_recent)
 
-        for r in results[:max_results]:
+        if len(lines) == 1:
+            return "No recent memories. Both systems empty."
+
+        return "\n".join(lines)
+
+    # Search both systems
+    ac_results = memory_manager.search(query, max_tiers=10)
+    hist_results = history_manager.search(query)
+
+    if ac_results or hist_results:
+        lines.append(f"=== MEMORY RECALL: '{query}' ===\n")
+
+        # AC-Memory results
+        for r in ac_results[:max_results]:
             tier = r.get("tier", 0)
-            location = r.get("location", "unknown")
             snippet = r.get("snippet", "")
+            lines.append(f"[AC-Memory Tier {tier}]")
+            lines.append(f"  {snippet}")
+            lines.append("")
 
-            lines.append(f"[Tier {tier} - {location}]")
+        # History results
+        for r in hist_results[:max_results]:
+            tier = r.get("tier", "unknown")
+            snippet = r.get("snippet", "")
+            lines.append(f"[History - {tier}]")
             lines.append(f"  {snippet}")
             lines.append("")
 
@@ -377,7 +395,7 @@ def recall_memory(query: str = "", max_results: int = 5, search_logs: bool = Tru
         if log_results:
             return log_results
 
-    return f"No matches for '{query}' in memory tiers" + (" or logs" if search_logs else "")
+    return f"No matches for '{query}' in AC-Memory, History, or logs"
 
 
 def _search_logs(query: str, max_results: int) -> str:
