@@ -480,11 +480,11 @@ async def search_code(
 async def read_lines(
     path: Annotated[str, Field(description="File path relative to project root")],
     start_line: Annotated[int, Field(description="First line to read (1-indexed)")],
-    end_line: Annotated[int, Field(description="Last line to read (inclusive). Max 100 lines per call.")],
+    end_line: Annotated[int, Field(description="Last line to read (inclusive). Max 200 lines per call.")],
 ) -> str:
     """Read specific lines from a file - use search_code first to find what you need.
 
-    IMPORTANT: Max 100 lines per call to prevent token explosion.
+    Max 200 lines per call - covers most functions/classes with context.
     For larger sections, make multiple calls or reconsider your approach.
     """
     file_path = PROJECT_ROOT / path
@@ -492,9 +492,9 @@ async def read_lines(
     if not file_path.exists():
         return f"File not found: {path}"
 
-    # Enforce max 100 lines
-    if end_line - start_line > 100:
-        return f"Too many lines requested ({end_line - start_line}). Max is 100. Use search_code to find specific sections."
+    # Enforce max 200 lines
+    if end_line - start_line > 200:
+        return f"Too many lines requested ({end_line - start_line}). Max is 200. Use search_code to find specific sections."
 
     try:
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
