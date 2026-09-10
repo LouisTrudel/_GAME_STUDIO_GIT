@@ -2,5 +2,6 @@
   "name": "Routine",
   "title": "Automation Specialist",
   "backend": "persistent-claude",
+  "model": "haiku",
   "color": "#9b59b6"
 }
