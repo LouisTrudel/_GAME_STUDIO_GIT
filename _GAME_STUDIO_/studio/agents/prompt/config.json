@@ -1,5 +1,5 @@
 {
-  "name": "Context",
+  "name": "Prompt",
   "title": "Context Engineer",
   "backend": "persistent-claude",
   "color": "#00bcd4"

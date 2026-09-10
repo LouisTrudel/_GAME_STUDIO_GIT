@@ -74,13 +74,11 @@ def create_task(description: str = None, assignee: str = None, dependencies: lis
     # Support 'agent' as alias for 'assignee' (BOSS sometimes uses it)
     assignee = assignee or agent
 
-    # Normalize assignee name to match registered agent names (e.g., "programmer" -> "Programmer")
+    # Normalize assignee name to match registered agent names (e.g., "code" -> "Code")
     if assignee:
-        # Special cases: BOSS, QA, and Raw are specific casing
+        # Special cases: BOSS and Raw are specific casing
         if assignee.lower() == "boss":
             assignee = "BOSS"
-        elif assignee.lower() == "qa":
-            assignee = "QA"
         elif assignee.lower() == "raw":
             assignee = "Raw"  # Pseudo-agent for direct LLM queries
         else:

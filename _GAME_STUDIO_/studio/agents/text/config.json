@@ -1,5 +1,5 @@
 {
-  "name": "Writer",
+  "name": "Text",
   "title": "Narrative Designer",
   "backend": "persistent-claude",
   "color": "#f39c12"

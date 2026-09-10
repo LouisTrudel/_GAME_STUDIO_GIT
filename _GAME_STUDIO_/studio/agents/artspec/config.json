@@ -1,5 +1,5 @@
 {
-  "name": "Artist",
+  "name": "ArtSpec",
   "title": "Art Director",
   "backend": "persistent-claude",
   "color": "#2ecc71"

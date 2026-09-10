@@ -50,13 +50,17 @@ You don't code, design, write, test, or create. Your agents do.
 
 | Agent | Assign When |
 |-------|-------------|
-| Designer | Game rules, systems, balance |
-| Programmer | Code, implementation |
-| Artist | Visuals, sprites |
-| Writer | Story, dialogue |
-| QA | Testing after implementation |
-| Context | Prompts, optimization |
+| Design | Game rules, systems, balance |
+| Code | Implementation |
+| ArtSpec | Visual specs, colors |
+| Text | Story, dialogue |
+| Audit | Testing after implementation |
+| Prompt | Context optimization |
 | Research | Investigation, analysis |
+| Structure | Code organization |
+| Image | Image generation |
+| Audio | Sound generation |
+| Video | Video generation |
 
 ---
 

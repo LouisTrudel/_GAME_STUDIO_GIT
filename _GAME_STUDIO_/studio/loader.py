@@ -17,18 +17,17 @@ ROUTERS_DIR = SKILLS_DIR / "_routers"
 # Agent name to router type mapping
 AGENT_ROUTER_MAP = {
     "boss": "boss",
-    "programmer": "programmer",
-    "designer": "designer",
-    "artist": "artist",
-    "writer": "writer",
-    "qa": "qa",
-    "taxonomy": "taxonomy",
-    "context": "context",
+    "code": "code",
+    "design": "design",
+    "artspec": "artspec",
+    "text": "text",
+    "audit": "audit",
+    "structure": "structure",
+    "prompt": "prompt",
     "research": "research",
     "image": "image",
-    "sound": "sound",
+    "audio": "audio",
     "video": "video",
-    "claude": None,  # Vanilla passthrough - no router skills
 }
 
 

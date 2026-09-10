@@ -529,8 +529,8 @@ def list_sessions() -> dict[str, dict]:
     sessions = {}
 
     # Known agents
-    agents = ["BOSS", "Programmer", "Designer", "Artist", "Writer", "QA",
-              "Context", "Research", "Routine", "Taxonomy", "Image", "Sound", "Video"]
+    agents = ["BOSS", "Code", "Design", "ArtSpec", "Text", "Audit",
+              "Prompt", "Research", "Routine", "Structure", "Image", "Audio", "Video"]
 
     for agent in agents:
         uuid = get_session_uuid(agent)

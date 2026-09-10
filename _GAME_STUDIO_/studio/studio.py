@@ -112,9 +112,9 @@ class Studio:
         Returns:
             dict with {keep: str, push: str, friction: str}
         """
-        context_agent = self.agents.get("Context")
+        context_agent = self.agents.get("Prompt")
         if not context_agent:
-            logger.debug("Context agent not found for AC-Memory compression")
+            logger.debug("Prompt agent not found for AC-Memory compression")
             return self._fallback_compress(content, tier_index, prev_tier_context)
 
         # Truncate for context window
@@ -161,9 +161,9 @@ class Studio:
 Compress the content above into classified bullet points. Output ===KEEP===, ===PUSH===, ===FRICTION=== sections."""
 
         try:
-            self._notify_status("Context", "working", f"Compacting tier {tier_index}...")
+            self._notify_status("Prompt", "working", f"Compacting tier {tier_index}...")
             response = context_agent.respond(prompt)
-            self._notify_status("Context", "idle", "")
+            self._notify_status("Prompt", "idle", "")
 
             # Parse response into keep/push
             result = self._parse_split_response(response)
@@ -289,9 +289,9 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
         Returns:
             Narrative markdown string, or None on failure
         """
-        writer_agent = self.agents.get("Writer")
+        writer_agent = self.agents.get("Text")
         if not writer_agent:
-            logger.debug("Writer agent not found for tier narrative")
+            logger.debug("Text agent not found for tier narrative")
             return None
 
         # Truncate content for Writer
@@ -347,9 +347,9 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
 Write narrative as markdown. Start with `# {tier_name.title()} {compression_count}`"""
 
         try:
-            self._notify_status("Writer", "working", f"Writing {tier_name} narrative...")
+            self._notify_status("Text", "working", f"Writing {tier_name} narrative...")
             narrative = writer_agent.respond(prompt)
-            self._notify_status("Writer", "idle", "")
+            self._notify_status("Text", "idle", "")
             return narrative
         except Exception as e:
             logger.error("Tier narrative generation failed: %s", e)

@@ -62,7 +62,7 @@ mcp = MCPServer("game-studio")
 @mcp.tool()
 async def create_task(
     description: Annotated[str, Field(description="Clear description of what needs to be done")],
-    assignee: Annotated[Optional[str], Field(description="Agent: Designer, Programmer, Artist, Writer, QA, Context, Research, Raw")] = None,
+    assignee: Annotated[Optional[str], Field(description="Agent: Design, Code, ArtSpec, Text, Audit, Prompt, Research, Raw")] = None,
     dependencies: Annotated[Optional[list[str]], Field(description="Task IDs that must complete first")] = None,
     backend: Annotated[Optional[str], Field(description="LLM backend for Raw tasks: 'gemini', 'claude_cli', 'ollama'")] = None,
 ) -> str:
@@ -169,7 +169,7 @@ async def git_commit(
 
 @mcp.tool()
 async def get_my_tasks(
-    agent_name: Annotated[str, Field(description="Your agent name (Designer, Programmer, etc.)")],
+    agent_name: Annotated[str, Field(description="Your agent name (Design, Code, etc.)")],
 ) -> str:
     """Get all tasks assigned to you."""
     from studio.core.employee_tools import get_my_tasks as handler
@@ -196,7 +196,7 @@ async def log_step(
 @mcp.tool()
 async def report_bug(
     title: Annotated[str, Field(description="Short bug title (e.g., 'Shop button unresponsive')")],
-    assignee: Annotated[str, Field(description="Agent to fix the bug: Programmer, Designer, Artist, Writer")] = "Programmer",
+    assignee: Annotated[str, Field(description="Agent to fix the bug: Code, Design, ArtSpec, Text")] = "Code",
     description: Annotated[str, Field(description="Bug details: steps to reproduce, expected vs actual")] = "",
     severity: Annotated[Literal["critical", "major", "minor", "polish"], Field(description="Bug severity level")] = "major",
 ) -> str:
@@ -204,7 +204,7 @@ async def report_bug(
 
     Creates a task for the responsible agent to fix it.
     """
-    from studio.agents.qa.tools import report_bug as handler
+    from studio.agents.audit.tools import report_bug as handler
     return handler(title=title, assignee=assignee, description=description, severity=severity)
 
 
@@ -216,7 +216,7 @@ async def check_files(
 
     Use to confirm deliverables were created.
     """
-    from studio.agents.qa.tools import check_files as handler
+    from studio.agents.audit.tools import check_files as handler
     return handler(paths=paths)
 
 
@@ -231,7 +231,7 @@ async def test_summary(
 
     Reports findings to BOSS. Always call this at the end of testing.
     """
-    from studio.agents.qa.tools import test_summary as handler
+    from studio.agents.audit.tools import test_summary as handler
     return handler(task_id=task_id, passed=passed, summary=summary, bugs_reported=bugs_reported)
 
 
@@ -313,7 +313,7 @@ async def analyze_naming(
     - Inconsistent prefixes (get_ vs fetch_ vs load_)
     - Unclear or abbreviated names
     """
-    from studio.agents.taxonomy.tools import analyze_naming as handler
+    from studio.agents.structure.tools import analyze_naming as handler
     return handler(path=path, scope=scope)
 
 
@@ -326,7 +326,7 @@ async def suggest_conventions(
 
     Analyzes existing patterns and suggests standards to adopt.
     """
-    from studio.agents.taxonomy.tools import suggest_conventions as handler
+    from studio.agents.structure.tools import suggest_conventions as handler
     return handler(path=path, language=language)
 
 
@@ -341,7 +341,7 @@ async def report_issue(
 
     Creates a task for the responsible agent with specific rename recommendations.
     """
-    from studio.agents.taxonomy.tools import report_issue as handler
+    from studio.agents.structure.tools import report_issue as handler
     return handler(title=title, description=description, assignee=assignee, priority=priority)
 
 
@@ -358,14 +358,14 @@ async def count_tokens(
 
     Use to check token budgets.
     """
-    from studio.agents.context.tools import count_tokens as handler
+    from studio.agents.prompt.tools import count_tokens as handler
     return handler(path=path, text=text)
 
 
 @mcp.tool()
 async def list_roles() -> str:
     """List all agent role.md files with token counts."""
-    from studio.agents.context.tools import list_roles as handler
+    from studio.agents.prompt.tools import list_roles as handler
     return handler()
 
 

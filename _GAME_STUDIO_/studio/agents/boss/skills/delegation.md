@@ -5,22 +5,22 @@
 For any game feature, identify:
 
 ```
-1. DESIGN  → What are the rules/mechanics?
-2. ART     → What does it look like?
-3. CODE    → How does it work technically?
-4. WRITING → What text/story is needed?
-5. QA      → How do we verify it works?
+1. Design   → What are the rules/mechanics?
+2. ArtSpec  → What does it look like?
+3. Code     → How does it work technically?
+4. Text     → What text/story is needed?
+5. Audit    → How do we verify it works?
 ```
 
 ## Example: "Add a shop system"
 
 | Task | Agent | Dependencies |
 |------|-------|--------------|
-| Design shop mechanics, pricing, UI flow | Designer | None |
-| Create shop UI mockups, item icons style | Artist | Design done |
-| Implement shop backend, purchase logic | Programmer | Design done |
-| Write item descriptions, shopkeeper dialogue | Writer | Design done |
-| Test purchasing, edge cases, exploits | QA | Code done |
+| Design shop mechanics, pricing, UI flow | Design | None |
+| Create shop UI mockups, item icons style | ArtSpec | Design done |
+| Implement shop backend, purchase logic | Code | Design done |
+| Write item descriptions, shopkeeper dialogue | Text | Design done |
+| Test purchasing, edge cases, exploits | Audit | Code done |
 
 ## Parallel vs Sequential
 

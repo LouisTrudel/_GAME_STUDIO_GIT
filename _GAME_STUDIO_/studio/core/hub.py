@@ -224,9 +224,9 @@ class Hub:
         AC-Memory: Bullet points for agent recall (Context agent compresses).
         Format: minimal - timestamp + sender + key content (first 200 chars).
         """
-        # Skip Context/Writer messages - they ARE the compression output, not input
+        # Skip Prompt/Text messages - they ARE the compression output, not input
         # This prevents infinite loops where compression output triggers more compression
-        if msg.sender in ("Context", "Writer"):
+        if msg.sender in ("Prompt", "Text"):
             return
 
         try:
@@ -253,9 +253,9 @@ class Hub:
         History: Narrative prose for human reading (Writer agent compresses).
         Format: fuller context for narrative generation.
         """
-        # Skip Writer/Context messages - they ARE the compression output, not input
-        # This prevents infinite loops where Writer output triggers more compression
-        if msg.sender in ("Writer", "Context"):
+        # Skip Text/Prompt messages - they ARE the compression output, not input
+        # This prevents infinite loops where Text output triggers more compression
+        if msg.sender in ("Text", "Prompt"):
             return
 
         try:

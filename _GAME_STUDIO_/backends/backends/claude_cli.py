@@ -604,7 +604,7 @@ class ClaudeCLIBackend(Backend):
 
         BOSS outputs tool calls as text syntax when MCP isn't available:
         <tool>create_task</tool>
-        <params>{"description": "...", "assignee": "Programmer"}</params>
+        <params>{"description": "...", "assignee": "Code"}</params>
 
         This method parses those tags, executes the handlers, and returns
         a cleaned response with tool results appended.

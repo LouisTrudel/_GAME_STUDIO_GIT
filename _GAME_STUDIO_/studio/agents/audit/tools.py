@@ -38,17 +38,15 @@ Use after testing when you find issues that need fixing.""",
 }
 
 
-def report_bug(title: str, assignee: str = "Programmer", description: str = "", severity: str = "major", **kwargs) -> str:
+def report_bug(title: str, assignee: str = "Code", description: str = "", severity: str = "major", **kwargs) -> str:
     # Handle alternate parameter names
     # 'steps' is sometimes passed instead of 'description'
     if not description and "steps" in kwargs:
         description = kwargs["steps"]
 
-    # Normalize assignee (BOSS and QA are uppercase, others capitalized)
+    # Normalize assignee (BOSS is uppercase, others capitalized)
     if assignee.lower() == "boss":
         assignee = "BOSS"
-    elif assignee.lower() == "qa":
-        assignee = "QA"
     else:
         assignee = assignee.capitalize()
 
@@ -57,7 +55,7 @@ def report_bug(title: str, assignee: str = "Programmer", description: str = "", 
         full_desc += f"\n\n{description}"
     task = task_manager.create_task(full_desc, assignee)
 
-    hub.post("QA", f"@{assignee} Bug reported: {task.id} - {title}")
+    hub.post("Audit", f"@{assignee} Bug reported: {task.id} - {title}")
     return f"Bug {task.id} created and assigned to {assignee}: {title}"
 
 
@@ -139,7 +137,7 @@ def test_summary(task_id: str, passed: bool = None, summary: str = "", bugs_repo
     status = "PASSED" if passed else "FAILED"
     bugs = f" | Bugs: {', '.join(bugs_reported)}" if bugs_reported else ""
 
-    hub.post("QA", f"@BOSS Testing {task_id} {status}{bugs}: {summary}")
+    hub.post("Audit", f"@BOSS Testing {task_id} {status}{bugs}: {summary}")
     return f"Test summary submitted for {task_id}: {status}"
 
 

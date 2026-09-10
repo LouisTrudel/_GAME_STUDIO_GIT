@@ -1,5 +1,5 @@
 {
-  "name": "Sound",
+  "name": "Audio",
   "title": "Sound Producer",
   "backend": "persistent-claude",
   "color": "#9c27b0"

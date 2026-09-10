@@ -317,18 +317,16 @@ Creates a task for the responsible agent with specific rename recommendations.""
 
 def report_issue(title: str, description: str, assignee: str, priority: str = "medium") -> str:
     """Report a taxonomy issue as a task for another agent."""
-    # Normalize assignee
+    # Normalize assignee (BOSS is uppercase, others capitalized)
     if assignee.lower() == "boss":
         assignee = "BOSS"
-    elif assignee.lower() == "qa":
-        assignee = "QA"
     else:
         assignee = assignee.capitalize()
 
-    full_desc = f"[TAXONOMY - {priority.upper()}] {title}\n\n{description}"
+    full_desc = f"[STRUCTURE - {priority.upper()}] {title}\n\n{description}"
     task = task_manager.create_task(full_desc, assignee)
 
-    hub.post("Taxonomy", f"@{assignee} Naming issue: {task.id} - {title}")
+    hub.post("Structure", f"@{assignee} Naming issue: {task.id} - {title}")
     return f"Issue {task.id} created and assigned to {assignee}: {title}"
 
 

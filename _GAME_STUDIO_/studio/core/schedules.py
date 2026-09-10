@@ -428,10 +428,10 @@ def create_trend_report_schedule(interval_hours: int = 24) -> Schedule:
         description="Research gaming trends and compile a report",
         interval_seconds=interval_hours * 3600,
         tasks=[
-            {"description": "Search the web for current gaming trends, popular mechanics, and industry news", "assignee": "Designer"},
-            {"description": "Write a comprehensive trend report based on the research", "assignee": "Writer"},
-            {"description": "Review the report for accuracy and completeness", "assignee": "QA"},
-            {"description": "Apply final edits and polish to the report", "assignee": "Writer"},
+            {"description": "Search the web for current gaming trends, popular mechanics, and industry news", "assignee": "Design"},
+            {"description": "Write a comprehensive trend report based on the research", "assignee": "Text"},
+            {"description": "Review the report for accuracy and completeness", "assignee": "Audit"},
+            {"description": "Apply final edits and polish to the report", "assignee": "Text"},
             {"description": "Save the final report and notify BOSS", "assignee": "BOSS"},
         ],
     )
@@ -444,9 +444,9 @@ def create_code_review_schedule(interval_hours: int = 12) -> Schedule:
         description="Review recent code changes for quality",
         interval_seconds=interval_hours * 3600,
         tasks=[
-            {"description": "Review recent code changes for bugs and issues", "assignee": "Programmer"},
-            {"description": "Test edge cases and potential exploits", "assignee": "QA"},
-            {"description": "Summarize findings for BOSS", "assignee": "Programmer"},
+            {"description": "Review recent code changes for bugs and issues", "assignee": "Code"},
+            {"description": "Test edge cases and potential exploits", "assignee": "Audit"},
+            {"description": "Summarize findings for BOSS", "assignee": "Code"},
         ],
     )
 
@@ -470,12 +470,12 @@ def create_taxonomy_review_schedule(interval_hours: int = 24) -> Schedule:
         tasks=[
             {
                 "description": f"[WHAT] Analyze codebase for structural issues [CONTEXT] Scan all files for: file sizes (>400 lines warn, logic files >1500 action), function lengths (>50 lines), duplicate code (>15 lines), naming inconsistencies, dead code, missing types [OUTPUT] Write report to {report_path} using this format:\n\n# Codebase Review - {today}\n\n## Priority: High\n- [ ] **Action** `file:lines` → description\n  - Rationale: why\n  - Files affected: N\n\n## Priority: Medium\n(same format)\n\n## Priority: Low\n(same format)\n\n## Stats\n- Files scanned: N\n- Issues found: N\n\n[CONSTRAINTS] Max 20 items, include exact file paths and line numbers, cap at top 20 by priority if >20 issues found",
-                "assignee": "Taxonomy",
+                "assignee": "Structure",
                 "output": "report",
             },
             {
                 "description": f"[WHAT] Apply codebase review recommendations [CONTEXT] See {report_path} [CONSTRAINTS] Address High priority first, create follow-up tasks for Medium/Low if needed",
-                "assignee": "Programmer",
+                "assignee": "Code",
             },
         ],
     )
