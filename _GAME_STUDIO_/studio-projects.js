@@ -695,7 +695,13 @@ function handleProjectsUpdate(data) {
     renderProjects();
     updateProjectSwitcher();
     // Re-render details if selected project was updated
+    // BUT skip if chat is visible - chat messages stored in DOM only, would be destroyed
     if (selectedProjectId && projects.find(p => p.id === selectedProjectId)) {
+        if (projectChatVisible) {
+            // Chat active - preserve DOM, just update whitepaper pane
+            loadProjectWhitepaper(selectedProjectId);
+            return;
+        }
         renderProjectDetails();
     }
 }
