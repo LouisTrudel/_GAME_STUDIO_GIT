@@ -1,1 +1,6 @@
-{"name": "Programmer", "title": "Lead Programmer", "backend": "claude-cli", "color": "#3498db"}
+{
+  "name": "Programmer",
+  "title": "Lead Programmer",
+  "backend": "persistent-claude",
+  "color": "#3498db"
+}

@@ -1,1 +1,6 @@
-{"name": "Image", "title": "Image Producer", "backend": "claude-cli", "color": "#e91e63"}
+{
+  "name": "Image",
+  "title": "Image Producer",
+  "backend": "persistent-claude",
+  "color": "#e91e63"
+}

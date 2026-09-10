@@ -8,6 +8,7 @@ from .backends import (
     AnthropicBackend,
     OllamaBackend,
     ClaudeCLIBackend,
+    PersistentClaudeCLI,
     Backend,
 )
 
@@ -17,7 +18,8 @@ class Agent:
     A conversational agent with pluggable LLM backends.
 
     Backends:
-    - "claude-cli" (uses Claude Pro subscription via CLI + MCP tools)
+    - "claude-cli" (stateless - spawns fresh process each call)
+    - "persistent-claude" (stateful - keeps process alive, 90% token savings)
     - "gemini" (free tier limited)
     - "anthropic" (requires API credits)
     - "ollama" (free, local)
@@ -29,6 +31,7 @@ class Agent:
     BACKENDS = {
         "claude-cli": ClaudeCLIBackend,
         "claude": ClaudeCLIBackend,  # Alias
+        "persistent-claude": PersistentClaudeCLI,  # Keeps process alive, 90% token savings
         "gemini": GeminiBackend,
         "anthropic": AnthropicBackend,
         "ollama": OllamaBackend,
@@ -40,6 +43,7 @@ class Agent:
         system_prompt: str,
         backend: str = "gemini",
         model: str = None,
+        max_turns: int = None,
         tools: list[dict] | None = None,
         tool_handlers: dict[str, Callable] | None = None,
     ):
@@ -59,6 +63,9 @@ class Agent:
             if model:
                 kwargs["model"] = model
             self.backend = backend_cls(**kwargs)
+            # Allow max_turns override (limits Claude CLI tool use loops)
+            if max_turns:
+                self.backend.max_turns = max_turns
         elif isinstance(backend, Backend):
             self.backend = backend
         else:

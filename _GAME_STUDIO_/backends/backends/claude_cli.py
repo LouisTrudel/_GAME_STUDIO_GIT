@@ -267,12 +267,30 @@ class ClaudeCLIBackend(Backend):
         # All agents need --dangerously-skip-permissions to use MCP tools
         cmd.append("--dangerously-skip-permissions")
 
+        # Tool restrictions to prevent token explosion from full-file reads
+        # All agents use MCP smart file tools instead of Claude Code's Read/Write
         if self.agent_name == "BOSS":
-            # BOSS: Whitelist only needed tools to reduce context bloat (T433)
-            # Removes: Read, Write, Edit, Grep, Glob, WebFetch, WebSearch from context
-            # Keeps: MCP tools, user questions, git/ls inspection, agent delegation
+            # BOSS: Only MCP tools + delegation (no file access)
             allowed = "mcp__game-studio__*,AskUserQuestion,Bash(git *),Bash(ls *),Task"
-            cmd.extend(["--allowedTools", allowed])
+        else:
+            # Employees: MCP tools + Edit (for surgical changes) + Bash (for running code)
+            # Blocks: Read, Write, Glob, Grep (use MCP search_code, read_lines, file_outline instead)
+            allowed = "mcp__game-studio__*,Edit,Bash,AskUserQuestion"
+        cmd.extend(["--allowedTools", allowed])
+
+        # Limit turns to prevent token explosion from excessive tool use
+        # Configurable via self.max_turns, defaults based on role
+        # BOSS: 5 (mostly delegates), Employees: 30 (enough for read+edit cycles)
+        if hasattr(self, 'max_turns') and self.max_turns:
+            max_turns = self.max_turns
+        else:
+            max_turns = 5 if self.agent_name == "BOSS" else 30
+        cmd.extend(["--max-turns", str(max_turns)])
+
+        # Model selection - use haiku for cheaper exploration
+        # Supported: sonnet, opus, haiku (default: sonnet)
+        if self.model and self.model != "claude":
+            cmd.extend(["--model", self.model])
 
         # Debug: print full command
         logger.debug("Command: %s", ' '.join(cmd))

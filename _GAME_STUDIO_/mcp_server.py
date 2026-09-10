@@ -406,6 +406,249 @@ async def list_reports() -> str:
 
 
 # =============================================================================
+# SMART FILE TOOLS - Token-efficient alternatives to Read/Write
+# =============================================================================
+
+@mcp.tool()
+async def search_code(
+    pattern: Annotated[str, Field(description="Search pattern. Examples: 'def login', 'class User', 'TODO'")],
+    path: Annotated[Optional[str], Field(description="File or folder to search (relative to project). Default: entire project")] = None,
+    context_lines: Annotated[int, Field(description="Lines of context around matches (default: 2)")] = 2,
+) -> str:
+    """Search for code patterns - returns ONLY matching lines, not entire files.
+
+    Use this BEFORE read_lines to find what you need. Much cheaper than reading whole files.
+    """
+    import subprocess
+    import os
+
+    search_path = PROJECT_ROOT / path if path else PROJECT_ROOT
+
+    try:
+        # Try ripgrep first (fast, cross-platform)
+        try:
+            cmd = ["rg", "-n", f"-C{context_lines}", "--max-count", "20", pattern, str(search_path)]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and result.stdout:
+                lines = result.stdout.strip().split('\n')
+                if len(lines) > 50:
+                    return '\n'.join(lines[:50]) + f"\n\n... ({len(lines) - 50} more matches)"
+                return result.stdout
+            elif result.returncode == 1:
+                return f"No matches found for '{pattern}'"
+        except FileNotFoundError:
+            pass  # rg not installed, try fallback
+
+        # Windows fallback: use findstr or Python-based search
+        if os.name == 'nt':
+            # Python-based search (more reliable than findstr)
+            matches = []
+            search_dir = search_path if search_path.is_dir() else search_path.parent
+            pattern_lower = pattern.lower()
+
+            for py_file in search_dir.rglob("*.py"):
+                try:
+                    with open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
+                        for i, line in enumerate(f, 1):
+                            if pattern_lower in line.lower():
+                                rel_path = py_file.relative_to(PROJECT_ROOT)
+                                matches.append(f"{rel_path}:{i}: {line.rstrip()[:100]}")
+                                if len(matches) >= 30:
+                                    break
+                except Exception:
+                    continue
+                if len(matches) >= 30:
+                    break
+
+            if matches:
+                return '\n'.join(matches)
+            return f"No matches found for '{pattern}'"
+
+        # Unix fallback: use grep
+        cmd = ["grep", "-rn", f"-C{context_lines}", pattern, str(search_path)]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.stdout:
+            lines = result.stdout.strip().split('\n')[:40]
+            return '\n'.join(lines)
+        return f"No matches found for '{pattern}'"
+
+    except Exception as e:
+        return f"Search error: {e}"
+
+
+@mcp.tool()
+async def read_lines(
+    path: Annotated[str, Field(description="File path relative to project root")],
+    start_line: Annotated[int, Field(description="First line to read (1-indexed)")],
+    end_line: Annotated[int, Field(description="Last line to read (inclusive). Max 100 lines per call.")],
+) -> str:
+    """Read specific lines from a file - use search_code first to find what you need.
+
+    IMPORTANT: Max 100 lines per call to prevent token explosion.
+    For larger sections, make multiple calls or reconsider your approach.
+    """
+    file_path = PROJECT_ROOT / path
+
+    if not file_path.exists():
+        return f"File not found: {path}"
+
+    # Enforce max 100 lines
+    if end_line - start_line > 100:
+        return f"Too many lines requested ({end_line - start_line}). Max is 100. Use search_code to find specific sections."
+
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            lines = f.readlines()
+
+        total_lines = len(lines)
+        start_idx = max(0, start_line - 1)
+        end_idx = min(total_lines, end_line)
+
+        selected = lines[start_idx:end_idx]
+
+        result = f"# {path} (lines {start_line}-{end_line} of {total_lines})\n\n"
+        for i, line in enumerate(selected, start=start_line):
+            result += f"{i:4}: {line}"
+
+        return result
+    except Exception as e:
+        return f"Error reading {path}: {e}"
+
+
+@mcp.tool()
+async def file_outline(
+    path: Annotated[str, Field(description="File path relative to project root")],
+) -> str:
+    """Get structure of a file (functions, classes, imports) WITHOUT reading full content.
+
+    Use this to understand file structure before deciding what to read.
+    """
+    file_path = PROJECT_ROOT / path
+
+    if not file_path.exists():
+        return f"File not found: {path}"
+
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            lines = f.readlines()
+
+        outline = [f"# {path} ({len(lines)} lines)\n"]
+
+        for i, line in enumerate(lines, 1):
+            stripped = line.strip()
+            # Python patterns
+            if stripped.startswith('def ') or stripped.startswith('async def '):
+                outline.append(f"{i:4}: {stripped.split('(')[0]}(...)")
+            elif stripped.startswith('class '):
+                outline.append(f"{i:4}: {stripped.split('(')[0].split(':')[0]}")
+            elif stripped.startswith('import ') or stripped.startswith('from '):
+                if len(outline) < 20:  # Limit imports shown
+                    outline.append(f"{i:4}: {stripped}")
+            # JS/TS patterns
+            elif 'function ' in stripped or stripped.startswith('export '):
+                outline.append(f"{i:4}: {stripped[:60]}...")
+            # Lua patterns
+            elif stripped.startswith('function ') or stripped.startswith('local function'):
+                outline.append(f"{i:4}: {stripped.split('(')[0]}(...)")
+
+        if len(outline) == 1:
+            outline.append("(no functions/classes detected - may be config or data file)")
+
+        return '\n'.join(outline)
+    except Exception as e:
+        return f"Error reading {path}: {e}"
+
+
+@mcp.tool()
+async def edit_lines(
+    path: Annotated[str, Field(description="File path relative to project root")],
+    start_line: Annotated[int, Field(description="First line to replace (1-indexed)")],
+    end_line: Annotated[int, Field(description="Last line to replace (inclusive)")],
+    new_content: Annotated[str, Field(description="New content to insert (will replace lines start_line through end_line)")],
+) -> str:
+    """Replace specific lines in a file. Use search_code + read_lines first to find exact lines.
+
+    Surgical edits - only modifies the lines you specify.
+    """
+    file_path = PROJECT_ROOT / path
+
+    if not file_path.exists():
+        return f"File not found: {path}"
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        # Validate range
+        if start_line < 1 or end_line > len(lines) or start_line > end_line:
+            return f"Invalid line range {start_line}-{end_line}. File has {len(lines)} lines."
+
+        # Prepare new content
+        new_lines = new_content.split('\n')
+        if not new_content.endswith('\n'):
+            new_lines = [line + '\n' for line in new_lines]
+        else:
+            new_lines = [line + '\n' if not line.endswith('\n') else line for line in new_lines[:-1]]
+            if new_lines:
+                pass  # Last line already handled
+
+        # Replace lines
+        lines[start_line-1:end_line] = [line if line.endswith('\n') else line + '\n' for line in new_content.split('\n')]
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.writelines(lines)
+
+        return f"Replaced lines {start_line}-{end_line} in {path}"
+    except Exception as e:
+        return f"Error editing {path}: {e}"
+
+
+# =============================================================================
+# SESSION MANAGEMENT (optional - sessions auto-compact)
+# =============================================================================
+
+@mcp.tool()
+async def session_stats() -> str:
+    """View agent session statistics.
+
+    Sessions auto-compact, so clearing is rarely needed.
+    Use this to monitor session sizes.
+    """
+    try:
+        from backends.backends.persistent_claude_cli import get_session_stats
+        stats = get_session_stats()
+
+        lines = [f"Active sessions: {stats['total_sessions']}",
+                 f"Total size: {stats['total_size_kb']} KB", ""]
+
+        for agent, info in stats['sessions'].items():
+            if info['exists']:
+                lines.append(f"  {agent}: {info['size_kb']} KB")
+
+        return '\n'.join(lines)
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@mcp.tool()
+async def clear_agent_session(
+    agent_name: Annotated[str, Field(description="Agent name to clear (e.g., 'Programmer', 'BOSS')")],
+) -> str:
+    """Clear a specific agent's session.
+
+    Only use if an agent seems stuck or confused.
+    Sessions auto-compact, so this is rarely needed.
+    """
+    try:
+        from backends.backends.persistent_claude_cli import clear_session
+        if clear_session(agent_name):
+            return f"Session cleared for {agent_name}. Next task will reinitialize."
+        return f"No session found for {agent_name}"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+# =============================================================================
 # SERVER ENTRY POINT
 # =============================================================================
 

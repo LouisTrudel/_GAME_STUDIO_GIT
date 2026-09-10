@@ -15,6 +15,7 @@ from .gemini import GeminiBackend
 from .anthropic import AnthropicBackend
 from .ollama import OllamaBackend
 from .claude_cli import ClaudeCLIBackend
+from .persistent_claude_cli import PersistentClaudeCLI
 
 __all__ = [
     "Backend",
@@ -22,4 +23,5 @@ __all__ = [
     "AnthropicBackend",
     "OllamaBackend",
     "ClaudeCLIBackend",
+    "PersistentClaudeCLI",
 ]

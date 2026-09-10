@@ -1,1 +1,6 @@
-{"name": "Context", "title": "Context Engineer", "backend": "claude-cli", "color": "#00bcd4"}
+{
+  "name": "Context",
+  "title": "Context Engineer",
+  "backend": "persistent-claude",
+  "color": "#00bcd4"
+}

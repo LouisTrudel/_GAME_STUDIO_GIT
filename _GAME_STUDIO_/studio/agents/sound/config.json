@@ -1,1 +1,6 @@
-{"name": "Sound", "title": "Sound Producer", "backend": "claude-cli", "color": "#9c27b0"}
+{
+  "name": "Sound",
+  "title": "Sound Producer",
+  "backend": "persistent-claude",
+  "color": "#9c27b0"
+}

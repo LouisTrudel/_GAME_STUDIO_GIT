@@ -1,1 +1,6 @@
-{"name": "Video", "title": "Video Producer", "backend": "claude-cli", "color": "#ff5722"}
+{
+  "name": "Video",
+  "title": "Video Producer",
+  "backend": "persistent-claude",
+  "color": "#ff5722"
+}

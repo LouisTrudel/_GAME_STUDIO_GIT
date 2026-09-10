@@ -1,1 +1,6 @@
-{"name": "Designer", "title": "Game Designer", "backend": "claude-cli", "color": "#9b59b6"}
+{
+  "name": "Designer",
+  "title": "Game Designer",
+  "backend": "persistent-claude",
+  "color": "#9b59b6"
+}

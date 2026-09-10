@@ -1,1 +1,7 @@
-{"name": "Claude", "title": "Vanilla Claude", "backend": "claude-cli", "color": "#d4a574", "vanilla": true}
+{
+  "name": "Claude",
+  "title": "Vanilla Claude",
+  "backend": "persistent-claude",
+  "color": "#d4a574",
+  "vanilla": true
+}

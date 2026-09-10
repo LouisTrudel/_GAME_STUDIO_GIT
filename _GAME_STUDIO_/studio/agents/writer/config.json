@@ -1,1 +1,6 @@
-{"name": "Writer", "title": "Narrative Designer", "backend": "claude-cli", "color": "#f39c12"}
+{
+  "name": "Writer",
+  "title": "Narrative Designer",
+  "backend": "persistent-claude",
+  "color": "#f39c12"
+}

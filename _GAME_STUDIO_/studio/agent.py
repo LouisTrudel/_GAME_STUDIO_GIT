@@ -73,6 +73,7 @@ class StudioAgent:
         self.title = config.get("title", "Agent")
         self.color = config.get("color", "#888")
         self.model = config.get("model", "claude")
+        self.max_turns = config.get("max_turns", None)  # Limits Claude CLI tool loops
         self.is_boss = "boss" in name.lower()
         self.is_vanilla = config.get("vanilla", False)
 
@@ -94,6 +95,7 @@ class StudioAgent:
             system_prompt=system_prompt,
             backend=backend,
             model=self.model,
+            max_turns=self.max_turns,
             tools=[],
             tool_handlers=handlers,
         )

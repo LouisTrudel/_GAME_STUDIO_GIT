@@ -1,7 +1,7 @@
 {
   "name": "BOSS",
   "title": "Studio Coordinator",
-  "backend": "claude-cli",
+  "backend": "persistent-claude",
   "color": "#e74c3c",
   "delegation_fixes": {
     "primacy_identity": false,
