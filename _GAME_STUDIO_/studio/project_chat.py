@@ -11,7 +11,7 @@ from datetime import datetime
 
 from studio.core.projects import project_manager, PipelineState
 from studio.core.logging_config import get_logger
-from backends.backends.claude_cli import ClaudeCLIBackend
+from backends.backends.persistent_claude_cli import PersistentClaudeCLI
 
 logger = get_logger("ProjectChat")
 
@@ -255,9 +255,9 @@ def handle_project_chat(project_id: str, user_message: str, project) -> dict:
 
     full_prompt = "\n".join(prompt_parts)
 
-    # Create Claude CLI backend with project-specific agent name for session persistence
+    # Create persistent backend with project-specific session
     agent_name = f"ProjectChat_{project_id}"
-    backend = ClaudeCLIBackend(agent_name=agent_name)
+    backend = PersistentClaudeCLI(agent_name=agent_name)
 
     try:
         # Call Claude CLI
