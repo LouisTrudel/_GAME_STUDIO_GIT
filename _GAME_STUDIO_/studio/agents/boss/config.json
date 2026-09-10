@@ -4,7 +4,7 @@
   "backend": "claude-cli",
   "color": "#e74c3c",
   "delegation_fixes": {
-    "primacy_identity": true,
-    "recency_bookend": true
+    "primacy_identity": false,
+    "recency_bookend": false
   }
 }

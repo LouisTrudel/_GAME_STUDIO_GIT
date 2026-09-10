@@ -11,10 +11,17 @@ Logs to /data/metrics/studio_metrics.json
 """
 
 import json
+import threading
 from pathlib import Path
 from datetime import datetime, date
 from typing import Optional
 
+from .logging_config import get_logger
+
+logger = get_logger("Metrics")
+
+# Thread lock for session token access
+_session_lock = threading.Lock()
 
 # Data directory
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -52,73 +59,84 @@ def track_tokens(agent: str, input_tokens: int, output_tokens: int, task_id: str
     if not input_tokens and not output_tokens:
         return
 
-    # Update session totals
-    _session_tokens["total_input_tokens"] += input_tokens
-    _session_tokens["total_output_tokens"] += output_tokens
+    with _session_lock:
+        # Update session totals
+        _session_tokens["total_input_tokens"] += input_tokens
+        _session_tokens["total_output_tokens"] += output_tokens
 
-    # Update per-agent stats
-    if agent not in _session_tokens["by_agent"]:
-        _session_tokens["by_agent"][agent] = {"input": 0, "output": 0, "calls": 0}
-    _session_tokens["by_agent"][agent]["input"] += input_tokens
-    _session_tokens["by_agent"][agent]["output"] += output_tokens
-    _session_tokens["by_agent"][agent]["calls"] += 1
+        # Update per-agent stats
+        if agent not in _session_tokens["by_agent"]:
+            _session_tokens["by_agent"][agent] = {"input": 0, "output": 0, "calls": 0}
+        _session_tokens["by_agent"][agent]["input"] += input_tokens
+        _session_tokens["by_agent"][agent]["output"] += output_tokens
+        _session_tokens["by_agent"][agent]["calls"] += 1
 
-    # Update per-task stats if applicable
-    if task_id:
-        if task_id not in _session_tokens["by_task"]:
-            _session_tokens["by_task"][task_id] = {"input": 0, "output": 0}
-        _session_tokens["by_task"][task_id]["input"] += input_tokens
-        _session_tokens["by_task"][task_id]["output"] += output_tokens
+        # Update per-task stats if applicable
+        if task_id:
+            if task_id not in _session_tokens["by_task"]:
+                _session_tokens["by_task"][task_id] = {"input": 0, "output": 0}
+            _session_tokens["by_task"][task_id]["input"] += input_tokens
+            _session_tokens["by_task"][task_id]["output"] += output_tokens
 
-    # Log the call (keep last 100)
-    _session_tokens["calls"].append({
-        "timestamp": datetime.now().isoformat(),
-        "agent": agent,
-        "task_id": task_id,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-    })
-    if len(_session_tokens["calls"]) > 100:
-        _session_tokens["calls"] = _session_tokens["calls"][-100:]
+        # Log the call (keep last 100)
+        _session_tokens["calls"].append({
+            "timestamp": datetime.now().isoformat(),
+            "agent": agent,
+            "task_id": task_id,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        })
+        if len(_session_tokens["calls"]) > 100:
+            _session_tokens["calls"] = _session_tokens["calls"][-100:]
 
-    # Persist to file
-    _save_token_usage()
-
-
-def get_session_tokens() -> dict:
-    """Get current session token usage stats."""
-    return {
-        "session_start": _session_tokens["session_start"],
-        "total_input_tokens": _session_tokens["total_input_tokens"],
-        "total_output_tokens": _session_tokens["total_output_tokens"],
-        "total_tokens": _session_tokens["total_input_tokens"] + _session_tokens["total_output_tokens"],
-        "by_agent": _session_tokens["by_agent"],
-        "by_task": _session_tokens["by_task"],
-        "recent_calls": _session_tokens["calls"][-20:],  # Last 20 calls
-    }
+        # Persist to file (inside lock to prevent concurrent writes)
+        _save_token_usage_unlocked()
 
 
-def reset_session_tokens():
-    """Reset session token tracking (called on server restart)."""
-    global _session_tokens
-    _session_tokens = {
-        "session_start": datetime.now().isoformat(),
-        "total_input_tokens": 0,
-        "total_output_tokens": 0,
-        "by_agent": {},
-        "by_task": {},
-        "calls": [],
-    }
-
-
-def _save_token_usage():
-    """Persist token usage to file."""
+def _save_token_usage_unlocked():
+    """Persist token usage to file. Must be called while holding _session_lock."""
     try:
         METRICS_DIR.mkdir(parents=True, exist_ok=True)
         with open(TOKENS_FILE, "w", encoding="utf-8") as f:
             json.dump(_session_tokens, f, indent=2)
     except Exception as e:
-        print(f"[Metrics] Failed to save token usage: {e}")
+        logger.error("Failed to save token usage: %s", e)
+
+
+def get_session_tokens() -> dict:
+    """Get current session token usage stats."""
+    with _session_lock:
+        return {
+            "session_start": _session_tokens["session_start"],
+            "total_input_tokens": _session_tokens["total_input_tokens"],
+            "total_output_tokens": _session_tokens["total_output_tokens"],
+            "total_tokens": _session_tokens["total_input_tokens"] + _session_tokens["total_output_tokens"],
+            "by_agent": dict(_session_tokens["by_agent"]),
+            "by_task": dict(_session_tokens["by_task"]),
+            "recent_calls": list(_session_tokens["calls"][-20:]),
+        }
+
+
+def reset_session_tokens():
+    """Reset session token tracking (called on server restart)."""
+    global _session_tokens
+    with _session_lock:
+        _session_tokens = {
+            "session_start": datetime.now().isoformat(),
+            "total_input_tokens": 0,
+            "total_output_tokens": 0,
+            "by_agent": {},
+            "by_task": {},
+            "calls": [],
+        }
+        # Persist reset to disk
+        _save_token_usage_unlocked()
+
+
+def _save_token_usage():
+    """Persist token usage to file (thread-safe wrapper)."""
+    with _session_lock:
+        _save_token_usage_unlocked()
 
 
 def _ensure_metrics_dir():
@@ -129,13 +147,7 @@ def _ensure_metrics_dir():
 def _load_metrics() -> dict:
     """Load existing metrics data or return empty structure."""
     _ensure_metrics_dir()
-    if METRICS_FILE.exists():
-        try:
-            with open(METRICS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            pass
-    return {
+    defaults = {
         "events": [],
         "by_day": {},
         "by_agent": {},
@@ -146,6 +158,18 @@ def _load_metrics() -> dict:
             "revisions_per_task": {}
         }
     }
+    if METRICS_FILE.exists():
+        try:
+            with open(METRICS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Merge with defaults to ensure all required keys exist
+            for key, value in defaults.items():
+                if key not in data:
+                    data[key] = value
+            return data
+        except (json.JSONDecodeError, IOError):
+            pass
+    return defaults
 
 
 def _save_metrics(data: dict):

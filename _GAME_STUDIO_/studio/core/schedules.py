@@ -12,7 +12,11 @@ from enum import Enum
 from pathlib import Path
 import json
 
+from .logging_config import get_logger
 from .tasks import task_manager
+from .paths import atomic_json_write
+
+logger = get_logger("Schedules")
 
 
 SCHEDULES_FILE = Path(__file__).parent.parent.parent / "data" / "schedules.json"
@@ -22,6 +26,12 @@ class ScheduleStatus(Enum):
     ACTIVE = "active"
     PAUSED = "paused"
     RUNNING = "running"  # Currently executing
+
+
+class LastRunStatus(Enum):
+    SUCCESS = "success"
+    FAILED = "failed"
+    NONE = "none"  # Never run
 
 
 @dataclass
@@ -55,6 +65,9 @@ class Schedule:
     created_task_ids: list[str] = field(default_factory=list)  # Tasks from current/last run
     schedule_type: ScheduleType = ScheduleType.TASKS
     script_module: Optional[str] = None  # Python module path (for SCRIPT type)
+    last_run_status: LastRunStatus = LastRunStatus.NONE
+    last_run_error: Optional[str] = None  # Error message if last run failed
+    order: int = 0  # Display order for UI (lower = first)
 
     def __post_init__(self):
         if self.next_run is None:
@@ -72,6 +85,9 @@ class Schedule:
             "last_run": self.last_run.isoformat() if self.last_run else None,
             "next_run": self.next_run.isoformat() if self.next_run else None,
             "run_count": self.run_count,
+            "last_run_status": self.last_run_status.value,
+            "last_run_error": self.last_run_error,
+            "order": self.order,
         }
         if self.schedule_type == ScheduleType.TASKS:
             result["tasks"] = [{
@@ -132,6 +148,13 @@ class ScheduleManager:
                                 parallel=is_parallel,
                             ))
 
+                    # Parse last_run_status (default to NONE for backwards compat)
+                    last_run_status_str = s_data.get("last_run_status", "none")
+                    try:
+                        last_run_status = LastRunStatus(last_run_status_str)
+                    except ValueError:
+                        last_run_status = LastRunStatus.NONE
+
                     schedule = Schedule(
                         id=s_data["id"],
                         name=s_data["name"],
@@ -145,25 +168,24 @@ class ScheduleManager:
                         created_task_ids=s_data.get("created_task_ids", []),
                         schedule_type=sched_type,
                         script_module=s_data.get("script_module"),
+                        last_run_status=last_run_status,
+                        last_run_error=s_data.get("last_run_error"),
+                        order=s_data.get("order", 0),
                     )
                     self.schedules[schedule.id] = schedule
                 self._counter = data.get("counter", 0)
-                print(f"[Schedules] Loaded {len(self.schedules)} schedules from history")
+                logger.info("Loaded %d schedules from history", len(self.schedules))
             except Exception as e:
-                print(f"[Schedules] Failed to load: {e}")
+                logger.error("Failed to load: %s", e)
 
     def _save_schedules(self):
         """Save schedules to file."""
-        try:
-            SCHEDULES_FILE.parent.mkdir(parents=True, exist_ok=True)
-            data = {
-                "counter": self._counter,
-                "schedules": [s.to_dict() for s in self.schedules.values()]
-            }
-            with open(SCHEDULES_FILE, "w") as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"[Schedules] Failed to save: {e}")
+        data = {
+            "counter": self._counter,
+            "schedules": [s.to_dict() for s in self.schedules.values()]
+        }
+        if not atomic_json_write(SCHEDULES_FILE, data):
+            logger.error("Failed to save schedules")
 
     def create(
         self,
@@ -262,76 +284,121 @@ class ScheduleManager:
                 due.append(schedule)
         return due
 
-    def run(self, schedule_id: str) -> list[str]:
-        """Execute a schedule. Returns created task IDs (for TASKS) or empty list (for SCRIPT)."""
+    def run(self, schedule_id: str, preserve_status: bool = True) -> list[str]:
+        """Execute a schedule. Returns created task IDs (for TASKS) or empty list (for SCRIPT).
+
+        Args:
+            schedule_id: ID of the schedule to run.
+            preserve_status: If True, restores original status after run (for manual triggers).
+                           If False, sets status to ACTIVE (for automatic triggers).
+        """
         schedule = self.schedules.get(schedule_id)
         if not schedule:
             return []
 
+        original_status = schedule.status
         schedule.status = ScheduleStatus.RUNNING
         created_ids = []
+        run_error = None
 
         if schedule.schedule_type == ScheduleType.SCRIPT:
             # Run Python script directly
-            self._run_script(schedule)
+            run_error = self._run_script(schedule)
         else:
             # Create agent tasks
-            prev_task_id = None
-            for template in schedule.tasks:
-                deps = [prev_task_id] if template.depends_on_previous and prev_task_id else []
-                task = task_manager.create_task(
-                    description=f"[{schedule.name}] {template.description}",
-                    assignee=template.assignee,
-                    dependencies=deps,
-                )
-                created_ids.append(task.id)
-                prev_task_id = task.id
-            schedule.created_task_ids = created_ids
+            try:
+                prev_task_id = None
+                for template in schedule.tasks:
+                    deps = [prev_task_id] if template.depends_on_previous and prev_task_id else []
+                    task = task_manager.create_task(
+                        description=f"[{schedule.name}] {template.description}",
+                        assignee=template.assignee,
+                        dependencies=deps,
+                    )
+                    created_ids.append(task.id)
+                    prev_task_id = task.id
+                schedule.created_task_ids = created_ids
+            except Exception as e:
+                run_error = str(e)
+                logger.error("Schedule %s: Task creation failed: %s", schedule.id, e)
 
         # Update schedule state
         schedule.last_run = datetime.now()
         schedule.next_run = datetime.now() + timedelta(seconds=schedule.interval_seconds)
         schedule.run_count += 1
-        schedule.status = ScheduleStatus.ACTIVE
+
+        # Set last run status
+        if run_error:
+            schedule.last_run_status = LastRunStatus.FAILED
+            schedule.last_run_error = run_error
+        else:
+            schedule.last_run_status = LastRunStatus.SUCCESS
+            schedule.last_run_error = None
+
+        # Restore original status for manual triggers, set ACTIVE for auto triggers
+        schedule.status = original_status if preserve_status else ScheduleStatus.ACTIVE
         self._save_schedules()
 
         return created_ids
 
-    def _run_script(self, schedule: Schedule):
-        """Run a script-type schedule. Executes the module's run_routine() function."""
+    def _run_script(self, schedule: Schedule) -> Optional[str]:
+        """Run a script-type schedule. Returns error message if failed, None if success."""
         import importlib
         import traceback
 
         if not schedule.script_module:
-            print(f"[Schedule {schedule.id}] ERROR: No script_module specified")
-            return
+            error = "No script_module specified"
+            logger.error("Schedule %s: %s", schedule.id, error)
+            return error
 
         try:
-            print(f"[Schedule {schedule.id}] Running script: {schedule.script_module}")
+            logger.info("Schedule %s: Running script: %s", schedule.id, schedule.script_module)
             module = importlib.import_module(schedule.script_module)
 
             if hasattr(module, "run_routine"):
                 result = module.run_routine()
                 if result and result.get("error"):
-                    print(f"[Schedule {schedule.id}] Script error: {result['error']}")
+                    error = result['error']
+                    logger.error("Schedule %s: Script error: %s", schedule.id, error)
+                    return error
                 else:
-                    print(f"[Schedule {schedule.id}] Script completed successfully")
+                    logger.info("Schedule %s: Script completed successfully", schedule.id)
+                    return None
             else:
-                print(f"[Schedule {schedule.id}] WARNING: Module has no run_routine() function")
+                error = "Module has no run_routine() function"
+                logger.warning("Schedule %s: %s", schedule.id, error)
+                return error
         except Exception as e:
-            print(f"[Schedule {schedule.id}] FAILED: {e}")
+            error = str(e)
+            logger.error("Schedule %s: FAILED: %s", schedule.id, e)
             traceback.print_exc()
+            return error
 
     def tick(self) -> list[str]:
         """Check for due schedules and run them. Returns list of schedule IDs that ran."""
         ran = []
         for schedule in self.get_due():
-            self.run(schedule.id)
+            self.run(schedule.id, preserve_status=False)  # Auto-triggers set ACTIVE
             ran.append(schedule.id)
         return ran
 
     def get_all(self) -> list[Schedule]:
-        return list(self.schedules.values())
+        """Get all schedules sorted by order."""
+        return sorted(self.schedules.values(), key=lambda s: s.order)
+
+    def reorder(self, ordered_ids: list[str]) -> bool:
+        """Reorder schedules based on list of IDs. Returns True if successful."""
+        # Validate all IDs exist
+        for sid in ordered_ids:
+            if sid not in self.schedules:
+                logger.warning("Reorder failed: unknown schedule ID %s", sid)
+                return False
+        # Update order field based on position in list
+        for i, sid in enumerate(ordered_ids):
+            self.schedules[sid].order = i
+        self._save_schedules()
+        logger.info("Reordered %d schedules", len(ordered_ids))
+        return True
 
     def to_context_string(self) -> str:
         """Format schedules for agent context."""

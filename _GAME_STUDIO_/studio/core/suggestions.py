@@ -16,6 +16,10 @@ from typing import Optional
 from pathlib import Path
 import json
 
+from .logging_config import get_logger
+from .paths import atomic_json_write
+
+logger = get_logger("Suggestions")
 
 SUGGESTIONS_FILE = Path(__file__).parent.parent.parent / "data" / "suggestions.json"
 
@@ -145,22 +149,18 @@ class SuggestionManager:
                     suggestion = Suggestion.from_dict(item)
                     self.suggestions[suggestion.id] = suggestion
                 self._counter = data.get("counter", 0)
-                print(f"[Suggestions] Loaded {len(self.suggestions)} suggestions")
+                logger.info("Loaded %d suggestions", len(self.suggestions))
             except Exception as e:
-                print(f"[Suggestions] Failed to load: {e}")
+                logger.error("Failed to load: %s", e)
 
     def _save(self):
-        """Save suggestions to file."""
-        try:
-            SUGGESTIONS_FILE.parent.mkdir(parents=True, exist_ok=True)
-            data = {
-                "counter": self._counter,
-                "suggestions": [s.to_dict() for s in self.suggestions.values()]
-            }
-            with open(SUGGESTIONS_FILE, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"[Suggestions] Failed to save: {e}")
+        """Save suggestions to file (atomic write)."""
+        data = {
+            "counter": self._counter,
+            "suggestions": [s.to_dict() for s in self.suggestions.values()]
+        }
+        if not atomic_json_write(SUGGESTIONS_FILE, data):
+            logger.error("Failed to save suggestions")
 
     def create(
         self,
@@ -201,7 +201,7 @@ class SuggestionManager:
         # Auto-archive oldest if over limit
         self._enforce_pending_limit()
 
-        print(f"[Suggestions] Created {suggestion_id}: {title[:40]}...")
+        logger.info("Created %s: %s...", suggestion_id, title[:40])
         return suggestion
 
     def get(self, suggestion_id: str) -> Optional[Suggestion]:
@@ -233,7 +233,7 @@ class SuggestionManager:
         if rating is not None:
             suggestion.rating = max(0, min(5, int(rating)))
         self._save()
-        print(f"[Suggestions] Approved {suggestion_id}" + (f" ({suggestion.rating}/5 stars)" if suggestion.rating is not None else ""))
+        logger.info("Approved %s%s", suggestion_id, f" ({suggestion.rating}/5 stars)" if suggestion.rating is not None else "")
         return True
 
     def reject(self, suggestion_id: str, notes: str = None) -> bool:
@@ -248,7 +248,7 @@ class SuggestionManager:
         suggestion.decided_by = "human"
         suggestion.decision_notes = notes[:200] if notes else None
         self._save()
-        print(f"[Suggestions] Rejected {suggestion_id}")
+        logger.info("Rejected %s", suggestion_id)
         return True
 
     def mark_implemented(self, suggestion_id: str) -> bool:
@@ -259,7 +259,7 @@ class SuggestionManager:
 
         suggestion.status = SuggestionStatus.IMPLEMENTED
         self._save()
-        print(f"[Suggestions] Implemented {suggestion_id}")
+        logger.info("Implemented %s", suggestion_id)
         return True
 
     def set_implementation_tasks(self, suggestion_id: str, task_ids: list[str]) -> bool:
@@ -270,7 +270,7 @@ class SuggestionManager:
 
         suggestion.implementation_tasks = task_ids
         self._save()
-        print(f"[Suggestions] {suggestion_id} linked to tasks: {task_ids}")
+        logger.info("%s linked to tasks: %s", suggestion_id, task_ids)
         return True
 
     def defer(self, suggestion_id: str) -> bool:
@@ -282,7 +282,7 @@ class SuggestionManager:
         suggestion.kept_for_later = True
         suggestion.deferred_at = datetime.now()
         self._save()
-        print(f"[Suggestions] Deferred {suggestion_id}")
+        logger.info("Deferred %s", suggestion_id)
         return True
 
     def add_discussion(self, suggestion_id: str, agent: str, content: str) -> bool:
@@ -297,7 +297,7 @@ class SuggestionManager:
             "timestamp": datetime.now().isoformat(),
         })
         self._save()
-        print(f"[Suggestions] Added {agent} discussion to {suggestion_id}")
+        logger.info("Added %s discussion to %s", agent, suggestion_id)
         return True
 
     def delete(self, suggestion_id: str) -> bool:
@@ -342,7 +342,7 @@ class SuggestionManager:
 
         if to_remove:
             self._save()
-            print(f"[Suggestions] Cleaned up {len(to_remove)} expired suggestions")
+            logger.info("Cleaned up %d expired suggestions", len(to_remove))
 
         return len(to_remove)
 

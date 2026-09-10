@@ -15,12 +15,34 @@ from enum import Enum
 from typing import Optional
 from pathlib import Path
 import json
+import os
+import threading
 
-from .paths import get_base_path
+from .logging_config import get_logger
+from .paths import get_base_path, atomic_json_write
+
+logger = get_logger("Tasks")
 
 
 # Stale task threshold: if a task is IN_PROGRESS for longer than this, recover it
 STALE_TASK_MINUTES = 35  # 30 min timeout + 5 min grace
+
+# Valid assignees (lazy loaded to avoid circular imports)
+_valid_agents: set[str] = None
+
+def _get_valid_agents() -> set[str]:
+    """Get set of valid agent names (case-insensitive lookup)."""
+    global _valid_agents
+    if _valid_agents is None:
+        try:
+            from studio.loader import get_all_agent_names
+            _valid_agents = {name.lower() for name in get_all_agent_names()}
+            # Add special pseudo-agents
+            _valid_agents.add("raw")
+            _valid_agents.add("boss")
+        except ImportError:
+            _valid_agents = set()
+    return _valid_agents
 
 # Import metrics tracking (lazy to avoid circular imports)
 def _track_created(task_id: str, assignee: Optional[str]):
@@ -73,7 +95,7 @@ def _log_to_memory(task_id: str, task: "Task", outcome: str):
     except ImportError:
         pass  # Memory module not available
     except Exception as e:
-        print(f"[Tasks] Failed to log to memory: {e}")
+        logger.error("Failed to log to memory: %s", e)
 
 # Default paths (used when no project is active)
 # Actual paths are resolved dynamically via TaskManager._get_tasks_file() etc.
@@ -122,23 +144,29 @@ def save_deliverable(task_id: str, content: str, description: str = "", project_
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(header + content)
 
-        print(f"[Tasks] Saved deliverable: {filepath}")
+        logger.info("Saved deliverable: %s", filepath)
         return True
     except Exception as e:
-        print(f"[Tasks] Failed to save deliverable {task_id}: {e}")
+        logger.error("Failed to save deliverable %s: %s", task_id, e)
         return False
 
 
 class TaskStatus(Enum):
+    # Active states
     PENDING = "pending"          # Waiting for dependencies
     READY = "ready"              # Dependencies met, can be picked up
     IN_PROGRESS = "in_progress"  # Agent is working on it
-    COMPLETED = "completed"      # Done, awaiting QA review
-    APPROVED = "approved"        # QA approved, task is done
-    REVISION = "revision"        # QA rejected, needs rework
-    FAILED = "failed"            # Something went wrong
+
+    # Terminal states
+    APPROVED = "approved"        # Task completed successfully (auto-approved)
+    FAILED = "failed"            # Agent reported failure
     BLOCKED = "blocked"          # Dependency failed
     ERROR = "error"              # Execution error (malformed task, timeout, etc.)
+    PARTIAL = "partial"          # Ran out of context - continuation task created
+
+    # Reserved (not currently used - kept for backwards compatibility)
+    COMPLETED = "completed"      # Reserved: would be "awaiting QA review"
+    REVISION = "revision"        # Reserved: would be "QA rejected, needs rework"
 
 
 @dataclass
@@ -185,6 +213,7 @@ class Task:
     # Claim tracking (for stale task recovery)
     claimed_by: Optional[str] = None
     claimed_at: Optional[datetime] = None
+    claimed_process_id: Optional[int] = None  # PID of process that claimed task
 
     # Retry tracking
     retry_count: int = 0
@@ -267,7 +296,13 @@ class Task:
 
             # Timestamps
             "created_at": self.created_at.isoformat(),
+            "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+
+            # Claim tracking (for multi-process coordination)
+            "claimed_by": self.claimed_by,
+            "claimed_at": self.claimed_at.isoformat() if self.claimed_at else None,
+            "claimed_process_id": self.claimed_process_id,
 
             # Execution: errors + context metrics
             "execution": {
@@ -357,10 +392,11 @@ class Task:
     def from_dict(cls, data: dict) -> "Task":
         """Deserialize task from dict, supporting both old and new schema."""
         # Extract nested structures (new schema) or use defaults
-        input_data = data.get("input", {})
-        output_data = data.get("output", {})
-        execution_data = data.get("execution", {})
-        cost_data = data.get("cost", {})
+        # Handle null values from JSON (None in Python)
+        input_data = data.get("input") or {}
+        output_data = data.get("output") or {}
+        execution_data = data.get("execution") or {}
+        cost_data = data.get("cost") or {}
 
         return cls(
             # Core fields
@@ -379,6 +415,7 @@ class Task:
             completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
             claimed_by=data.get("claimed_by"),
             claimed_at=datetime.fromisoformat(data["claimed_at"]) if data.get("claimed_at") else None,
+            claimed_process_id=data.get("claimed_process_id"),
 
             # NEW: Input (raw content)
             input_role_md=input_data.get("role_md"),
@@ -439,11 +476,14 @@ class TaskManager:
 
     def __init__(self, project_name: Optional[str] = None):
         self._project_name = project_name
+        self._lock = threading.RLock()  # Thread-safe access to tasks dict
+        self._process_id = os.getpid()  # Track which process owns this instance
         self.tasks: dict[str, Task] = {}
         self._counter = 0
         self._load_tasks()
-        # Reset any stale IN_PROGRESS tasks from previous crash
-        self.reset_in_progress_tasks()
+        # NOTE: reset_in_progress_tasks() is NOT called here.
+        # It must be called explicitly at server startup ONLY.
+        # MCP server imports this module but should NOT reset active tasks.
 
     def _get_tasks_file(self) -> Path:
         """Get tasks.json path for current project context.
@@ -496,7 +536,7 @@ class TaskManager:
         self._counter = 0
         self._load_tasks()
         self.reset_in_progress_tasks()
-        print(f"[Tasks] Switched to project: {project_name or 'default'}")
+        logger.info("Switched to project: %s", project_name or 'default')
 
     def _load_tasks(self):
         """Load tasks from file.
@@ -512,26 +552,84 @@ class TaskManager:
                     task = Task.from_dict(task_data)
                     self.tasks[task.id] = task
                 self._counter = data.get("counter", 0)
-                print(f"[Tasks] Loaded {len(self.tasks)} tasks from {tasks_file}")
+                logger.info("Loaded %d tasks from %s", len(self.tasks), tasks_file)
             except Exception as e:
-                print(f"[Tasks] Failed to load from {tasks_file}: {e}")
+                logger.error("Failed to load from %s: %s", tasks_file, e)
+
+    def reload_from_disk(self) -> bool:
+        """Sync NEW tasks from disk file (thread-safe).
+
+        Used to pick up tasks created by MCP server (separate process).
+        Only adds new tasks, never overwrites existing task states.
+
+        Returns True if new tasks were added, False otherwise.
+        """
+        tasks_file = self._get_tasks_file()
+        if not tasks_file.exists():
+            return False
+
+        try:
+            with open(tasks_file) as f:
+                data = json.load(f)
+
+            disk_counter = data.get("counter", 0)
+
+            with self._lock:
+                # Quick check - if counter hasn't increased, no new tasks
+                if disk_counter <= self._counter:
+                    return False
+
+                # Load tasks from disk and add only NEW ones
+                added = False
+                for task_data in data.get("tasks", []):
+                    task_id = task_data.get("id")
+                    if task_id and task_id not in self.tasks:
+                        task = Task.from_dict(task_data)
+                        self.tasks[task_id] = task
+                        logger.info("Synced new task from disk: %s", task_id)
+                        added = True
+
+                # Update counter to match disk
+                self._counter = disk_counter
+                return added
+
+        except Exception as e:
+            logger.error("Failed to sync tasks from disk: %s", e)
+            return False
 
     def _save_tasks(self):
-        """Save tasks to file.
+        """Save tasks to file (atomic write).
 
         T332: Uses project-aware path via _get_tasks_file().
         """
         tasks_file = self._get_tasks_file()
-        try:
-            tasks_file.parent.mkdir(parents=True, exist_ok=True)
-            data = {
-                "counter": self._counter,
-                "tasks": [t.to_dict() for t in self.tasks.values()]
-            }
-            with open(tasks_file, "w") as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            print(f"[Tasks] Failed to save to {tasks_file}: {e}")
+        data = {
+            "counter": self._counter,
+            "tasks": [t.to_dict() for t in self.tasks.values()]
+        }
+        if not atomic_json_write(tasks_file, data):
+            logger.error("Failed to save tasks to %s", tasks_file)
+
+    def _has_dependency_cycle(self, task_id: str, dependencies: list[str], visited: set[str] = None) -> bool:
+        """Check if adding these dependencies would create a cycle.
+
+        Uses DFS to detect if any dependency chain leads back to task_id.
+        """
+        if visited is None:
+            visited = set()
+
+        for dep_id in dependencies:
+            if dep_id == task_id:
+                return True  # Direct cycle
+            if dep_id in visited:
+                continue  # Already checked this branch
+            visited.add(dep_id)
+
+            dep_task = self.tasks.get(dep_id)
+            if dep_task and dep_task.dependencies:
+                if self._has_dependency_cycle(task_id, dep_task.dependencies, visited):
+                    return True
+        return False
 
     def create_task(
         self,
@@ -543,12 +641,25 @@ class TaskManager:
         """Create a new task."""
         self._counter += 1
         task_id = f"T{self._counter:03d}"
+        deps = dependencies or []
+
+        # Validate dependencies exist and no cycles
+        if deps:
+            # Check for references to non-existent tasks (that aren't in archive)
+            for dep_id in deps:
+                if dep_id not in self.tasks and not self._is_in_archive(dep_id):
+                    logger.warning("Dependency %s not found for %s", dep_id, task_id)
+
+            # Check for cycles (would cause infinite waiting)
+            if self._has_dependency_cycle(task_id, deps):
+                logger.error("Dependency cycle detected for %s, ignoring dependencies", task_id)
+                deps = []
 
         task = Task(
             id=task_id,
             description=description,
             assignee=assignee,
-            dependencies=dependencies or [],
+            dependencies=deps,
             backend=backend,
         )
 
@@ -590,6 +701,11 @@ class TaskManager:
         if not task.assignee:
             return False, "No assignee specified"
 
+        # Validate assignee is a registered agent
+        valid_agents = _get_valid_agents()
+        if valid_agents and task.assignee.lower() not in valid_agents:
+            return False, f"Unknown assignee '{task.assignee}' - valid agents: {sorted(valid_agents)}"
+
         return True, ""
 
     def get_ready_tasks(self) -> list[Task]:
@@ -605,16 +721,18 @@ class TaskManager:
         return [t for t in self.tasks.values() if t.status == TaskStatus.COMPLETED]
 
     def start_task(self, task_id: str, claimed_by: str = None) -> bool:
-        """Mark task as in progress and record claim."""
-        task = self.tasks.get(task_id)
-        if task and task.status == TaskStatus.READY:
-            task.status = TaskStatus.IN_PROGRESS
-            task.started_at = datetime.now()
-            task.claimed_by = claimed_by or task.assignee
-            task.claimed_at = datetime.now()
-            self._save_tasks()
-            return True
-        return False
+        """Mark task as in progress and record claim (thread-safe)."""
+        with self._lock:
+            task = self.tasks.get(task_id)
+            if task and task.status == TaskStatus.READY:
+                task.status = TaskStatus.IN_PROGRESS
+                task.started_at = datetime.now()
+                task.claimed_by = claimed_by or task.assignee
+                task.claimed_at = datetime.now()
+                task.claimed_process_id = self._process_id  # Track which process claimed
+                self._save_tasks()
+                return True
+            return False
 
     def reset_task(self, task_id: str) -> bool:
         """Reset task back to READY (for retries after errors)."""
@@ -629,13 +747,20 @@ class TaskManager:
         return False
 
     def complete_task(self, task_id: str, result: str) -> bool:
-        """Mark task as completed (approved) with result. No review gate."""
-        task = self.tasks.get(task_id)
-        if task and task.status == TaskStatus.IN_PROGRESS:
+        """Mark task as completed (approved) with result (thread-safe)."""
+        with self._lock:
+            task = self.tasks.get(task_id)
+            if not task:
+                logger.warning("complete_task: %s not found", task_id)
+                return False
+            if task.status != TaskStatus.IN_PROGRESS:
+                logger.warning("complete_task: %s status=%s (expected IN_PROGRESS)", task_id, task.status.value)
+                return False
+
             task.status = TaskStatus.APPROVED  # Direct to approved, no review loop
-            # Store in output_response (T115/T207)
             task.output_response = result
             task.completed_at = datetime.now()
+            task.claimed_process_id = None  # Clear claim
             self._update_dependents(task_id)
             self._save_tasks()
             # Track metrics
@@ -645,7 +770,6 @@ class TaskManager:
             # T248: Log to memory hot tier
             _log_to_memory(task_id, task, "success")
             return True
-        return False
 
     def fail_task(self, task_id: str, reason: str) -> bool:
         """Mark task as failed."""
@@ -671,11 +795,48 @@ class TaskManager:
             task.error = error_msg
             task.completed_at = datetime.now()
             self._save_tasks()
-            print(f"[Tasks] {task_id} ERROR: {error_msg}")
+            logger.error("%s ERROR: %s", task_id, error_msg)
             # Track metrics (errors count as failures)
             _track_failed(task_id, task.assignee, error_msg)
             return True
         return False
+
+    def set_partial(self, task_id: str, partial_output: str = None) -> Optional[str]:
+        """Mark task as partial (ran out of context) and create continuation.
+
+        Returns the continuation task ID, or None if failed.
+
+        This is backend-agnostic - any LLM that exceeds context will trigger this.
+        """
+        task = self.tasks.get(task_id)
+        if not task:
+            return None
+
+        # Mark original as partial
+        task.status = TaskStatus.PARTIAL
+        task.error = "Context limit reached - continuation created"
+        task.completed_at = datetime.now()
+        if partial_output:
+            task.output_response = partial_output
+
+        # Create continuation task
+        continuation_desc = (
+            f"[CONTEXT] Continuation of {task_id} which ran out of context. "
+            f"Review what was already done and complete the remaining work. "
+            f"[ORIGINAL] {task.description[:500]}"
+        )
+
+        continuation = self.create_task(
+            description=continuation_desc,
+            assignee=task.assignee,
+            dependencies=[],  # Don't depend on partial - it's done
+            backend=task.backend,
+        )
+
+        logger.info("%s PARTIAL -> continuation %s created", task_id, continuation.id)
+        self._save_tasks()
+
+        return continuation.id
 
     def increment_retry(self, task_id: str, max_retries: int = 3) -> bool:
         """
@@ -843,8 +1004,12 @@ class TaskManager:
         try:
             with open(archive_file, "r") as f:
                 archive_data = json.load(f)
+            # Handle both list format and dict with "tasks" key
+            if isinstance(archive_data, dict):
+                archive_data = archive_data.get("tasks", [])
             return any(t.get("id") == task_id for t in archive_data)
-        except (json.JSONDecodeError, IOError):
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning("Archive check failed for %s: %s", task_id, e)
             return False
 
     def _update_dependents(self, completed_task_id: str):
@@ -857,11 +1022,17 @@ class TaskManager:
                         task.status = TaskStatus.READY
 
     def _block_dependents(self, failed_task_id: str):
-        """Block tasks that depend on a failed task."""
+        """Block tasks that depend on a failed task.
+
+        Includes IN_PROGRESS tasks - they should be stopped if dependency failed.
+        """
         for task in self.tasks.values():
             if failed_task_id in task.dependencies:
-                if task.status in (TaskStatus.PENDING, TaskStatus.READY):
+                if task.status in (TaskStatus.PENDING, TaskStatus.READY, TaskStatus.IN_PROGRESS):
+                    was_in_progress = task.status == TaskStatus.IN_PROGRESS
                     task.status = TaskStatus.BLOCKED
+                    if was_in_progress:
+                        logger.info("BLOCKED in-progress task %s - dependency %s failed", task.id, failed_task_id)
 
     def get_all_tasks(self) -> list[Task]:
         """Get all tasks."""
@@ -890,6 +1061,24 @@ class TaskManager:
             del self.tasks[task_id]
         self._save_tasks()
         return len(to_remove)
+
+    def reset_token_costs(self) -> int:
+        """Reset token/cost data on all tasks. Returns count of tasks reset."""
+        count = 0
+        with self._lock:
+            for task in self.tasks.values():
+                task.cost_input_tokens = 0
+                task.cost_output_tokens = 0
+                task.cost_cache_creation_tokens = 0
+                task.cost_cache_read_tokens = 0
+                task.cost_usd = 0.0
+                task.total_input_tokens = 0
+                task.total_output_tokens = 0
+                task.cache_creation_tokens = 0
+                task.cache_read_tokens = 0
+                count += 1
+            self._save_tasks()
+        return count
 
     def cancel_task(self, task_id: str) -> bool:
         """Cancel a task (remove it from the system)."""
@@ -924,32 +1113,44 @@ class TaskManager:
             return True
         return False
 
-    def reset_in_progress_tasks(self) -> list[str]:
+    def reset_in_progress_tasks(self, force_all: bool = False) -> list[str]:
         """
-        Reset all IN_PROGRESS tasks to READY on server startup.
+        Reset IN_PROGRESS tasks to READY on server startup.
 
-        If the server crashes mid-task, agents lose context. Stale IN_PROGRESS
-        tasks block the queue, so we reset them to READY with retry_count=0.
-        Does NOT touch COMPLETED/APPROVED/ERROR tasks.
+        By default, only resets tasks claimed by THIS process (prevents MCP server
+        from resetting tasks actively being processed by the web server).
+
+        If force_all=True, resets ALL IN_PROGRESS tasks (use for crash recovery).
 
         Returns list of task IDs that were reset.
         """
-        reset_ids = []
-        for task in self.tasks.values():
-            if task.status == TaskStatus.IN_PROGRESS:
-                task.status = TaskStatus.READY
-                task.retry_count = 0
-                task.started_at = None
-                task.claimed_by = None
-                task.claimed_at = None
-                reset_ids.append(task.id)
-                print(f"[Tasks] Reset stale IN_PROGRESS task {task.id} -> READY")
+        with self._lock:
+            reset_ids = []
+            current_pid = self._process_id
 
-        if reset_ids:
-            self._save_tasks()
-            print(f"[Tasks] Reset {len(reset_ids)} stale tasks on startup: {reset_ids}")
+            for task in self.tasks.values():
+                if task.status == TaskStatus.IN_PROGRESS:
+                    # Only reset if: force_all OR task was claimed by this process OR no PID recorded
+                    should_reset = (
+                        force_all or
+                        task.claimed_process_id is None or
+                        task.claimed_process_id == current_pid
+                    )
+                    if should_reset:
+                        task.status = TaskStatus.READY
+                        task.retry_count = 0
+                        task.started_at = None
+                        task.claimed_by = None
+                        task.claimed_at = None
+                        task.claimed_process_id = None
+                        reset_ids.append(task.id)
+                        logger.info("Reset IN_PROGRESS task %s -> READY (pid=%s)", task.id, current_pid)
 
-        return reset_ids
+            if reset_ids:
+                self._save_tasks()
+                logger.info("Reset %d tasks on startup: %s", len(reset_ids), reset_ids)
+
+            return reset_ids
 
     def recover_stale_tasks(self) -> list[str]:
         """
@@ -976,11 +1177,11 @@ class TaskManager:
                     task.claimed_at = None
                     # Don't reset retry_count - this is a recovery, not a fresh start
                     recovered_ids.append(task.id)
-                    print(f"[Tasks] Recovered stale task {task.id} (claimed by {old_claimer} for {elapsed.total_seconds()//60:.0f}min)")
+                    logger.info("Recovered stale task %s (claimed by %s for %.0fmin)", task.id, old_claimer, elapsed.total_seconds()//60)
 
         if recovered_ids:
             self._save_tasks()
-            print(f"[Tasks] Recovered {len(recovered_ids)} stale tasks: {recovered_ids}")
+            logger.info("Recovered %d stale tasks: %s", len(recovered_ids), recovered_ids)
 
         return recovered_ids
 
@@ -1065,7 +1266,7 @@ class TaskManager:
         # Save active tasks
         self._save_tasks()
 
-        print(f"[Tasks] Archived {len(to_archive)} old tasks, kept {keep_recent} recent")
+        logger.info("Archived %d old tasks, kept %d recent", len(to_archive), keep_recent)
         return len(to_archive)
 
     def get_archive_stats(self) -> dict:

@@ -17,7 +17,10 @@ from typing import Optional
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
+from studio.core.logging_config import get_logger
 from studio.core.hub import hub
+
+logger = get_logger("Routes")
 from studio.core.tasks import task_manager
 from studio.core.schedules import schedule_manager
 from studio.core.suggestions import suggestion_manager
@@ -25,6 +28,7 @@ from studio.core.projects import project_manager
 from studio.core.studio_metrics import get_session_tokens, reset_session_tokens
 from studio.core.memory import memory_manager
 from studio.studio import load_agent_role, load_agent_config, get_all_agent_names
+from studio.loader import load_agent_role_md
 
 from .broadcast import _compute_agent_stats
 
@@ -85,6 +89,17 @@ def register_routes(app: FastAPI):
     async def get_agent_stats():
         """Get live stats for all agents."""
         return _compute_agent_stats(include_task_details=True)
+
+    @app.get("/api/agents/{agent_name}/role")
+    async def get_agent_role_content(agent_name: str):
+        """Get the raw role.md content for an agent."""
+        try:
+            content = load_agent_role_md(agent_name)
+            if not content:
+                return {"error": f"No role.md found for {agent_name}"}
+            return {"content": content}
+        except Exception as e:
+            return {"error": str(e)}
 
     @app.post("/api/agents/{agent_name}/config")
     async def update_agent_config(agent_name: str, config: dict):
@@ -312,9 +327,9 @@ Consider:
 
 Be specific in task descriptions. Reference suggestion {suggestion.id} for context."""
 
-                    print(f"[Suggestions] Calling Boss to implement {suggestion_id}...")
+                    logger.info("Suggestions: Calling Boss to implement %s...", suggestion_id)
                     response = boss.respond(prompt)
-                    print(f"[Suggestions] Boss response: {response[:200]}...")
+                    logger.info("Suggestions: Boss response: %s...", response[:200])
 
                     # Extract task IDs from response (format: Created T###)
                     import re
@@ -323,12 +338,12 @@ Be specific in task descriptions. Reference suggestion {suggestion.id} for conte
                         suggestion_manager.set_implementation_tasks(suggestion_id, task_ids)
                         result["implementation_tasks"] = task_ids
                         result["task_created"] = task_ids[0]  # Backward compat
-                        print(f"[Suggestions] Boss created tasks: {task_ids}")
+                        logger.info("Suggestions: Boss created tasks: %s", task_ids)
                     else:
-                        print(f"[Suggestions] Boss did not create tasks for {suggestion_id}")
+                        logger.info("Suggestions: Boss did not create tasks for %s", suggestion_id)
 
                 except Exception as e:
-                    print(f"[Suggestions] Boss implementation failed: {e}")
+                    logger.error("Suggestions: Boss implementation failed: %s", e)
                     # Approval still succeeded, just no tasks created
 
                 return result
@@ -462,9 +477,11 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
 
     @app.post("/api/tokens/reset")
     async def reset_token_session():
-        """Reset session token tracking."""
+        """Reset session token tracking AND task cost data (full reset)."""
         reset_session_tokens()
-        return {"status": "ok", "message": "Session token tracking reset"}
+        # Also reset task costs so UI reflects the reset
+        tasks_reset = task_manager.reset_token_costs()
+        return {"status": "ok", "message": f"Token tracking reset. {tasks_reset} tasks cleared."}
 
     # ============ FILE EXPLORER ============
 
@@ -622,7 +639,7 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
 
     @app.post("/api/projects")
     async def create_project(data: dict):
-        """Create a new project."""
+        """Create a new project (link existing folder - legacy mode)."""
         try:
             project = project_manager.create(
                 name=data["name"],
@@ -634,6 +651,26 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
             return {"error": str(e)}
         except KeyError as e:
             return {"error": f"Missing required field: {e}"}
+
+    @app.post("/api/projects/create-external")
+    async def create_external_project(data: dict):
+        """Create a new external project with folder scaffolding (T425/T434).
+
+        Creates folder at {parent_dir}/{slug}/, initializes git, scaffolds files.
+        T434: with_ai=True sets pipeline_state to DRAFT for AI whitepaper generation.
+        """
+        try:
+            result = project_manager.create_external(
+                name=data.get("name", ""),
+                parent_dir=data.get("parent_dir", ""),
+                description=data.get("description", ""),
+                init_git=data.get("init_git", True),
+                with_ai=data.get("with_ai", False),
+                metadata=data.get("metadata", {}),
+            )
+            return result
+        except Exception as e:
+            return {"error": str(e)}
 
     @app.patch("/api/projects/{project_id}")
     async def update_project(project_id: str, data: dict):
@@ -709,3 +746,91 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
             return {"status": "opened"}
         except Exception as e:
             return {"error": str(e)}
+
+    # ============ T434: PROJECT PIPELINE ENDPOINTS ============
+
+    @app.post("/api/projects/{project_id}/pipeline-state")
+    async def set_project_pipeline_state(project_id: str, data: dict):
+        """Set project pipeline state (setup/draft/clarify/dispatch/delivered)."""
+        from studio.core.projects import PipelineState
+        state_str = data.get("state", "")
+        try:
+            state = PipelineState(state_str)
+        except ValueError:
+            return {"error": f"Invalid state: {state_str}"}
+
+        if project_manager.set_pipeline_state(project_id, state):
+            return {"status": "updated", "pipeline_state": state.value}
+        return {"error": "Project not found"}
+
+    @app.post("/api/projects/{project_id}/whitepaper-rating")
+    async def set_project_whitepaper_rating(project_id: str, data: dict):
+        """Set whitepaper star rating (1-5)."""
+        rating = data.get("rating", 0)
+        if not isinstance(rating, int) or rating < 1 or rating > 5:
+            return {"error": "Rating must be 1-5"}
+
+        if project_manager.set_whitepaper_rating(project_id, rating):
+            return {"status": "updated", "whitepaper_rating": rating}
+        return {"error": "Project not found"}
+
+    @app.post("/api/projects/{project_id}/whitepaper")
+    async def update_project_whitepaper(project_id: str, data: dict):
+        """Update project whitepaper.md content."""
+        content = data.get("content", "")
+        if not content:
+            return {"error": "Content is required"}
+
+        result = project_manager.update_whitepaper(project_id, content)
+        return result
+
+    @app.post("/api/projects/{project_id}/cancel")
+    async def cancel_project(project_id: str, data: dict):
+        """Cancel a project in draft/clarify state.
+
+        Optionally deletes the external folder with delete_folder=True.
+        """
+        delete_folder = data.get("delete_folder", False)
+        result = project_manager.cancel_project(project_id, delete_folder)
+        return result
+
+    @app.post("/api/projects/{project_id}/chat")
+    async def project_chat(project_id: str, data: dict):
+        """Send a message to the Project Chat agent for whitepaper drafting.
+
+        T439: Connects Project Chat panel to whitepaper drafting agent.
+        Uses Gemini for speed. Returns updated whitepaper + star rating.
+        """
+        from studio.project_chat import handle_project_chat
+
+        message = data.get("message", "").strip()
+        if not message:
+            return {"error": "Message is required"}
+
+        project = project_manager.get(project_id)
+        if not project:
+            return {"error": "Project not found"}
+
+        # Run chat agent (blocking, but Gemini is fast)
+        try:
+            result = await asyncio.to_thread(
+                handle_project_chat,
+                project_id=project_id,
+                user_message=message,
+                project=project
+            )
+            return result
+        except Exception as e:
+            logger.error("Project chat error: %s", e)
+            return {"error": str(e)}
+
+    @app.get("/api/projects/{project_id}/chat-history")
+    async def get_project_chat_history(project_id: str):
+        """Get chat history for a project."""
+        from studio.project_chat import get_chat_history
+
+        project = project_manager.get(project_id)
+        if not project:
+            return {"error": "Project not found"}
+
+        return {"messages": get_chat_history(project_id)}

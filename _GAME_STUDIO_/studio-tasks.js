@@ -79,13 +79,13 @@ function computeAggregateMetrics() {
     let errorCount = 0;
 
     tasks.forEach(task => {
-        totalCost += task.cost_usd || 0;
+        totalCost += task.cost?.usd || 0;
         totalRetries += task.api_retries || 0;
         totalToolErrors += (task.tool_errors?.length || 0);
-        totalInputTokens += task.total_input_tokens || 0;
-        totalOutputTokens += task.total_output_tokens || 0;
-        totalCacheCreation += task.cache_creation_tokens || 0;
-        totalCacheRead += task.cache_read_tokens || 0;
+        totalInputTokens += task.cost?.input_tokens || 0;
+        totalOutputTokens += task.cost?.output_tokens || 0;
+        totalCacheCreation += task.cost?.cache_creation_tokens || 0;
+        totalCacheRead += task.cost?.cache_read_tokens || 0;
         totalTurns += task.num_turns || 0;
         totalToolUses += task.num_tool_uses || 0;
         if (task.is_error) errorCount++;
@@ -230,9 +230,9 @@ function showTaskDetailModal(taskId) {
     if (!task) return;
 
     const agentColor = roles[task.assignee]?.color || '#888';
-    const hasTokens = (task.total_input_tokens || 0) + (task.total_output_tokens || 0) > 0;
-    const hasCacheTokens = (task.cache_creation_tokens || 0) + (task.cache_read_tokens || 0) > 0;
-    const hasQualityMetrics = (task.api_retries || 0) > 0 || (task.tool_errors?.length || 0) > 0 || (task.cost_usd || 0) > 0;
+    const hasTokens = (task.cost?.input_tokens || 0) + (task.cost?.output_tokens || 0) > 0;
+    const hasCacheTokens = (task.cost?.cache_creation_tokens || 0) + (task.cost?.cache_read_tokens || 0) > 0;
+    const hasQualityMetrics = (task.api_retries || 0) > 0 || (task.tool_errors?.length || 0) > 0 || (task.cost?.usd || 0) > 0;
     const hasExecutionMetrics = (task.num_turns || 0) > 0 || (task.num_tool_uses || 0) > 0;
 
     // Build token stats
@@ -243,11 +243,11 @@ function showTaskDetailModal(taskId) {
             cacheRow = `
                 <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #333;">
                     <div>
-                        <span style="color: #f39c12;">${(task.cache_creation_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #f39c12;">${(task.cost?.cache_creation_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> cache write</span>
                     </div>
                     <div>
-                        <span style="color: #27ae60;">${(task.cache_read_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #27ae60;">${(task.cost?.cache_read_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> cache read</span>
                     </div>
                 </div>
@@ -258,15 +258,15 @@ function showTaskDetailModal(taskId) {
                 <div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem;">TOKEN USAGE</div>
                 <div style="display: flex; gap: 1.5rem;">
                     <div>
-                        <span style="color: #5dade2;">${(task.total_input_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #5dade2;">${(task.cost?.input_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> input</span>
                     </div>
                     <div>
-                        <span style="color: #9b59b6;">${(task.total_output_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #9b59b6;">${(task.cost?.output_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> output</span>
                     </div>
                     <div>
-                        <span style="color: #2ecc71;">${((task.total_input_tokens || 0) + (task.total_output_tokens || 0)).toLocaleString()}</span>
+                        <span style="color: #2ecc71;">${((task.cost?.input_tokens || 0) + (task.cost?.output_tokens || 0)).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> total</span>
                     </div>
                 </div>
@@ -280,7 +280,7 @@ function showTaskDetailModal(taskId) {
     if (hasQualityMetrics || hasExecutionMetrics) {
         const retries = task.api_retries || 0;
         const toolErrors = task.tool_errors || [];
-        const cost = task.cost_usd || 0;
+        const cost = task.cost?.usd || 0;
         const duration = task.duration_ms || 0;
         const numTurns = task.num_turns || 0;
         const numToolUses = task.num_tool_uses || 0;

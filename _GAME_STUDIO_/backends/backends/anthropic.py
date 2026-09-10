@@ -3,7 +3,10 @@ Anthropic Claude backend - requires API credits.
 """
 
 import os
-from .base import Backend
+import logging
+from .base import Backend, with_retry
+
+logger = logging.getLogger(__name__)
 
 
 class AnthropicBackend(Backend):
@@ -16,6 +19,11 @@ class AnthropicBackend(Backend):
         # Import here to avoid requiring anthropic if not used
         from anthropic import Anthropic
         self.client = Anthropic()
+        # Store exception types for error handling
+        import anthropic
+        self._api_error = anthropic.APIError
+        self._rate_limit_error = anthropic.RateLimitError
+        self._auth_error = anthropic.AuthenticationError
 
     def chat(
         self,
@@ -30,12 +38,7 @@ class AnthropicBackend(Backend):
         # Reset token tracking
         self._reset_token_tracking()
 
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=max_tokens,
-            system=system_prompt,
-            messages=messages,
-        )
+        response = self._make_request(system_prompt, messages, max_tokens)
 
         # Track token usage from response as a single "response" step
         if hasattr(response, 'usage'):
@@ -50,3 +53,33 @@ class AnthropicBackend(Backend):
                 texts.append(block.text)
 
         return "\n".join(texts)
+
+    @with_retry
+    def _make_request(self, system_prompt: str, messages: list, max_tokens: int):
+        """Make API request to Anthropic with retry on transient failures."""
+        try:
+            return self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                system=system_prompt,
+                messages=messages,
+            )
+        except self._rate_limit_error as e:
+            # Rate limit is retryable
+            logger.warning("Anthropic rate limit: %s", e)
+            raise ConnectionError(f"Rate limited: {e}") from e
+        except self._auth_error as e:
+            # Auth errors should NOT be retried
+            logger.error("Anthropic auth error: %s", e)
+            raise RuntimeError(f"AUTH_ERROR: {e}") from e
+        except self._api_error as e:
+            # Other API errors - check if retryable
+            error_str = str(e).lower()
+            if "overloaded" in error_str or "server" in error_str:
+                raise ConnectionError(f"Anthropic server error: {e}") from e
+            logger.error("Anthropic API error: %s", e)
+            raise RuntimeError(f"API_ERROR: {e}") from e
+        except Exception as e:
+            # Network errors are retryable
+            logger.warning("Network error calling Anthropic: %s", e)
+            raise ConnectionError(f"Network error: {e}") from e

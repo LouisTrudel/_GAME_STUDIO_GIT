@@ -8,6 +8,10 @@ This backend spawns Claude Code CLI as a subprocess, giving access to:
 - Token tracking via JSON output
 
 Uses output streaming with stale detection instead of fixed timeout.
+
+Permanent sessions: Each agent has a deterministic UUID based on their name.
+Sessions persist indefinitely for maximum context caching (5x cost reduction).
+Auto-recovery handles both "session already in use" and "session not found" errors.
 """
 
 import subprocess
@@ -15,13 +19,78 @@ import json
 import os
 import time
 import threading
+import uuid
+import hashlib
 from pathlib import Path
 
-from .base import Backend
+from .base import Backend, INITIAL_DELAY, BACKOFF_MULTIPLIER, MAX_RETRIES
+from studio.core.logging_config import get_logger
 
+logger = get_logger("Claude CLI")
 
 # Stale timeout: if no output for this many seconds, consider process stuck
 STALE_TIMEOUT_SECONDS = 1200  # 20 minutes
+
+# Retryable subprocess error patterns (case-insensitive)
+RETRYABLE_SUBPROCESS_ERRORS = [
+    "connection reset",
+    "connection refused",
+    "network unreachable",
+    "temporary failure",
+    "timeout",
+    "timed out",
+    "service unavailable",
+    "502",
+    "503",
+    "504",
+    "overloaded",
+    "rate limit",  # May retry rate limits
+]
+
+# Non-retryable error patterns (should fail immediately)
+NON_RETRYABLE_SUBPROCESS_ERRORS = [
+    "invalid api key",
+    "authentication",
+    "unauthorized",
+    "forbidden",
+    "not found",  # CLI not installed
+    "not recognized",  # Windows - CLI not installed
+]
+
+
+def get_permanent_session_uuid(agent_name: str) -> str:
+    """Generate a deterministic session UUID for an agent.
+
+    Same agent always gets same UUID - sessions are permanent.
+    """
+    hash_bytes = hashlib.sha256(f"game-studio-{agent_name}".encode()).digest()
+    return str(uuid.UUID(bytes=hash_bytes[:16]))
+
+
+def clear_all_sessions(cwd: Path = None):
+    """No-op stub for permanent sessions. Sessions persist indefinitely."""
+    pass
+
+
+def _session_file_exists(cwd: Path, session_uuid: str) -> bool:
+    """Check if a session file exists in Claude's storage."""
+    home = Path.home()
+    claude_projects = home / ".claude" / "projects"
+
+    if not claude_projects.exists():
+        return False
+
+    # Encode the cwd path like Claude does:
+    # C:\Users\foo\_bar_ -> C--Users-foo--bar-
+    cwd_str = str(cwd.resolve())
+    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
+
+    project_dir = claude_projects / encoded
+    if not project_dir.exists():
+        return False
+
+    session_file = project_dir / f"{session_uuid}.jsonl"
+    return session_file.exists()
 
 
 class ClaudeCLIBackend(Backend):
@@ -33,7 +102,9 @@ class ClaudeCLIBackend(Backend):
         self.agent_name = agent_name
         self.cwd = Path(__file__).parent.parent.parent
         self._reset_quality_metrics()
-        print(f"  [Claude CLI] Backend initialized (stale timeout: {STALE_TIMEOUT_SECONDS}s)")
+        self._session_uuid = None
+        self._session_is_new = True
+        logger.info("Backend initialized (stale timeout: %ds)", STALE_TIMEOUT_SECONDS)
 
     def _reset_quality_metrics(self):
         """Reset all quality metrics to initial state."""
@@ -84,32 +155,29 @@ class ClaudeCLIBackend(Backend):
         """Send messages to Claude CLI and get response with streaming output."""
         self._reset_token_tracking()
         self._reset_quality_metrics()
+        # Reset session retry flags for this call
+        self._session_retry_attempted = False
+        self._force_resume = False
 
         full_prompt = self._build_prompt(messages, system_prompt, tools)
         self._prompt_text = full_prompt
 
         # Debug: Show what's actually being sent
-        print(f"  [Claude CLI] Prompt length: {len(full_prompt)} chars")
-        print(f"  [Claude CLI] System prompt length: {len(system_prompt) if system_prompt else 0} chars")
+        logger.debug("Prompt length: %d chars", len(full_prompt))
+        logger.debug("System prompt length: %d chars", len(system_prompt) if system_prompt else 0)
         if system_prompt and len(system_prompt) > 100:
-            print(f"  [Claude CLI] System prompt preview: {system_prompt[:150]}...")
+            logger.debug("System prompt preview: %s...", system_prompt[:150])
+
+        import tempfile
+
+        # Write prompt to temp file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(full_prompt)
+            temp_path = f.name
 
         try:
-            import tempfile
-
-            # Write prompt to temp file
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
-                f.write(full_prompt)
-                temp_path = f.name
-
-            # Run with streaming output
-            response = self._run_with_streaming(temp_path, full_prompt)
-
-            # Clean up temp file
-            try:
-                os.unlink(temp_path)
-            except Exception:
-                pass
+            # Run with streaming output and retry on transient failures
+            response = self._run_with_retry(temp_path, full_prompt)
 
             # Parse and execute <tool> tags if present (BOSS uses text-based tool syntax)
             if tool_handlers and "<tool>" in response:
@@ -121,6 +189,40 @@ class ClaudeCLIBackend(Backend):
             return f"Error: Process stale - no output for {STALE_TIMEOUT_SECONDS // 60} minutes. {e}"
         except Exception as e:
             return f"Error: {type(e).__name__}: {e}"
+        finally:
+            # Clean up temp file
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass
+
+    def _run_with_retry(self, temp_path: str, full_prompt: str) -> str:
+        """Run with exponential backoff retry on transient failures.
+
+        Retries for: network errors, rate limits, server errors
+        Does NOT retry for: auth errors, CLI not found
+        Backoff: 2s -> 4s -> 8s (3 attempts max)
+        """
+        delay = INITIAL_DELAY
+        last_error = None
+
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                return self._run_with_streaming(temp_path, full_prompt)
+            except RetryableSubprocessError as e:
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    logger.warning("[Retry] Attempt %d/%d failed: %s", attempt, MAX_RETRIES, e)
+                    logger.warning("[Retry] Waiting %ds before retry...", delay)
+                    time.sleep(delay)
+                    delay *= BACKOFF_MULTIPLIER
+                else:
+                    logger.error("[Retry] All %d attempts failed", MAX_RETRIES)
+            except (StaleProcessError, RuntimeError):
+                # These are not retryable, re-raise immediately
+                raise
+
+        raise last_error
 
     def _run_with_streaming(self, temp_path: str, full_prompt: str) -> str:
         """Run Claude CLI with stream-json output and line-by-line parsing."""
@@ -135,25 +237,45 @@ class ClaudeCLIBackend(Backend):
             cmd = ["claude", "-p", "-", "--output-format", "stream-json", "--verbose"]
             shell = False
 
+        # Permanent sessions: deterministic UUID per agent, always resume if exists
+        if self.agent_name:
+            session_uuid = get_permanent_session_uuid(self.agent_name)
+            self._session_uuid = session_uuid
+            session_exists = _session_file_exists(self.cwd, session_uuid)
+
+            # Check if we're retrying after "session already in use" error
+            force_resume = getattr(self, '_force_resume', False)
+
+            if session_exists or force_resume:
+                cmd.extend(["--resume", session_uuid])
+                self._session_is_new = False
+                logger.debug("Resuming permanent session for %s: %s", self.agent_name, session_uuid[:8])
+            else:
+                cmd.extend(["--session-id", session_uuid])
+                self._session_is_new = True
+                logger.info("Creating permanent session for %s: %s", self.agent_name, session_uuid[:8])
+
         # Add MCP server config for custom tools (create_task, acknowledge, etc.)
-        mcp_config_path = self.cwd / ".claude" / "settings.json"
+        mcp_config_path = (self.cwd / ".claude" / "settings.json").resolve()
         if mcp_config_path.exists():
             cmd.extend(["--mcp-config", str(mcp_config_path)])
-            print(f"  [Claude CLI] MCP config: {mcp_config_path}")
+            logger.debug("MCP config: %s", mcp_config_path)
         else:
-            print(f"  [Claude CLI] WARNING: MCP config not found at {mcp_config_path}")
+            logger.warning("MCP config not found at %s", mcp_config_path)
 
         # Add permission flags based on agent role
         # All agents need --dangerously-skip-permissions to use MCP tools
-        # BOSS also gets --disallowedTools to block execution tools
         cmd.append("--dangerously-skip-permissions")
 
         if self.agent_name == "BOSS":
-            # BOSS: Block execution tools (architectural enforcement - delegates, never executes)
-            cmd.extend(["--disallowedTools", "Edit,Write,Bash,MultiEdit,NotebookEdit"])
+            # BOSS: Whitelist only needed tools to reduce context bloat (T433)
+            # Removes: Read, Write, Edit, Grep, Glob, WebFetch, WebSearch from context
+            # Keeps: MCP tools, user questions, git/ls inspection, agent delegation
+            allowed = "mcp__game-studio__*,AskUserQuestion,Bash(git *),Bash(ls *),Task"
+            cmd.extend(["--allowedTools", allowed])
 
         # Debug: print full command
-        print(f"  [Claude CLI] Command: {' '.join(cmd)}")
+        logger.debug("Command: %s", ' '.join(cmd))
 
         # Read prompt content
         with open(temp_path, 'r', encoding='utf-8') as f:
@@ -171,9 +293,33 @@ class ClaudeCLIBackend(Backend):
             shell=shell,
         )
 
-        # Send input and close stdin
-        process.stdin.write(prompt_content)
-        process.stdin.close()
+        # Send input and close stdin (catch BrokenPipeError if process exits early)
+        try:
+            process.stdin.write(prompt_content)
+            process.stdin.close()
+        except BrokenPipeError:
+            # Process exited before we could write - check for session errors
+            process.wait()
+            stderr_output = process.stderr.read() if process.stderr else ""
+
+            # Handle session errors with auto-retry
+            if self.agent_name and not getattr(self, '_session_retry_attempted', False):
+                self._session_retry_attempted = True
+
+                if "already in use" in stderr_output.lower():
+                    logger.warning("Session exists for %s, retrying with --resume", self.agent_name)
+                    self._force_resume = True
+                    return self._run_with_streaming(temp_path, full_prompt)
+
+                if "No conversation found" in stderr_output:
+                    logger.warning("Session expired for %s, retrying with --session-id", self.agent_name)
+                    self._force_resume = False
+                    return self._run_with_streaming(temp_path, full_prompt)
+
+            # Check if error is retryable
+            if _is_retryable_subprocess_error(stderr_output):
+                raise RetryableSubprocessError(f"CLI failed (retryable): {stderr_output[:200]}")
+            return f"Error: Claude CLI exited unexpectedly. {stderr_output[:200]}"
 
         # Reset quality metrics
         self.last_retries = 0
@@ -235,10 +381,20 @@ class ClaudeCLIBackend(Backend):
         stderr_thread.start()
 
         # Monitor for completion or stale
+        heartbeat_interval = 30  # Log "still thinking" every 30 seconds
+        last_heartbeat = time.time()
+
         while process.poll() is None:
             time.sleep(1)  # Check every second
 
-            elapsed_since_output = time.time() - last_output_time
+            now = time.time()
+            elapsed_since_output = now - last_output_time
+
+            # Heartbeat log to show we're still alive
+            if now - last_heartbeat >= heartbeat_interval:
+                last_heartbeat = now
+                total_elapsed = now - last_output_time
+                logger.info("Still thinking... (%ds since last output)", int(total_elapsed))
 
             if elapsed_since_output > STALE_TIMEOUT_SECONDS:
                 # Process is stale - kill it
@@ -254,7 +410,29 @@ class ClaudeCLIBackend(Backend):
 
         if process.returncode != 0:
             if "not recognized" in error or "not found" in error.lower():
-                return "Error: Claude CLI not found. Make sure 'claude' works in your terminal."
+                # Non-retryable: CLI not installed
+                raise RuntimeError("Claude CLI not found. Make sure 'claude' works in your terminal.")
+
+            # Handle session errors with auto-retry (internal retry, not exponential backoff)
+            if self.agent_name and not getattr(self, '_session_retry_attempted', False):
+                self._session_retry_attempted = True
+
+                if "already in use" in error.lower():
+                    # Used --session-id but session exists, retry with --resume
+                    logger.warning("Session exists for %s, retrying with --resume", self.agent_name)
+                    self._force_resume = True
+                    return self._run_with_streaming(temp_path, full_prompt)
+
+                if "No conversation found" in error:
+                    # Used --resume but session gone, retry with --session-id
+                    logger.warning("Session expired for %s, retrying with --session-id", self.agent_name)
+                    self._force_resume = False
+                    return self._run_with_streaming(temp_path, full_prompt)
+
+            # Check if error is retryable (rate limits, network issues, etc.)
+            if _is_retryable_subprocess_error(error):
+                raise RetryableSubprocessError(f"CLI error (code {process.returncode}): {error[:200]}")
+
             return f"Error (code {process.returncode}): {error[:200]}"
 
         # Extract final result
@@ -270,7 +448,7 @@ class ClaudeCLIBackend(Backend):
             if subtype == "api_retry":
                 self.last_retries += 1
                 error_cat = event.get("error", "unknown")
-                print(f"  [Claude CLI] API retry #{event.get('attempt', '?')} - {error_cat}")
+                logger.warning("API retry #%s - %s", event.get('attempt', '?'), error_cat)
 
         # Handle assistant message events - these contain usage data
         elif event_type == "assistant":
@@ -297,7 +475,12 @@ class ClaudeCLIBackend(Backend):
             content_block = event.get("content_block", {})
             if content_block.get("type") == "tool_use":
                 tool_name = content_block.get("name", "unknown")
-                # Log tool call start (no tokens yet, will be in result)
+                tool_input = content_block.get("input", {})
+                # Log tool call attempt (visible debug)
+                logger.debug("TOOL CALL: %s", tool_name)
+                if tool_input:
+                    input_preview = str(tool_input)[:100]
+                    logger.debug("  input: %s...", input_preview)
                 self._pending_tool = tool_name
                 self._tool_use_count = getattr(self, '_tool_use_count', 0) + 1
 
@@ -306,15 +489,17 @@ class ClaudeCLIBackend(Backend):
             tool_name = getattr(self, '_pending_tool', 'tool')
             # Check for tool errors in various formats
             is_error = event.get("isError", False) or event.get("is_error", False)
-            if is_error:
-                content = event.get("content", "")
-                if isinstance(content, list) and content:
-                    content = content[0].get("text", str(content))
-                self.last_tool_errors.append(str(content)[:200])
-            # Log tool result (estimate tokens from content size)
             content = event.get("content", "")
-            if isinstance(content, list):
-                content = str(content)
+            if isinstance(content, list) and content:
+                content = content[0].get("text", str(content)) if isinstance(content[0], dict) else str(content)
+
+            if is_error:
+                logger.error("TOOL ERROR: %s - %s", tool_name, str(content)[:150])
+                self.last_tool_errors.append(str(content)[:200])
+            else:
+                logger.debug("TOOL OK: %s", tool_name)
+
+            # Log tool result (estimate tokens from content size)
             estimated_tokens = max(1, len(str(content)) // 4)
             self._log_step(f"tool:{tool_name}", 0, estimated_tokens)
 
@@ -364,10 +549,10 @@ class ClaudeCLIBackend(Backend):
         """Extract final result text and actual token counts from result event."""
         if result_data:
             # DEBUG: Print raw result event (temporary - for T103 verification)
-            print(f"\n  [DEBUG] Raw result event keys: {list(result_data.keys())}")
+            logger.debug("Raw result event keys: %s", list(result_data.keys()))
             if "usage" in result_data:
-                print(f"  [DEBUG] usage keys: {list(result_data['usage'].keys())}")
-            print(f"  [DEBUG] Full result: {json.dumps(result_data, indent=2)[:3000]}")
+                logger.debug("usage keys: %s", list(result_data['usage'].keys()))
+            logger.debug("Full result: %s", json.dumps(result_data, indent=2)[:3000])
 
             # Extract metrics from result event
             total_input, total_output = self._parse_result_metrics(result_data)
@@ -460,7 +645,41 @@ class ClaudeCLIBackend(Backend):
             "num_tool_uses": getattr(self, '_tool_use_count', 0),
         }
 
+    def clear_session(self) -> bool:
+        """No-op for permanent sessions. Sessions persist indefinitely."""
+        return False
+
+    def get_session_info(self) -> dict:
+        """Get current session info for debugging."""
+        return {
+            "agent": self.agent_name,
+            "session_uuid": self._session_uuid[:8] if self._session_uuid else None,
+            "is_new": self._session_is_new,
+        }
+
 
 class StaleProcessError(Exception):
     """Raised when a process produces no output for too long."""
     pass
+
+
+class RetryableSubprocessError(Exception):
+    """Raised when subprocess fails with a retryable error."""
+    pass
+
+
+def _is_retryable_subprocess_error(error_text: str) -> bool:
+    """Check if subprocess error is retryable based on error text."""
+    error_lower = error_text.lower()
+
+    # First check for non-retryable patterns
+    for pattern in NON_RETRYABLE_SUBPROCESS_ERRORS:
+        if pattern in error_lower:
+            return False
+
+    # Then check for retryable patterns
+    for pattern in RETRYABLE_SUBPROCESS_ERRORS:
+        if pattern in error_lower:
+            return True
+
+    return False

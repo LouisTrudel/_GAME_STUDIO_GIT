@@ -19,7 +19,9 @@ URL Routing (T327):
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
+import json
+import os
 
 
 # Base directories
@@ -91,3 +93,40 @@ def ensure_project_dirs(project_name: str) -> bool:
     history_dir.mkdir(parents=True, exist_ok=True)
 
     return True
+
+
+def atomic_json_write(filepath: Path, data: Any, indent: int = 2) -> bool:
+    """Write JSON data atomically to prevent corruption on crash.
+
+    Uses write-to-temp-then-rename pattern:
+    1. Write to .tmp file
+    2. Flush and fsync to ensure data on disk
+    3. Atomic rename to target (overwrites existing)
+
+    Args:
+        filepath: Target JSON file path
+        data: Data to serialize as JSON
+        indent: JSON indentation (default 2)
+
+    Returns:
+        True on success, False on failure
+    """
+    temp_file = filepath.with_suffix('.json.tmp')
+
+    try:
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write to temp file
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=indent)
+            f.flush()
+            os.fsync(f.fileno())  # Force write to disk
+
+        # Atomic rename
+        os.replace(temp_file, filepath)
+        return True
+
+    except Exception as e:
+        # Log error but don't raise - let caller handle
+        print(f"[atomic_json_write] Failed to save {filepath}: {e}")
+        return False

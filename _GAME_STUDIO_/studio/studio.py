@@ -13,7 +13,12 @@ from datetime import datetime
 from typing import Optional
 
 from studio.core import task_manager, TaskStatus, hub
+from studio.core.logging_config import get_logger
 from studio.core.studio_metrics import track_tokens
+from studio.core.projects import project_manager
+from studio.core.file_index import get_file_tree
+
+logger = get_logger("Studio")
 from studio.core.memory import memory_manager
 from studio.core.history import history_manager
 from studio.loader import get_all_agent_names
@@ -24,7 +29,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import gemini
-from backends.backends.claude_cli import ClaudeCLIBackend
+from backends.backends.claude_cli import ClaudeCLIBackend, clear_all_sessions
 from backends.backends.ollama import OllamaBackend
 
 
@@ -109,7 +114,7 @@ class Studio:
         """
         context_agent = self.agents.get("Context")
         if not context_agent:
-            print("[Studio] Context agent not found for AC-Memory compression")
+            logger.debug("Context agent not found for AC-Memory compression")
             return self._fallback_compress(content, tier_index, prev_tier_context)
 
         # Truncate for context window
@@ -162,12 +167,12 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
 
             # Parse response into keep/push
             result = self._parse_split_response(response)
-            print(f"[Studio] AC-Memory: Tier {tier_index} split by Context agent "
-                  f"(keep={len(result['keep'])} chars, push={len(result['push'])} chars)")
+            logger.info("AC-Memory: Tier %d split by Context agent (keep=%d chars, push=%d chars)",
+                        tier_index, len(result['keep']), len(result['push']))
             return result
 
         except Exception as e:
-            print(f"[Studio] AC-Memory compression failed: {e}")
+            logger.error("AC-Memory compression failed: %s", e)
             return self._fallback_compress(content, tier_index, prev_tier_context)
 
     def _parse_split_response(self, response: str) -> dict:
@@ -286,7 +291,7 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
         """
         writer_agent = self.agents.get("Writer")
         if not writer_agent:
-            print("[Studio] Writer agent not found for tier narrative")
+            logger.debug("Writer agent not found for tier narrative")
             return None
 
         # Truncate content for Writer
@@ -347,7 +352,7 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
             self._notify_status("Writer", "idle", "")
             return narrative
         except Exception as e:
-            print(f"[Studio] Tier narrative generation failed: {e}")
+            logger.error("Tier narrative generation failed: %s", e)
             return None
 
     def _find_agent(self, name: str) -> StudioAgent | None:
@@ -373,7 +378,8 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
         hub.post("user", content)
         self._notify_status("BOSS", "working", "Processing user message...")
         self._notify_thinking("BOSS")
-        boss_response = self.boss.respond("User sent a new message. Respond carefully.")
+        # Simple trigger - role.md handles tool enforcement
+        boss_response = self.boss.respond("New user message above. Use MCP tools: create_task, acknowledge, or recall_memory. Imperative = DELEGATE.")
 
         # Track Boss token usage
         usage = self.boss.get_last_token_usage()
@@ -423,10 +429,19 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
         if "429" in error_str or "rate limit" in error_str:
             return "RATE_LIMIT", "retry"
 
-        # Context/token limit errors
-        if "context" in error_str and "limit" in error_str:
-            return "CONTEXT_TOO_LARGE", "skip"
-        if "token" in error_str and ("limit" in error_str or "exceed" in error_str):
+        # Context/token limit errors (backend-agnostic patterns)
+        context_patterns = [
+            "context" in error_str and "limit" in error_str,
+            "context" in error_str and "length" in error_str,
+            "context" in error_str and "exceed" in error_str,
+            "token" in error_str and "limit" in error_str,
+            "token" in error_str and "exceed" in error_str,
+            "max_tokens" in error_str,
+            "input too long" in error_str,
+            "maximum context" in error_str,
+            "context window" in error_str and "exceed" in error_str,
+        ]
+        if any(context_patterns):
             return "CONTEXT_TOO_LARGE", "skip"
 
         # Timeout errors
@@ -465,7 +480,7 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
         """
         import time as _task_time
         task_start = _task_time.time()
-        print(f"[Studio] _run_raw_task() start | task={task.id} | backend={backend}")
+        logger.info("_run_raw_task() start | task=%s | backend=%s", task.id, backend)
 
         try:
             # Extract prompt from task description
@@ -482,7 +497,7 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
             if backend == "gemini":
                 # Status callback for rate limit retries (T196)
                 def gemini_status_cb(msg):
-                    print(f"[Raw] {msg}")
+                    logger.info("[Raw] %s", msg)
                     if self.status_callback:
                         self.status_callback("Raw", "working", msg)
 
@@ -514,7 +529,7 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
                 raise ValueError(f"Invalid backend '{backend}'. Valid options: {', '.join(valid_backends)}")
 
             task_elapsed = _task_time.time() - task_start
-            print(f"[Studio] _run_raw_task() done | task={task.id} | elapsed={task_elapsed:.1f}s")
+            logger.info("_run_raw_task() done | task=%s | elapsed=%.1fs", task.id, task_elapsed)
 
             # Return minimal usage/metrics (gemini.py doesn't track tokens)
             usage = {"total_input_tokens": 0, "total_output_tokens": 0}
@@ -523,7 +538,8 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
 
         except Exception as e:
             task_elapsed = _task_time.time() - task_start
-            print(f"[Studio] _run_raw_task() EXCEPTION | task={task.id} | elapsed={task_elapsed:.1f}s | error={type(e).__name__}: {str(e)[:100]}")
+            logger.error("_run_raw_task() EXCEPTION | task=%s | elapsed=%.1fs | error=%s: %s",
+                         task.id, task_elapsed, type(e).__name__, str(e)[:100])
             return (task.id, None, {"error": e}, {})
 
     def _prepare_agent_context(self, agent: StudioAgent, task) -> tuple[str, str, dict]:
@@ -546,8 +562,15 @@ TASK {task.id}:
 
         # T226: Build structured prompt with explicit section markers
         # Order optimized for primacy/recency effects (T224):
-        # skills (primacy) → role (middle) → context → task (recency)
+        # files → skills (primacy) → role (middle) → context → task (recency)
         prompt_sections = []
+
+        # ## FILES - Project file tree for orientation (T402/T432)
+        active_project = project_manager.get_active()
+        project_id = active_project.id if active_project else None
+        file_tree = get_file_tree(project_id)
+        if file_tree:
+            prompt_sections.append("## FILES\n\n```\n" + file_tree + "\n```")
 
         # ## SKILLS - How to do work (primacy position)
         skills = agent.get_skills_content()
@@ -612,9 +635,9 @@ TASK {task.id}:
 
             with open(debug_log_path, "w") as f:
                 json.dump(existing, f, indent=2)
-            print(f"[Studio] Saved error prompt to {debug_log_path}")
+            logger.debug("Saved error prompt to %s", debug_log_path)
         except Exception as log_err:
-            print(f"[Studio] Failed to save error prompt: {log_err}")
+            logger.error("Failed to save error prompt: %s", log_err)
 
     def _run_agent_task(self, agent: StudioAgent, task) -> tuple[str, Optional[str], dict, dict]:
         """
@@ -623,12 +646,12 @@ TASK {task.id}:
         """
         import time as _task_time
         task_start = _task_time.time()
-        print(f"[Studio] _run_agent_task() start | task={task.id} | agent={agent.name}")
+        logger.info("_run_agent_task() start | task=%s | agent=%s", task.id, agent.name)
         full_prompt = None
 
         try:
             # Build structured prompt
-            print(f"[Studio] _run_agent_task() building context for {task.id}")
+            logger.debug("_run_agent_task() building context for %s", task.id)
             full_prompt, trigger, context_metrics = self._prepare_agent_context(agent, task)
             task_manager.save_prompt(task.id, full_prompt)
 
@@ -650,29 +673,39 @@ TASK {task.id}:
             )
 
             task_manager.log_context_metrics(task.id, context_metrics)
-            print(f"[Studio] _run_agent_task() calling agent.respond() for {task.id} | prompt_len={len(full_prompt)} | est_tokens={context_metrics['estimated_context_tokens']}")
+            logger.debug("_run_agent_task() calling agent.respond() for %s | prompt_len=%d | est_tokens=%d",
+                         task.id, len(full_prompt), context_metrics['estimated_context_tokens'])
 
             # Get agent's response (blocking call in thread)
             response = agent.respond(full_prompt=full_prompt)
             usage = agent.get_last_token_usage()
             quality_metrics = agent.get_quality_metrics()
 
+            # T430 DEBUG: Log usage immediately after retrieval
+            logger.debug("_run_agent_task() usage for %s: in=%d out=%d keys=%s",
+                        task.id,
+                        usage.get("total_input_tokens", 0),
+                        usage.get("total_output_tokens", 0),
+                        list(usage.keys()))
+
             task_elapsed = _task_time.time() - task_start
             retries = quality_metrics.get("retries", 0)
             tool_errors = len(quality_metrics.get("tool_errors", []))
-            print(f"[Studio] _run_agent_task() done | task={task.id} | elapsed={task_elapsed:.1f}s | retries={retries} | tool_errors={tool_errors}")
+            logger.info("_run_agent_task() done | task=%s | elapsed=%.1fs | retries=%d | tool_errors=%d",
+                        task.id, task_elapsed, retries, tool_errors)
             return (task.id, response, usage, quality_metrics)
 
         except Exception as e:
             task_elapsed = _task_time.time() - task_start
-            print(f"[Studio] _run_agent_task() EXCEPTION | task={task.id} | elapsed={task_elapsed:.1f}s | error={type(e).__name__}: {str(e)[:100]}")
+            logger.error("_run_agent_task() EXCEPTION | task=%s | elapsed=%.1fs | error=%s: %s",
+                         task.id, task_elapsed, type(e).__name__, str(e)[:100])
             self._log_task_error(task.id, agent.name, e, full_prompt)
             return (task.id, None, {"error": e}, {})
 
     def _handle_successful_task(self, task_id: str, agent_name: str, response: str, usage: dict, quality_metrics: dict):
         """Handle successful task completion - logging, archival, and metrics."""
         task_manager.complete_task(task_id, response)
-        print(f"[Studio] Completed {task_id}")
+        logger.info("Completed %s", task_id)
 
         # Post Raw task responses to chat (they have no agent to post)
         if agent_name == "Raw":
@@ -684,21 +717,11 @@ TASK {task.id}:
                 task_description=task.description if task else None,
             )
 
-        # Archive old tasks to keep context small
-        task_manager.archive_old_tasks(keep_recent=10)
-
-        # T258: Trigger AB compression cascade on memory tiers
-        try:
-            compressed = memory_manager.check_and_compress_all()
-            if compressed > 0:
-                print(f"[Studio] Memory compression: {compressed} tier(s)")
-        except Exception as mem_err:
-            print(f"[Studio] Memory compression error (non-fatal): {mem_err}")
-
-        # Log token usage with substep breakdown
+        # Log token usage BEFORE archiving (T421: task must exist for log_tokens to work)
         input_tokens = usage.get("total_input_tokens", 0)
         output_tokens = usage.get("total_output_tokens", 0)
         token_log = usage.get("token_log", [])
+        logger.info("_handle_successful_task %s: usage=%s, in=%d out=%d", task_id, list(usage.keys()), input_tokens, output_tokens)
         task_manager.log_tokens(task_id, input_tokens, output_tokens, token_log)
         track_tokens(
             agent=agent_name,
@@ -713,21 +736,48 @@ TASK {task.id}:
             retries = quality_metrics.get("retries", 0)
             tool_errors = quality_metrics.get("tool_errors", [])
             if retries > 0 or tool_errors:
-                print(f"[Studio] {task_id} quality: {retries} retries, {len(tool_errors)} tool errors")
+                logger.debug("%s quality: %d retries, %d tool errors", task_id, retries, len(tool_errors))
+
+        # Archive old tasks AFTER logging metrics (task must exist for logging)
+        task_manager.archive_old_tasks(keep_recent=10)
+
+        # T258: Trigger AB compression cascade on memory tiers
+        try:
+            compressed = memory_manager.check_and_compress_all()
+            if compressed > 0:
+                logger.info("Memory compression: %d tier(s)", compressed)
+        except Exception as mem_err:
+            logger.error("Memory compression error (non-fatal): %s", mem_err)
 
     def _handle_failed_task(self, task_id: str, usage: dict):
-        """Handle task failure with retry logic."""
+        """Handle task failure with retry logic.
+
+        Special handling for CONTEXT_TOO_LARGE (any backend):
+        - Mark task as PARTIAL
+        - Auto-create continuation task
+        """
         error = usage.get("error")
+        partial_output = usage.get("partial_output")  # If backend captured any output
         error_type, action = self._classify_error(error)
         error_msg = f"{error_type}: {str(error)[:200]}"
-        print(f"[Studio] Task {task_id} error ({action}): {error_msg}")
+        logger.error("Task %s error (%s): %s", task_id, action, error_msg)
+
+        # Handle context exceeded specially - create continuation
+        if error_type == "CONTEXT_TOO_LARGE":
+            continuation_id = task_manager.set_partial(task_id, partial_output)
+            if continuation_id:
+                logger.info("Task %s ran out of context -> continuation %s created", task_id, continuation_id)
+                # Post to hub so user sees it
+                from studio.core.hub import hub
+                hub.post("System", f"Task {task_id} ran out of context. Continuation {continuation_id} created automatically.")
+            return
 
         if action == "retry":
             task_manager.reset_task(task_id)
             can_retry = task_manager.increment_retry(task_id, max_retries=3)
             if can_retry:
                 retry_count = task_manager.get_retry_count(task_id)
-                print(f"[Studio] Task {task_id} will retry ({retry_count}/3)")
+                logger.info("Task %s will retry (%d/3)", task_id, retry_count)
             else:
                 task_manager.set_error(task_id, f"{error_msg} (max retries exceeded)")
         else:
@@ -742,11 +792,11 @@ TASK {task.id}:
             if not future.done():
                 continue
 
-            print(f"[Studio] future DONE for {agent_name}")
+            logger.debug("future DONE for %s", agent_name)
             completed_agents.append(agent_name)
             try:
                 task_id, response, usage, quality_metrics = future.result(timeout=0)
-                print(f"[Studio] got result for {task_id} | has_response={response is not None}")
+                logger.debug("got result for %s | has_response=%s", task_id, response is not None)
 
                 if response is not None:
                     self._handle_successful_task(task_id, agent_name, response, usage, quality_metrics)
@@ -758,14 +808,14 @@ TASK {task.id}:
                 did_work = True
 
             except Exception as e:
-                print(f"[Studio] Future error for {agent_name}: {e}")
+                logger.error("Future error for %s: %s", agent_name, e)
                 self._notify_status(agent_name, "idle", "")
 
         # Remove completed agents from active tracking
         for agent_name in completed_agents:
             del self._active_tasks[agent_name]
         if completed_agents:
-            print(f"[Studio] removed completed: {completed_agents}")
+            logger.debug("removed completed: %s", completed_agents)
 
         return did_work
 
@@ -773,7 +823,7 @@ TASK {task.id}:
         """Recover tasks that have been claimed too long. Returns True if any recovered."""
         recovered = task_manager.recover_stale_tasks()
         if recovered:
-            print(f"[Studio] recovered stale tasks: {recovered}")
+            logger.info("recovered stale tasks: %s", recovered)
             return True
         return False
 
@@ -786,16 +836,16 @@ TASK {task.id}:
         # Validate task
         is_valid, error_msg = task_manager.validate_task(task.id)
         if not is_valid:
-            print(f"[Studio] Skipping invalid Raw task {task.id}: {error_msg}")
+            logger.warning("Skipping invalid Raw task %s: %s", task.id, error_msg)
             task_manager.set_error(task.id, error_msg)
             return True  # Did work (marked as error)
 
         # Claim the task
         if not task_manager.start_task(task.id, claimed_by="Raw"):
-            print(f"[Studio] Task {task.id} already claimed, skipping")
+            logger.debug("Task %s already claimed, skipping", task.id)
             return False
 
-        print(f"[Studio] Started Raw task {task.id}")
+        logger.info("Started Raw task %s", task.id)
         self._notify_status("Raw", "working", f"Processing {task.id}...")
         self._notify_thinking("Raw")
 
@@ -814,23 +864,23 @@ TASK {task.id}:
         # Validate task before dispatch
         is_valid, error_msg = task_manager.validate_task(task.id)
         if not is_valid:
-            print(f"[Studio] Skipping invalid task {task.id}: {error_msg}")
+            logger.warning("Skipping invalid task %s: %s", task.id, error_msg)
             task_manager.set_error(task.id, error_msg)
             return True  # Did work (marked as error)
 
         # Claim the task atomically
         if not task_manager.start_task(task.id, claimed_by=agent.name):
-            print(f"[Studio] Task {task.id} already claimed, skipping")
+            logger.debug("Task %s already claimed, skipping", task.id)
             return False
 
-        print(f"[Studio] Started {task.id} for {agent.name}")
+        logger.info("Started %s for %s", task.id, agent.name)
         self._notify_status(agent.name, "working", f"Working on {task.id}...")
         self._notify_thinking(agent.name)
 
         # Submit to executor (non-blocking)
         future = self._executor.submit(self._run_agent_task, agent, task)
         self._active_tasks[agent.name] = future
-        print(f"[Studio] submitted {task.id} to executor for {agent.name}")
+        logger.debug("submitted %s to executor for %s", task.id, agent.name)
         return True
 
     def _dispatch_new_tasks(self) -> bool:
@@ -838,7 +888,8 @@ TASK {task.id}:
         did_work = False
 
         ready_tasks = task_manager.get_ready_tasks()
-        print(f"[Studio] found {len(ready_tasks)} ready tasks")
+        if ready_tasks:
+            logger.debug("found %d ready tasks", len(ready_tasks))
 
         # Process Raw tasks first (they don't consume agent slots)
         for task in ready_tasks:
@@ -870,6 +921,27 @@ TASK {task.id}:
 
         return did_work
 
+    # Tick logging: only log status every 60 seconds to reduce spam
+    _last_tick_log = 0
+    _tick_count = 0
+    _sessions_cleared = False  # Track if sessions were cleared when queue emptied
+
+    def _maybe_clear_sessions(self):
+        """Clear Claude CLI sessions when task queue is empty.
+
+        Only clears once per empty period - resets when new tasks arrive.
+        This saves context/tokens on the next batch of tasks.
+        """
+        if not Studio._sessions_cleared:
+            Studio._sessions_cleared = True
+            cwd = Path(__file__).parent.parent
+            clear_all_sessions(cwd)
+            logger.info("Task queue empty - cleared all agent sessions")
+
+    def _reset_session_cleared_flag(self):
+        """Reset the flag when new work arrives."""
+        Studio._sessions_cleared = False
+
     def tick(self) -> bool:
         """
         Process one cycle of work. Returns True if any work was done.
@@ -881,7 +953,13 @@ TASK {task.id}:
         """
         import time as _tick_time
         tick_start = _tick_time.time()
-        print(f"[Studio] tick() start | active_agents={list(self._active_tasks.keys())}")
+        Studio._tick_count += 1
+
+        # Only log tick status every 60 seconds (reduces console spam)
+        should_log = (tick_start - Studio._last_tick_log) >= 60
+        if should_log:
+            Studio._last_tick_log = tick_start
+            logger.debug("tick #%d | active_agents=%s", Studio._tick_count, list(self._active_tasks.keys()))
 
         did_work = False
 
@@ -897,6 +975,17 @@ TASK {task.id}:
         if self._dispatch_new_tasks():
             did_work = True
 
-        tick_elapsed = _tick_time.time() - tick_start
-        print(f"[Studio] tick() end | elapsed={tick_elapsed:.3f}s | did_work={did_work} | active={len(self._active_tasks)}")
+        # 4. Session management: clear when idle, reset flag when working
+        if did_work:
+            self._reset_session_cleared_flag()
+        elif not self._active_tasks:
+            ready_tasks = task_manager.get_ready_tasks()
+            if not ready_tasks:
+                self._maybe_clear_sessions()
+
+        # Only log completion if work was done or periodic log
+        if did_work or should_log:
+            tick_elapsed = _tick_time.time() - tick_start
+            logger.debug("tick done | elapsed=%.3fs | did_work=%s | active=%d", tick_elapsed, did_work, len(self._active_tasks))
+
         return did_work

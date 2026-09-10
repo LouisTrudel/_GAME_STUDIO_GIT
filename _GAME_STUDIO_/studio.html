@@ -25,10 +25,10 @@
     <nav class="tabs">
         <div class="tab active" data-tab="hub">Hub</div>
         <div class="tab" data-tab="routines">Routines</div>
-        <div class="tab" data-tab="agents">Agents</div>
         <div class="tab" data-tab="learning">Learning</div>
         <div class="tab" data-tab="projects">Projects</div>
         <div class="tab" data-tab="explorer">Explorer</div>
+        <div class="tab" data-tab="agents">Agents</div>
     </nav>
 
     <div class="main">
@@ -119,25 +119,6 @@
         <!-- AGENTS TAB -->
         <div class="panel agents-panel" id="panel-agents"></div>
 
-        <!-- Agent Config Modal -->
-        <div class="config-modal" id="configModal">
-            <div class="config-modal-content">
-                <h3>Configure <span id="configAgentName"></span></h3>
-                <div class="config-stats" id="configStats"></div>
-                <label>Model</label>
-                <select id="configModel">
-                    <option value="claude-cli">claude-cli (Claude Code)</option>
-                    <!-- API models disabled until ANTHROPIC_API_KEY configured and model IDs fixed -->
-                </select>
-                <label>Skills</label>
-                <div class="config-skills" id="configSkills"></div>
-                <div class="modal-buttons">
-                    <button class="secondary" onclick="hideConfigModal()">Cancel</button>
-                    <button onclick="saveAgentConfig()">Save</button>
-                </div>
-            </div>
-        </div>
-
         <!-- LEARNING TAB -->
         <div class="panel learning-panel" id="panel-learning">
             <div class="learning-header">
@@ -186,19 +167,61 @@
             </div>
         </div>
 
-        <!-- Create Project Modal -->
+        <!-- Create Project Modal (T425/T434: mode toggle + type chips + AI option) -->
         <div class="modal-overlay" id="createProjectModal">
-            <div class="modal" style="width: 450px;">
+            <div class="modal" style="width: 500px;">
                 <h2>New Project</h2>
-                <label>Project Name</label>
-                <input type="text" id="projectName" placeholder="e.g., My Awesome Game" maxlength="50" />
-                <label>Project Folder Path</label>
-                <input type="text" id="projectPath" placeholder="e.g., D:/Games/MyProject" />
-                <label>Description <span style="color: #666; font-weight: normal;">(optional)</span></label>
-                <textarea id="projectDescription" placeholder="Brief description..." maxlength="200" style="min-height: 60px;"></textarea>
+
+                <!-- Mode Toggle Tabs -->
+                <div class="project-mode-tabs">
+                    <button class="project-mode-tab active" id="modeCreateNew" onclick="setProjectMode('create')">Create New</button>
+                    <button class="project-mode-tab" id="modeLinkExisting" onclick="setProjectMode('link')">Link Existing</button>
+                </div>
+
+                <!-- Create New Mode (T434: with type chips and AI option) -->
+                <div id="projectCreateForm" class="project-form">
+                    <label>Project Name</label>
+                    <input type="text" id="projectNameCreate" placeholder="e.g., My Awesome Game" maxlength="50" />
+
+                    <label>Parent Directory</label>
+                    <input type="text" id="projectParentDir" placeholder="e.g., D:/Games" />
+                    <small style="color: #888; display: block; margin: -8px 0 12px;">Folder will be created: {parent}/{project-slug}/</small>
+
+                    <!-- T434: Type chips -->
+                    <label>Type</label>
+                    <div class="project-type-chips" id="projectTypeChips">
+                        <button type="button" class="type-chip selected" data-type="game">Game</button>
+                        <button type="button" class="type-chip" data-type="website">Website</button>
+                        <button type="button" class="type-chip" data-type="research">Research</button>
+                        <button type="button" class="type-chip" data-type="other">Other</button>
+                    </div>
+
+                    <label>Subtype <span style="color: #666; font-weight: normal;">(optional)</span></label>
+                    <input type="text" id="projectSubtype" placeholder="e.g., platformer, RPG, blog" maxlength="30" />
+
+                    <label>Engine/Framework <span style="color: #666; font-weight: normal;">(optional)</span></label>
+                    <input type="text" id="projectEngine" placeholder="e.g., Godot, Three.js, Unity" maxlength="30" />
+
+                    <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; margin: 8px 0;">
+                        <input type="checkbox" id="projectInitGit" checked />
+                        <span>Initialize Git Repository</span>
+                    </label>
+                </div>
+
+                <!-- Link Existing Mode -->
+                <div id="projectLinkForm" class="project-form" style="display: none;">
+                    <label>Project Name</label>
+                    <input type="text" id="projectName" placeholder="e.g., My Awesome Game" maxlength="50" />
+                    <label>Project Folder Path</label>
+                    <input type="text" id="projectPath" placeholder="e.g., D:/Games/MyProject" />
+                    <label>Description <span style="color: #666; font-weight: normal;">(optional)</span></label>
+                    <textarea id="projectDescription" placeholder="Brief description..." maxlength="200" style="min-height: 60px;"></textarea>
+                </div>
+
                 <div class="modal-buttons">
                     <button class="secondary" onclick="hideCreateProject()">Cancel</button>
-                    <button onclick="createProject()">Create</button>
+                    <button onclick="submitProjectForm()">Create Blank</button>
+                    <button class="primary" onclick="submitProjectFormWithAI()">Create with AI</button>
                 </div>
             </div>
         </div>

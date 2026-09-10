@@ -14,11 +14,16 @@ from pathlib import Path
 from backends import Agent
 
 from studio.core import hub, task_manager, TaskStatus
+from studio.core.logging_config import get_logger
+from studio.core.file_index import get_file_tree
+from studio.core.projects import project_manager
 from studio.loader import (
     AGENTS_DIR,
     load_agent_role_md,
     load_agent_config,
 )
+
+logger = get_logger("Agent")
 
 
 def _truncate_for_hub(response: str, max_chars: int = 300) -> str:
@@ -76,7 +81,7 @@ class StudioAgent:
 
         # Load role from markdown
         self._role_md = load_agent_role_md(name)
-        print(f"  [{self.name}] Loaded role.md: {len(self._role_md)} chars, is_vanilla={self.is_vanilla}")
+        logger.info("[%s] Loaded role.md: %d chars, is_vanilla=%s", self.name, len(self._role_md), self.is_vanilla)
 
         # Build system prompt from role only (skills system removed)
         system_prompt = self._build_system_prompt(self._role_md)
@@ -92,7 +97,7 @@ class StudioAgent:
             tools=[],
             tool_handlers=handlers,
         )
-        print(f"  [{self.name}] Using backend: {backend}")
+        logger.info("[%s] Using backend: %s", self.name, backend)
 
     def get_role_md(self) -> str:
         """Get raw role.md content."""
@@ -167,11 +172,18 @@ class StudioAgent:
 
         # T356: Vanilla agents get raw trigger only, no context injection
         if self.is_vanilla:
-            print(f"  [{self.name}] VANILLA MODE - skipping context injection")
+            logger.debug("[%s] VANILLA MODE - skipping context injection", self.name)
             return trigger_message or "Respond appropriately."
 
         # Debug: confirm non-vanilla path
-        print(f"  [{self.name}] Building context (is_vanilla={self.is_vanilla}, is_boss={self.is_boss})")
+        logger.debug("[%s] Building context (is_vanilla=%s, is_boss=%s)", self.name, self.is_vanilla, self.is_boss)
+
+        # ## FILES - Inject file tree for orientation (T402)
+        active_project = project_manager.get_active()
+        project_id = active_project.id if active_project else None
+        file_tree = get_file_tree(project_id)
+        if file_tree:
+            sections.append("## FILES\n\n```\n" + file_tree + "\n```")
 
         # ## CONTEXT - Dynamic context (tasks, hub messages)
         context_md = self.get_context_md()
@@ -195,16 +207,16 @@ class StudioAgent:
             # T226: Use pre-built prompt if provided, otherwise build internally
             prompt = full_prompt if full_prompt else self._build_context(trigger_message)
 
-            print(f"[{self.name}] Thinking...")
+            logger.info("[%s] Thinking...", self.name)
             start = time.time()
             response = self.agent.chat(prompt)
             elapsed = time.time() - start
 
-            # Get token usage
+            # Get token usage for logging (callers handle track_tokens with task context)
             usage = self.agent.get_last_token_usage()
             tokens_in = usage.get("total_input_tokens", 0)
             tokens_out = usage.get("total_output_tokens", 0)
-            print(f"[{self.name}] Done. ({elapsed:.1f}s, {tokens_in}+{tokens_out} tokens)")
+            logger.info("[%s] Done. (%.1fs, %d+%d tokens)", self.name, elapsed, tokens_in, tokens_out)
 
             # Post full response to hub (truncation happens when injecting into agent context)
             hub.post(self.name, response)
@@ -212,7 +224,7 @@ class StudioAgent:
 
         except Exception as e:
             error_msg = f"Error: {e}"
-            print(f"[{self.name}] {error_msg}")
+            logger.error("[%s] %s", self.name, error_msg)
             hub.post(self.name, error_msg)
             return error_msg
 

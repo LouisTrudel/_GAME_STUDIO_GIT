@@ -185,10 +185,97 @@ function renderProjectDetails() {
         month: 'short', day: 'numeric', year: 'numeric'
     });
 
+    // T434: Check if project is in draft/clarify state (show chat panel)
+    const pipelineState = project.pipeline_state || 'setup';
+    const showChatPanel = projectChatVisible && projectChatId === project.id &&
+                          (pipelineState === 'draft' || pipelineState === 'clarify');
+
+    // T434: Build metadata display if present
+    let metadataHtml = '';
+    if (project.metadata && Object.keys(project.metadata).length > 0) {
+        const m = project.metadata;
+        const parts = [];
+        if (m.project_type) parts.push(m.project_type);
+        if (m.subtype) parts.push(m.subtype);
+        if (m.engine) parts.push(m.engine);
+        if (parts.length > 0) {
+            metadataHtml = `
+                <div class="project-meta-item">
+                    <span class="project-meta-label">Type:</span>
+                    <span class="project-meta-value">${escapeHtml(parts.join(' / '))}</span>
+                </div>
+            `;
+        }
+    }
+
+    // T434: Show pipeline state badge if not setup
+    const pipelineBadge = pipelineState !== 'setup' ? `
+        <span class="project-pipeline-badge ${pipelineState}">${pipelineState}</span>
+    ` : '';
+
+    // T434: Show star rating if rated
+    const ratingHtml = project.whitepaper_rating > 0 ? `
+        <div class="project-meta-item">
+            <span class="project-meta-label">Rating:</span>
+            <span class="project-meta-value">${renderStarRating(project.whitepaper_rating)}</span>
+        </div>
+    ` : '';
+
+    // T434: If showing chat panel, use 40/60 split layout
+    if (showChatPanel) {
+        panel.innerHTML = `
+            <div class="project-chat-layout">
+                <div class="project-chat-whitepaper">
+                    <div class="project-details-header">
+                        <h3>${escapeHtml(project.name)}</h3>
+                        ${pipelineBadge}
+                        <button onclick="saveWhitepaper('${project.id}')" class="project-btn-save" title="Save whitepaper">
+                            💾 Save
+                        </button>
+                    </div>
+                    <textarea id="whitepaperEditor" class="whitepaper-editor"
+                              placeholder="Whitepaper content will appear here..."></textarea>
+                </div>
+                <div class="project-chat-panel">
+                    <div class="project-chat-header">
+                        <span>Project Chat</span>
+                        <button onclick="hideProjectChat()" class="project-chat-close">×</button>
+                    </div>
+                    <div class="project-chat-messages" id="projectChatMessages">
+                        <div class="chat-message assistant">
+                            <div class="chat-content">
+                                Tell me about your project. What are you building?
+                            </div>
+                        </div>
+                    </div>
+                    <div class="project-chat-input-area">
+                        <input type="text" id="projectChatInput"
+                               placeholder="Describe your project..."
+                               onkeydown="if(event.key==='Enter')sendProjectChatMessage()" />
+                        <button onclick="sendProjectChatMessage()">Send</button>
+                    </div>
+                    <div class="project-chat-actions">
+                        <button onclick="startProjectDispatch('${project.id}')" class="project-btn-dispatch"
+                                ${project.whitepaper_rating >= 4 ? '' : 'disabled title="Refine whitepaper to 4+ stars first"'}>
+                            🚀 Start Project
+                        </button>
+                        <button onclick="cancelProject('${project.id}')" class="project-btn-cancel">
+                            Cancel Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        // Whitepaper is loaded by showProjectChat() after render
+        return;
+    }
+
+    // Standard layout (non-chat mode)
     panel.innerHTML = `
         <div class="project-details-header">
             <h3>${escapeHtml(project.name)}</h3>
             ${isActive ? '<span class="project-active-badge">Active</span>' : ''}
+            ${pipelineBadge}
         </div>
 
         <div class="project-details-meta">
@@ -206,6 +293,8 @@ function renderProjectDetails() {
                 <span class="project-meta-label">Created:</span>
                 <span class="project-meta-value">${createdDate}</span>
             </div>
+            ${metadataHtml}
+            ${ratingHtml}
             ${project.description ? `
                 <div class="project-meta-item">
                     <span class="project-meta-label">Description:</span>
@@ -236,6 +325,11 @@ function renderProjectDetails() {
         </div>
 
         <div class="project-details-actions">
+            ${(pipelineState === 'draft' || pipelineState === 'clarify') ? `
+                <button onclick="showProjectChat('${project.id}')" class="project-btn-chat">
+                    Open Chat
+                </button>
+            ` : ''}
             ${!isActive && project.status === 'active' ? `
                 <button onclick="setActiveProject('${project.id}')" class="project-btn-active">
                     Set Active
@@ -401,13 +495,70 @@ function toggleShowArchived() {
     fetchProjects();
 }
 
+// T425: Project creation mode - 'create' (external) or 'link' (legacy)
+let projectCreateMode = 'create';
+
+// T434: Track selected project type chip
+let selectedProjectType = 'game';
+
 // Show create project modal
 function showCreateProject() {
     document.getElementById('createProjectModal').classList.add('show');
+    setProjectMode('create');  // Default to Create New mode
+    // Clear all fields
+    document.getElementById('projectNameCreate').value = '';
+    document.getElementById('projectParentDir').value = '';
+    document.getElementById('projectInitGit').checked = true;
     document.getElementById('projectName').value = '';
     document.getElementById('projectPath').value = '';
     document.getElementById('projectDescription').value = '';
-    document.getElementById('projectName').focus();
+    // T434: Clear metadata fields
+    const subtypeField = document.getElementById('projectSubtype');
+    const engineField = document.getElementById('projectEngine');
+    if (subtypeField) subtypeField.value = '';
+    if (engineField) engineField.value = '';
+    // T434: Reset type chips to default (game)
+    selectedProjectType = 'game';
+    initTypeChips();
+    document.getElementById('projectNameCreate').focus();
+}
+
+// T434: Initialize type chip click handlers
+function initTypeChips() {
+    const chips = document.querySelectorAll('.type-chip');
+    chips.forEach(chip => {
+        chip.classList.toggle('selected', chip.dataset.type === selectedProjectType);
+        chip.onclick = () => selectProjectType(chip.dataset.type);
+    });
+}
+
+// T434: Select project type
+function selectProjectType(type) {
+    selectedProjectType = type;
+    const chips = document.querySelectorAll('.type-chip');
+    chips.forEach(chip => {
+        chip.classList.toggle('selected', chip.dataset.type === type);
+    });
+}
+
+// Set project creation mode
+function setProjectMode(mode) {
+    projectCreateMode = mode;
+
+    // Update tab styling
+    document.getElementById('modeCreateNew').classList.toggle('active', mode === 'create');
+    document.getElementById('modeLinkExisting').classList.toggle('active', mode === 'link');
+
+    // Show/hide forms
+    document.getElementById('projectCreateForm').style.display = mode === 'create' ? 'block' : 'none';
+    document.getElementById('projectLinkForm').style.display = mode === 'link' ? 'block' : 'none';
+
+    // Focus appropriate input
+    if (mode === 'create') {
+        document.getElementById('projectNameCreate').focus();
+    } else {
+        document.getElementById('projectName').focus();
+    }
 }
 
 // Hide create project modal
@@ -415,7 +566,88 @@ function hideCreateProject() {
     document.getElementById('createProjectModal').classList.remove('show');
 }
 
-// Create new project
+// Submit project form (routes to correct handler based on mode)
+async function submitProjectForm() {
+    if (projectCreateMode === 'create') {
+        await createExternalProject();
+    } else {
+        await createProject();
+    }
+}
+
+// T434: Gather project metadata from form
+function gatherProjectMetadata() {
+    const subtypeField = document.getElementById('projectSubtype');
+    const engineField = document.getElementById('projectEngine');
+    return {
+        project_type: selectedProjectType,
+        subtype: subtypeField ? subtypeField.value.trim() : '',
+        engine: engineField ? engineField.value.trim() : ''
+    };
+}
+
+// Create external project (new folder with scaffolding)
+async function createExternalProject(withAI = false) {
+    const name = document.getElementById('projectNameCreate').value.trim();
+    const parentDir = document.getElementById('projectParentDir').value.trim();
+    const initGit = document.getElementById('projectInitGit').checked;
+    const metadata = gatherProjectMetadata();
+
+    if (!name) {
+        alert('Project name is required');
+        return;
+    }
+    if (!parentDir) {
+        alert('Parent directory is required');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${API_URL}/projects/create-external`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                parent_dir: parentDir,
+                init_git: initGit,
+                with_ai: withAI,
+                metadata
+            })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert(data.error);
+        } else {
+            hideCreateProject();
+            // Show git warning if any
+            if (data.git_warning) {
+                console.warn('[Projects] Git warning:', data.git_warning);
+            }
+            await fetchProjects();
+            selectProject(data.id);
+
+            // T434: If created with AI, open project chat panel
+            if (withAI && data.pipeline_state === 'draft') {
+                showProjectChat(data.id);
+            }
+        }
+    } catch (e) {
+        alert('Failed to create project');
+    }
+}
+
+// T434: Submit project form with AI whitepaper generation
+async function submitProjectFormWithAI() {
+    if (projectCreateMode === 'create') {
+        await createExternalProject(true);  // withAI = true
+    } else {
+        // Link mode doesn't support AI generation
+        alert('AI whitepaper generation is only available for new projects');
+    }
+}
+
+// Create project by linking existing folder (legacy mode)
 async function createProject() {
     const name = document.getElementById('projectName').value.trim();
     const path = document.getElementById('projectPath').value.trim();
@@ -465,5 +697,302 @@ function handleProjectsUpdate(data) {
     // Re-render details if selected project was updated
     if (selectedProjectId && projects.find(p => p.id === selectedProjectId)) {
         renderProjectDetails();
+    }
+}
+
+// ============ T434: PROJECT CHAT PANEL ============
+
+let projectChatVisible = false;
+let projectChatId = null;
+
+// Show project chat panel (40/60 split with whitepaper)
+function showProjectChat(projectId) {
+    projectChatId = projectId;
+    projectChatVisible = true;
+
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    // Re-render details to show chat panel
+    renderProjectDetails();
+
+    // Load existing whitepaper content (T439)
+    loadProjectWhitepaper(projectId);
+
+    // Load chat history if any (T439)
+    loadProjectChatHistory(projectId);
+}
+
+// Load chat history for a project (T439)
+async function loadProjectChatHistory(projectId) {
+    const chatMessages = document.getElementById('projectChatMessages');
+    if (!chatMessages) return;
+
+    try {
+        const resp = await fetch(`${API_URL}/projects/${projectId}/chat-history`);
+        const data = await resp.json();
+
+        if (data.messages && data.messages.length > 0) {
+            // Clear default welcome message and add history
+            chatMessages.innerHTML = '';
+            for (const msg of data.messages) {
+                addProjectChatMessage(msg.role, msg.content);
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load chat history:', e);
+    }
+}
+
+// Hide project chat panel
+function hideProjectChat() {
+    projectChatVisible = false;
+    projectChatId = null;
+    renderProjectDetails();
+}
+
+// Render star rating display
+function renderStarRating(rating) {
+    const filled = '★'.repeat(rating);
+    const empty = '☆'.repeat(5 - rating);
+    return `<span class="star-rating">${filled}${empty}</span> (${rating}/5)`;
+}
+
+// Send message in project chat (T439: Connected to whitepaper agent)
+async function sendProjectChatMessage() {
+    const input = document.getElementById('projectChatInput');
+    if (!input || !projectChatId) return;
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    const chatMessages = document.getElementById('projectChatMessages');
+
+    // Add user message to chat display
+    if (chatMessages) {
+        chatMessages.innerHTML += `
+            <div class="chat-message user">
+                <div class="chat-content">${escapeHtml(message)}</div>
+            </div>
+        `;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    input.value = '';
+    input.disabled = true;
+
+    // Show typing indicator
+    const typingId = 'typing-' + Date.now();
+    if (chatMessages) {
+        chatMessages.innerHTML += `
+            <div class="chat-message assistant typing" id="${typingId}">
+                <div class="chat-content">
+                    <span class="typing-dots">●●●</span> Thinking...
+                </div>
+            </div>
+        `;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    try {
+        const resp = await fetch(`${API_URL}/projects/${projectChatId}/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        const data = await resp.json();
+
+        // Remove typing indicator
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+
+        if (data.error) {
+            addProjectChatMessage('assistant', `Error: ${data.error}`);
+        } else {
+            // Add response with rating badge
+            let responseHtml = escapeHtml(data.response);
+            if (data.rating > 0) {
+                responseHtml += `
+                    <div class="chat-rating-badge">
+                        <span class="star-rating">${data.rating_display}</span>
+                        (${data.rating}/5)
+                        ${data.missing ? `<br><span class="rating-missing">Missing: ${escapeHtml(data.missing)}</span>` : ''}
+                    </div>
+                `;
+            }
+            addProjectChatMessage('assistant', responseHtml, true);
+
+            // Refresh whitepaper display (editable)
+            await loadProjectWhitepaper(projectChatId);
+
+            // Update project rating in local array (avoid full re-render which resets chat)
+            if (data.rating > 0) {
+                const proj = projects.find(p => p.id === projectChatId);
+                if (proj) {
+                    proj.whitepaper_rating = data.rating;
+                    // Update dispatch button state
+                    const dispatchBtn = document.querySelector('.project-btn-dispatch');
+                    if (dispatchBtn) {
+                        dispatchBtn.disabled = data.rating < 4;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        // Remove typing indicator
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+
+        addProjectChatMessage('assistant', `Error: Failed to connect to agent. ${e}`);
+    }
+
+    input.disabled = false;
+    input.focus();
+}
+
+// Add a message to project chat display
+function addProjectChatMessage(role, content, isHtml = false) {
+    const chatMessages = document.getElementById('projectChatMessages');
+    if (!chatMessages) return;
+
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-message ${role}`;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'chat-content';
+    if (isHtml) {
+        contentDiv.innerHTML = content;
+    } else {
+        contentDiv.textContent = content;
+    }
+
+    msgDiv.appendChild(contentDiv);
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Load whitepaper content into the display pane
+async function loadProjectWhitepaper(projectId) {
+    const editor = document.getElementById('whitepaperEditor');
+    if (!editor) return;
+
+    try {
+        const resp = await fetch(`${API_URL}/projects/${projectId}/document/white_paper`);
+        const data = await resp.json();
+
+        if (data.error || !data.content) {
+            editor.value = '';
+            editor.placeholder = 'No whitepaper yet. Start chatting to generate one, or type here directly.';
+        } else {
+            editor.value = data.content;
+        }
+    } catch (e) {
+        editor.value = '';
+        editor.placeholder = 'Failed to load whitepaper';
+    }
+}
+
+// Save whitepaper content from editor
+async function saveWhitepaper(projectId) {
+    const editor = document.getElementById('whitepaperEditor');
+    if (!editor) return;
+
+    const content = editor.value.trim();
+    if (!content) {
+        alert('Whitepaper is empty');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${API_URL}/projects/${projectId}/whitepaper`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert(`Failed to save: ${data.error}`);
+        } else {
+            // Visual feedback
+            const saveBtn = document.querySelector('.project-btn-save');
+            if (saveBtn) {
+                const original = saveBtn.textContent;
+                saveBtn.textContent = '✓ Saved';
+                setTimeout(() => saveBtn.textContent = original, 1500);
+            }
+        }
+    } catch (e) {
+        alert('Failed to save whitepaper');
+    }
+}
+
+// Cancel project (with confirmation)
+async function cancelProject(projectId) {
+    const deleteFolder = confirm(
+        'Cancel this project?\n\n' +
+        'Click OK to delete the project folder.\n' +
+        'Click Cancel to keep the folder but remove it from Studio.'
+    );
+
+    try {
+        const resp = await fetch(`${API_URL}/projects/${projectId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ delete_folder: deleteFolder })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert(data.error);
+        } else {
+            hideProjectChat();
+            await fetchProjects();
+            selectedProjectId = null;
+            renderProjectDetails();
+        }
+    } catch (e) {
+        alert('Failed to cancel project');
+    }
+}
+
+// Start project dispatch - transitions to DISPATCH state and tells BOSS to decompose
+async function startProjectDispatch(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    if (project.whitepaper_rating < 4) {
+        alert('Please refine the whitepaper to 4+ stars before starting the project.');
+        return;
+    }
+
+    if (!confirm(`Ready to start "${project.name}"?\n\nBOSS will read the whitepaper and create tasks for the team.`)) {
+        return;
+    }
+
+    try {
+        // Set pipeline state to dispatch
+        const resp = await fetch(`${API_URL}/projects/${projectId}/pipeline-state`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ state: 'dispatch' })
+        });
+        const data = await resp.json();
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // TODO: Trigger BOSS to read whitepaper and create tasks
+        // For now, just show confirmation
+        alert(`Project dispatched! BOSS will now read the whitepaper and create tasks.\n\nCheck the Tasks tab for progress.`);
+
+        hideProjectChat();
+        await fetchProjects();
+        renderProjectDetails();
+
+    } catch (e) {
+        alert('Failed to start project dispatch');
     }
 }

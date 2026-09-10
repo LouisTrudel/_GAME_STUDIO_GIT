@@ -16,6 +16,10 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
+from studio.core.logging_config import get_logger
+
+logger = get_logger("Git Routine")
+
 # Project root
 ROOT = Path(__file__).parent.parent.parent
 
@@ -228,38 +232,38 @@ def run_routine(
     }
 
     # Step 1: Check status
-    print("[Git Routine] Step 1: Checking git status...")
+    logger.info("Step 1: Checking git status...")
     status = get_status()
     result["status_check"] = status
 
     if status.get("error"):
         result["error"] = f"Status check failed: {status['error']}"
-        print(f"[Git Routine] FAILED: {result['error']}")
+        logger.error("FAILED: %s", result["error"])
         return result
 
     if not status["has_changes"]:
         result["error"] = "Nothing to commit - working tree clean"
-        print(f"[Git Routine] SKIPPED: {result['error']}")
+        logger.info("SKIPPED: %s", result["error"])
         return result
 
-    print(f"[Git Routine] Found {status['total_files']} changed file(s)")
+    logger.info("Found %d changed file(s)", status['total_files'])
 
     # Step 2: Get diff summary for commit message
-    print("[Git Routine] Step 2: Analyzing changes...")
+    logger.info("Step 2: Analyzing changes...")
     diff = get_diff_summary()
 
     # Step 3: Stage all changes
-    print("[Git Routine] Step 3: Staging changes...")
+    logger.info("Step 3: Staging changes...")
     ok, output = stage_all()
     if not ok:
         result["error"] = f"Failed to stage changes: {output}"
-        print(f"[Git Routine] FAILED: {result['error']}")
+        logger.error("FAILED: %s", result["error"])
         return result
     result["staged"] = True
-    print("[Git Routine] Changes staged")
+    logger.info("Changes staged")
 
     # Step 4: Generate and create commit
-    print("[Git Routine] Step 4: Creating commit...")
+    logger.info("Step 4: Creating commit...")
     message = generate_commit_message(status, diff)
     result["commit_message"] = message
 
@@ -268,28 +272,28 @@ def run_routine(
         # Check if it's just "nothing to commit"
         if "nothing to commit" in output.lower():
             result["error"] = "Nothing to commit after staging"
-            print(f"[Git Routine] SKIPPED: {result['error']}")
+            logger.info("SKIPPED: %s", result["error"])
             return result
         result["error"] = f"Commit failed: {output}"
-        print(f"[Git Routine] FAILED: {result['error']}")
+        logger.error("FAILED: %s", result["error"])
         return result
     result["committed"] = True
-    print(f"[Git Routine] Committed: {message.split(chr(10))[0]}")
+    logger.info("Committed: %s", message.split(chr(10))[0])
 
     # Step 5: Push (if enabled)
     if auto_push:
-        print("[Git Routine] Step 5: Pushing to remote...")
+        logger.info("Step 5: Pushing to remote...")
         ok, output = push(remote, branch)
         if not ok:
             result["error"] = f"Push failed: {output}"
             result["pushed"] = False
-            print(f"[Git Routine] WARNING: {result['error']}")
+            logger.warning("Push failed: %s", output)
             # Don't return - commit succeeded, push is secondary
         else:
             result["pushed"] = True
-            print(f"[Git Routine] Pushed to {remote}")
+            logger.info("Pushed to %s", remote)
 
-    print("[Git Routine] SUCCESS")
+    logger.info("SUCCESS")
     return result
 
 

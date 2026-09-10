@@ -10,7 +10,10 @@ import time
 import urllib.request
 import urllib.error
 
-from .base import Backend
+from .base import Backend, with_retry
+from studio.core.logging_config import get_logger
+
+logger = get_logger("Gemini")
 
 
 class GeminiBackend(Backend):
@@ -76,7 +79,7 @@ class GeminiBackend(Backend):
         func_name = function_call["name"]
         func_args = function_call.get("args", {})
 
-        print(f"  [Tool] {func_name}({func_args})")
+        logger.debug("Tool call: %s(%s)", func_name, func_args)
 
         if func_name in tool_handlers:
             try:
@@ -145,30 +148,34 @@ class GeminiBackend(Backend):
 
         return "Max tool iterations reached"
 
-    def _make_request(self, url: str, payload: dict, retries: int = 3) -> dict:
-        """Make HTTP request to Gemini API with retry on rate limit."""
-        for attempt in range(retries):
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
+    @with_retry
+    def _make_request(self, url: str, payload: dict) -> dict:
+        """Make HTTP request to Gemini API with retry on transient failures."""
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
 
-            try:
-                with urllib.request.urlopen(req, timeout=120) as response:
-                    return json.loads(response.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=120) as response:
+                return json.loads(response.read().decode("utf-8"))
 
-            except urllib.error.HTTPError as e:
-                error_body = e.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8")
 
-                # Rate limit - wait and retry
-                if e.code == 429 and attempt < retries - 1:
-                    wait_time = 10 * (attempt + 1)  # 10s, 20s, 30s
-                    print(f"  [Rate limited] Waiting {wait_time}s...")
-                    time.sleep(wait_time)
-                    continue
+            # Rate limit - raise as retryable
+            if e.code == 429:
+                logger.warning("Rate limited by Gemini API")
+                raise ConnectionError(f"Rate limited: {error_body}")
 
+            # Auth/client errors - don't retry
+            if e.code in (400, 401, 403, 404):
                 raise RuntimeError(f"Gemini API error {e.code}: {error_body}")
-            except Exception as e:
-                raise RuntimeError(f"Gemini request failed: {e}")
+
+            # Server errors (5xx) - treat as retryable
+            if e.code >= 500:
+                raise ConnectionError(f"Gemini server error {e.code}: {error_body}")
+
+            raise RuntimeError(f"Gemini API error {e.code}: {error_body}")

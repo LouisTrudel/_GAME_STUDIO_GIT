@@ -10,6 +10,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from .logging_config import get_logger
+
+logger = get_logger("MessageLogger")
 
 LOGS_DIR = Path(__file__).parent.parent.parent / "data" / "logs"
 RETENTION_DAYS = 30
@@ -37,7 +40,7 @@ class MessageLogger:
                 with open(path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except (json.JSONDecodeError, IOError) as e:
-                print(f"[MessageLogger] Failed to load {path}: {e}")
+                logger.error("Failed to load %s: %s", path, e)
                 return []
         return []
 
@@ -48,7 +51,7 @@ class MessageLogger:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(entries, f, indent=2, ensure_ascii=False)
         except IOError as e:
-            print(f"[MessageLogger] Failed to save {path}: {e}")
+            logger.error("Failed to save %s: %s", path, e)
 
     def log_message(
         self,
@@ -106,10 +109,10 @@ class MessageLogger:
                     # Skip files that don't match the date pattern
                     pass
         except Exception as e:
-            print(f"[MessageLogger] Cleanup error: {e}")
+            logger.error("Cleanup error: %s", e)
 
         if removed > 0:
-            print(f"[MessageLogger] Cleaned up {removed} old log files")
+            logger.info("Cleaned up %d old log files", removed)
 
     def get_logs_for_date(self, date: datetime) -> list[dict]:
         """Get all log entries for a specific date."""

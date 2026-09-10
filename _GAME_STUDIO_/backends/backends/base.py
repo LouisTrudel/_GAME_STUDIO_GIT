@@ -1,8 +1,101 @@
 """
 Base backend interface.
+
+T437: Added LLM-agnostic exponential backoff retry wrapper.
 """
 
+import functools
+import socket
+import time
 from abc import ABC, abstractmethod
+from typing import Callable, TypeVar
+from urllib.error import URLError
+
+# Retryable exceptions - network/transient errors
+RETRYABLE_EXCEPTIONS = (
+    URLError,
+    ConnectionResetError,
+    socket.timeout,
+    ConnectionRefusedError,
+    ConnectionError,
+    TimeoutError,
+    OSError,  # Includes network-related OS errors
+)
+
+# Non-retryable HTTP status codes (auth errors, bad requests)
+NON_RETRYABLE_STATUS_CODES = {400, 401, 403, 404}
+
+# Retry configuration
+MAX_RETRIES = 3
+INITIAL_DELAY = 2  # seconds
+BACKOFF_MULTIPLIER = 2  # 2s -> 4s -> 8s
+
+
+T = TypeVar("T")
+
+
+def with_retry(func: Callable[..., T]) -> Callable[..., T]:
+    """Decorator for exponential backoff retry on transient failures.
+
+    Retries for: URLError, ConnectionResetError, socket.timeout,
+                 ConnectionRefusedError, ConnectionError, TimeoutError
+
+    Does NOT retry for: Auth errors (401/403), Bad request (400), Not found (404)
+
+    Backoff: 2s -> 4s -> 8s (3 attempts max)
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs) -> T:
+        last_exception = None
+        delay = INITIAL_DELAY
+
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                return func(*args, **kwargs)
+            except RETRYABLE_EXCEPTIONS as e:
+                last_exception = e
+                if attempt < MAX_RETRIES:
+                    print(f"[Retry] Attempt {attempt}/{MAX_RETRIES} failed: {type(e).__name__}: {e}")
+                    print(f"[Retry] Waiting {delay}s before retry...")
+                    time.sleep(delay)
+                    delay *= BACKOFF_MULTIPLIER
+                else:
+                    print(f"[Retry] All {MAX_RETRIES} attempts failed")
+            except Exception as e:
+                # Check if it's an HTTP error with non-retryable status
+                if _is_non_retryable_http_error(e):
+                    raise
+                # For other exceptions, treat as retryable
+                last_exception = e
+                if attempt < MAX_RETRIES:
+                    print(f"[Retry] Attempt {attempt}/{MAX_RETRIES} failed: {type(e).__name__}: {e}")
+                    print(f"[Retry] Waiting {delay}s before retry...")
+                    time.sleep(delay)
+                    delay *= BACKOFF_MULTIPLIER
+                else:
+                    print(f"[Retry] All {MAX_RETRIES} attempts failed")
+
+        # All retries exhausted
+        raise last_exception
+
+    return wrapper
+
+
+def _is_non_retryable_http_error(e: Exception) -> bool:
+    """Check if exception represents a non-retryable HTTP error."""
+    error_str = str(e).lower()
+
+    # Check for common HTTP error patterns
+    for status in NON_RETRYABLE_STATUS_CODES:
+        if str(status) in error_str:
+            return True
+
+    # Check for auth-related keywords
+    auth_keywords = ["unauthorized", "forbidden", "invalid api key", "authentication"]
+    if any(keyword in error_str for keyword in auth_keywords):
+        return True
+
+    return False
 
 
 class Backend(ABC):

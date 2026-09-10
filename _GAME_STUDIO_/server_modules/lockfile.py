@@ -12,6 +12,10 @@ import sys
 import socket
 from pathlib import Path
 
+from studio.core.logging_config import get_logger
+
+logger = get_logger("Lockfile")
+
 LOCK_FILE = Path(__file__).parent.parent / "data" / ".server.lock"
 
 
@@ -58,13 +62,13 @@ def acquire_lock(port: int = 8000) -> bool:
     """
     # Check 1: Port binding
     if is_port_in_use(port):
-        print("=" * 50)
-        print("  ERROR: Server already running!")
-        print("=" * 50)
-        print(f"Port {port} is already in use.")
-        print("Another server instance may be running.")
-        print("Close the existing server or use a different port.")
-        print("=" * 50)
+        logger.error("=" * 50)
+        logger.error("  ERROR: Server already running!")
+        logger.error("=" * 50)
+        logger.error("Port %d is already in use.", port)
+        logger.error("Another server instance may be running.")
+        logger.error("Close the existing server or use a different port.")
+        logger.error("=" * 50)
         return False
 
     # Check 2: Lock file
@@ -72,20 +76,20 @@ def acquire_lock(port: int = 8000) -> bool:
         try:
             old_pid = int(LOCK_FILE.read_text().strip())
             if is_process_running(old_pid):
-                print("=" * 50)
-                print("  ERROR: Server already running!")
-                print("=" * 50)
-                print(f"Lock file exists with active PID: {old_pid}")
-                print("Another server instance is running.")
-                print("=" * 50)
+                logger.error("=" * 50)
+                logger.error("  ERROR: Server already running!")
+                logger.error("=" * 50)
+                logger.error("Lock file exists with active PID: %d", old_pid)
+                logger.error("Another server instance is running.")
+                logger.error("=" * 50)
                 return False
             else:
                 # Stale lock file from crashed process
-                print(f"Cleaning up stale lock file (PID {old_pid} not running)")
+                logger.info("Cleaning up stale lock file (PID %d not running)", old_pid)
                 LOCK_FILE.unlink()
         except (ValueError, OSError) as e:
             # Corrupted lock file, clean up
-            print(f"Cleaning up corrupted lock file: {e}")
+            logger.warning("Cleaning up corrupted lock file: %s", e)
             LOCK_FILE.unlink()
 
     # Create lock file with current PID

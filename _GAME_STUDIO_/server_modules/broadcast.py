@@ -9,11 +9,16 @@ Handles:
 
 import asyncio
 import json
+import threading
 from datetime import datetime
 from collections import Counter
 from typing import Optional
 
 from fastapi import WebSocket
+
+from studio.core.logging_config import get_logger
+
+logger = get_logger("Broadcast")
 
 
 # Track WebSocket connections
@@ -24,6 +29,7 @@ current_thinking_agent: str | None = None
 
 # Agent status tracking: {"AgentName": {"status": "idle/working/thinking", "activity": "description"}}
 agent_statuses: dict[str, dict] = {}
+_agent_statuses_lock = threading.Lock()
 
 # Event loop reference (set at startup for thread-safe access)
 main_loop: asyncio.AbstractEventLoop | None = None
@@ -46,8 +52,8 @@ async def broadcast_to_clients(data: str):
 
 def update_agent_status_sync(agent: str, status: str, activity: str = ""):
     """Update an agent's status (called from sync code)."""
-    global agent_statuses
-    agent_statuses[agent] = {"status": status, "activity": activity}
+    with _agent_statuses_lock:
+        agent_statuses[agent] = {"status": status, "activity": activity}
     if main_loop is not None:
         asyncio.run_coroutine_threadsafe(_broadcast_agent_statuses(), main_loop)
 
@@ -56,16 +62,9 @@ def broadcast_thinking_sync(agent: str | None):
     """Queue a thinking broadcast (called from sync code)."""
     global current_thinking_agent
     current_thinking_agent = agent
-    # Also update agent status
+    # Update agent status to thinking (agents call update_agent_status_sync(idle) on completion)
     if agent:
         update_agent_status_sync(agent, "thinking", "Processing...")
-    else:
-        # Clear all thinking statuses when done
-        for name in list(agent_statuses.keys()):
-            if agent_statuses[name].get("status") == "thinking":
-                agent_statuses[name] = {"status": "idle", "activity": ""}
-        if main_loop is not None:
-            asyncio.run_coroutine_threadsafe(_broadcast_agent_statuses(), main_loop)
     # Schedule the actual broadcast in the event loop
     if main_loop is not None:
         asyncio.run_coroutine_threadsafe(_do_broadcast_thinking(agent), main_loop)
@@ -73,9 +72,11 @@ def broadcast_thinking_sync(agent: str | None):
 
 async def _broadcast_agent_statuses():
     """Broadcast all agent statuses to connected clients."""
+    with _agent_statuses_lock:
+        statuses_copy = dict(agent_statuses)
     data = json.dumps({
         "type": "agent_statuses",
-        "data": agent_statuses
+        "data": statuses_copy
     })
     await broadcast_to_clients(data)
 
@@ -109,11 +110,17 @@ async def _message_broadcast_loop():
 
 
 async def _task_broadcast_loop():
-    """Broadcast task updates periodically."""
+    """Broadcast task updates periodically.
+
+    Reloads from disk to sync with changes from MCP server (separate process).
+    """
     from studio.core.tasks import task_manager
 
     last_hash = ""
     while True:
+        # Reload from disk to catch changes from MCP server
+        task_manager.reload_from_disk()
+
         tasks = task_manager.get_all_tasks()
         current_hash = str([(t.id, t.status.value) for t in tasks])
         if current_hash != last_hash:
@@ -127,22 +134,21 @@ async def _task_broadcast_loop():
 
 
 async def _agent_status_broadcast_loop():
-    """Continuously broadcast agent statuses while any agent is active."""
+    """Continuously broadcast agent statuses on change."""
+    last_hash = ""
     while True:
-        has_active = any(
-            info.get("status") in ("thinking", "working")
-            for info in agent_statuses.values()
-        )
+        with _agent_statuses_lock:
+            statuses_copy = dict(agent_statuses)
 
-        if has_active and connections:
+        current_hash = str(statuses_copy)
+        if current_hash != last_hash and connections:
+            last_hash = current_hash
             data = json.dumps({
                 "type": "agent_statuses",
-                "data": agent_statuses
+                "data": statuses_copy
             })
             await broadcast_to_clients(data)
-            await asyncio.sleep(0.2)  # Fast updates while active
-        else:
-            await asyncio.sleep(0.5)  # Slower polling when idle
+        await asyncio.sleep(0.3)
 
 
 async def _schedule_broadcast_loop():
@@ -170,7 +176,7 @@ async def _schedule_tick_loop():
     while True:
         ran = schedule_manager.tick()
         if ran:
-            print(f"[Schedule] Triggered: {ran}")
+            logger.info("Schedule triggered: %s", ran)
         await asyncio.sleep(5)  # Check every 5 seconds
 
 
@@ -184,7 +190,7 @@ async def _task_tick_loop(studio):
             else:
                 await asyncio.sleep(3)  # Check for new tasks every 3 seconds
         except Exception as e:
-            print(f"[TaskTick] Error: {e}")
+            logger.error("TaskTick error: %s", e)
             await asyncio.sleep(5)
 
 
@@ -323,7 +329,7 @@ async def _memory_compression_loop():
                 })
                 await broadcast_to_clients(data)
         except Exception as e:
-            print(f"[Memory] Stats broadcast error: {e}")
+            logger.error("Memory stats broadcast error: %s", e)
 
         await asyncio.sleep(60)  # Update every minute
 

@@ -1,6 +1,9 @@
 // Game Studio - Routines Module
 // Routine CRUD and rendering
 
+// Drag-and-drop state for routine cards
+let draggedRoutineCard = null;
+
 async function fetchSchedules() {
     console.log('[Routines] Fetching schedules...');
     try {
@@ -77,12 +80,13 @@ function renderRoutines() {
         }).join('');
 
         return `
-            <div class="routine-card ${statusClass}">
+            <div class="routine-card ${statusClass}" data-routine-id="${routine.id}" draggable="true">
+                <span class="routine-drag-handle" title="Drag to reorder">⋮⋮</span>
                 <div class="routine-header" onclick="toggleRoutineDetails('${routine.id}')" style="cursor: pointer;">
                     <span class="routine-id">${routine.id}</span>
-                    <span class="routine-title">${escapeHtml(routine.name)}</span>
                     <span class="routine-interval">⏱ ${routine.interval_human}</span>
                     <span class="routine-status ${statusClass}">${statusLabel}</span>
+                    <span class="routine-title">${escapeHtml(routine.name)}</span>
                     <span class="routine-agent-chain">${agentChain}</span>
                     <span class="routine-timeline-compact">
                         <span class="routine-timeline-label">Last:</span> ${lastRun}
@@ -325,4 +329,87 @@ function deleteRoutine(id) {
     if (confirm('Delete this routine?')) {
         ws.send(JSON.stringify({ type: 'delete_schedule', id }));
     }
+}
+
+// ========== Drag-and-Drop Reorder ==========
+
+function initRoutineDragEvents() {
+    const list = document.getElementById('routineList');
+    if (!list) return;
+
+    list.addEventListener('dragstart', handleRoutineDragStart);
+    list.addEventListener('dragend', handleRoutineDragEnd);
+    list.addEventListener('dragover', handleRoutineDragOver);
+    list.addEventListener('drop', handleRoutineDrop);
+}
+
+function handleRoutineDragStart(e) {
+    const card = e.target.closest('.routine-card');
+    if (!card) return;
+
+    draggedRoutineCard = card;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.dataset.routineId);
+}
+
+function handleRoutineDragEnd(e) {
+    if (draggedRoutineCard) {
+        draggedRoutineCard.classList.remove('dragging');
+    }
+    // Remove drag-over from all cards
+    document.querySelectorAll('.routine-card.drag-over').forEach(el => {
+        el.classList.remove('drag-over');
+    });
+    draggedRoutineCard = null;
+}
+
+function handleRoutineDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    const card = e.target.closest('.routine-card');
+    if (!card || card === draggedRoutineCard) return;
+
+    // Remove drag-over from others, add to current
+    document.querySelectorAll('.routine-card.drag-over').forEach(el => {
+        if (el !== card) el.classList.remove('drag-over');
+    });
+    card.classList.add('drag-over');
+}
+
+function handleRoutineDrop(e) {
+    e.preventDefault();
+    const targetCard = e.target.closest('.routine-card');
+    if (!targetCard || !draggedRoutineCard || targetCard === draggedRoutineCard) return;
+
+    const list = document.getElementById('routineList');
+    const cards = Array.from(list.querySelectorAll('.routine-card'));
+
+    const draggedIdx = cards.indexOf(draggedRoutineCard);
+    const targetIdx = cards.indexOf(targetCard);
+
+    // Move in DOM
+    if (draggedIdx < targetIdx) {
+        targetCard.after(draggedRoutineCard);
+    } else {
+        targetCard.before(draggedRoutineCard);
+    }
+
+    // Gather new order and send to server
+    const newOrder = Array.from(list.querySelectorAll('.routine-card'))
+        .map(card => card.dataset.routineId)
+        .filter(id => id);
+
+    ws.send(JSON.stringify({ type: 'reorder_schedules', order: newOrder }));
+
+    // Cleanup
+    targetCard.classList.remove('drag-over');
+}
+
+// Initialize drag events when DOM is ready (or immediately if already ready)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRoutineDragEvents);
+} else {
+    initRoutineDragEvents();
 }

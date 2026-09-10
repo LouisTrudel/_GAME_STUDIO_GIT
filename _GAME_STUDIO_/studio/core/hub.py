@@ -12,12 +12,15 @@ from pathlib import Path
 from typing import Optional
 from queue import Queue
 
+from .logging_config import get_logger
 from .message_logger import message_logger
 from .memory import memory_manager
 from .history import history_manager
 from .projects import project_manager
-from .paths import get_base_path
+from .paths import get_base_path, atomic_json_write
 from .tasks import task_manager
+
+logger = get_logger("Hub")
 
 
 # T330: Default paths (used when no project is active)
@@ -72,7 +75,7 @@ class Hub:
                 memory_manager.set_project(project_folder)
                 history_manager.set_project(project_folder)
                 task_manager.set_project(project_folder)
-                print(f"[Hub] Synced managers with persisted project: {project.name} ({project_folder})")
+                logger.info("Synced managers with persisted project: %s (%s)", project.name, project_folder)
 
     def _get_messages_file(self) -> Path:
         """Get messages.json path for current project context.
@@ -112,13 +115,13 @@ class Hub:
             project_manager._save()
             # T330: Reload messages from default path
             self._load_history()
-            print("[Hub] Switched to default project (no project)")
+            logger.info("Switched to default project (no project)")
             return True
 
         # Get project to extract folder name
         project = project_manager.get(project_id)
         if not project:
-            print(f"[Hub] Project not found: {project_id}")
+            logger.warning("Project not found: %s", project_id)
             return False
 
         # Use project ID as folder name within projects/
@@ -136,7 +139,7 @@ class Hub:
         # T330: Reload messages from project-specific path
         self._load_history()
 
-        print(f"[Hub] Switched to project: {project.name} ({project_id})")
+        logger.info("Switched to project: %s (%s)", project.name, project_id)
         return True
 
     def get_active_project(self) -> Optional[dict]:
@@ -159,14 +162,14 @@ class Hub:
                 with open(messages_file) as f:
                     data = json.load(f)
                 self.messages = [Message.from_dict(m) for m in data.get("messages", [])]
-                print(f"[Hub] Loaded {len(self.messages)} messages from {messages_file}")
+                logger.info("Loaded %d messages from %s", len(self.messages), messages_file)
             except Exception as e:
-                print(f"[Hub] Failed to load {messages_file}: {e}")
+                logger.error("Failed to load %s: %s", messages_file, e)
                 self.messages = []
         else:
             # T330: Clear messages when switching to project with no history
             self.messages = []
-            print(f"[Hub] No messages found at {messages_file}")
+            logger.debug("No messages found at %s", messages_file)
 
     def _save_history(self):
         """Save message history to messages.json (rolling 50-message buffer).
@@ -174,17 +177,13 @@ class Hub:
         T330: Uses project-aware path via _get_messages_file().
         """
         messages_file = self._get_messages_file()
-        try:
-            messages_file.parent.mkdir(parents=True, exist_ok=True)
-            messages_to_save = self.messages[-MAX_MESSAGES:]
-            messages_data = {
-                "messages": [m.to_dict() for m in messages_to_save],
-                "count": len(messages_to_save),
-            }
-            with open(messages_file, "w") as f:
-                json.dump(messages_data, f, indent=2)
-        except Exception as e:
-            print(f"[Hub] Failed to save history to {messages_file}: {e}")
+        messages_to_save = self.messages[-MAX_MESSAGES:]
+        messages_data = {
+            "messages": [m.to_dict() for m in messages_to_save],
+            "count": len(messages_to_save),
+        }
+        if not atomic_json_write(messages_file, messages_data):
+            logger.error("Failed to save history to %s", messages_file)
 
     def post(
         self,
@@ -246,7 +245,7 @@ class Hub:
             memory_manager.append(0, entry)
         except Exception as e:
             # Non-fatal - don't break message posting if memory fails
-            print(f"[Hub] AC-Memory accumulation error (non-fatal): {e}")
+            logger.error("AC-Memory accumulation error (non-fatal): %s", e)
 
     def _accumulate_to_history(self, msg: Message, task_id: Optional[str] = None):
         """Append message to History Draft tier.
@@ -273,7 +272,7 @@ class Hub:
             history_manager.accumulate(entry)
         except Exception as e:
             # Non-fatal - don't break message posting if history fails
-            print(f"[Hub] History accumulation error (non-fatal): {e}")
+            logger.error("History accumulation error (non-fatal): %s", e)
 
     def get_pending(self) -> list[Message]:
         """Get all pending messages from outbox."""
@@ -309,42 +308,57 @@ class Hub:
         tier1 = memory_manager.get_tier(1)
         tier2 = memory_manager.get_tier(2)
         if tier1 or tier2:
-            memory_block = "MEMORY:\n"
+            memory_block = "## MEMORY\n\n"
             if tier1:
-                memory_block += tier1 + "\n"
+                memory_block += "### Recent\n" + tier1 + "\n"
             if tier2:
-                memory_block += "\n---\n" + tier2 + "\n"
-            memory_block += "---\n"
+                memory_block += "\n### Archive\n" + tier2 + "\n"
             lines.append(memory_block)
 
         # Add recent messages
         recent = self.messages[-limit:]
-        lines.append("RECENT MESSAGES:")
 
         # Noise senders to skip entirely
         skip_senders = {"System", "TEST", "test_sender"}
 
-        for msg in recent:
-            # Skip noise
-            if msg.sender in skip_senders:
-                continue
+        # T389: BOSS gets two-tier message display
+        # - Older messages (positions 6-N): trimmed for efficiency
+        # - Last 5 messages: full verbatim for recency detail
+        if agent_name == "BOSS":
+            full_count = 5
+            older_messages = recent[:-full_count] if len(recent) > full_count else []
+            recent_messages = recent[-full_count:] if len(recent) >= full_count else recent
 
-            prefix = "YOU" if msg.sender == agent_name else msg.sender
-            content = msg.content
+            # Block 1: Trimmed older messages
+            if older_messages:
+                lines.append("### EARLIER (trimmed)")
+                for msg in older_messages:
+                    if msg.sender in skip_senders:
+                        continue
+                    prefix = "YOU" if msg.sender == agent_name else msg.sender
+                    if msg.sender == "user":
+                        content = self._truncate_message(msg.content, max_chars=300)
+                    elif msg.sender == agent_name:
+                        content = self._truncate_message(msg.content, max_chars=200)
+                    else:
+                        content = self._truncate_message(msg.content, max_chars=100)
+                    lines.append(f"[{prefix}]: {content}")
 
-            # BOSS gets ALL messages truncated to save tokens
-            if agent_name == "BOSS":
-                if msg.sender == "user":
-                    # User messages: more context, 300 chars
-                    content = self._truncate_message(content, max_chars=300)
-                elif msg.sender == agent_name:
-                    # Own messages: medium context, 200 chars
-                    content = self._truncate_message(content, max_chars=200)
-                else:
-                    # Agent messages: minimal, 100 chars
-                    content = self._truncate_message(content, max_chars=100)
-
-            lines.append(f"[{prefix}]: {content}")
+            # Block 2: Full recent messages
+            lines.append("\n### RECENT (full)")
+            for msg in recent_messages:
+                if msg.sender in skip_senders:
+                    continue
+                prefix = "YOU" if msg.sender == agent_name else msg.sender
+                lines.append(f"[{prefix}]: {msg.content}")
+        else:
+            # Non-BOSS: all messages verbatim
+            lines.append("RECENT MESSAGES:")
+            for msg in recent:
+                if msg.sender in skip_senders:
+                    continue
+                prefix = "YOU" if msg.sender == agent_name else msg.sender
+                lines.append(f"[{prefix}]: {msg.content}")
         return "\n".join(lines)
 
     def _truncate_message(self, content: str, max_chars: int = 100) -> str:

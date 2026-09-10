@@ -305,9 +305,10 @@ def git_commit(auto_push: bool = True, message: str = None) -> str:
 
 RECALL_MEMORY_SCHEMA = {
     "name": "recall_memory",
-    "description": """Search memory tiers for relevant context. Uses AB tiered compression model:
-- Tier 0: Recent session messages (most detail)
-- Tier 1+: Compressed summaries from older sessions
+    "description": """Search memory tiers for relevant context:
+- Tier 0: Raw session buffer
+- Tier 1-2: Injected into prompts (Recent/Archive)
+- Tier 3-10: Reference only (searchable, not auto-injected)
 
 Falls back to raw logs if no tier matches. Call with no query to see recent memories.""",
     "input_schema": {
@@ -334,9 +335,10 @@ Falls back to raw logs if no tier matches. Call with no query to see recent memo
 def recall_memory(query: str = "", max_results: int = 5, search_logs: bool = True) -> str:
     """Search memory tiers for relevant context.
 
-    Uses AB tiered compression model (T256):
-    - Tier 0: Recent session messages (accumulated_a = raw, summary_b = compressed)
-    - Tier 1+: Higher-level summaries from compression cascade
+    Tier structure:
+    - Tier 0: Raw session buffer
+    - Tier 1-2: Injected into prompts (Recent/Archive)
+    - Tier 3-10: Reference only (searchable, not auto-injected)
 
     Empty query returns recent tier 0 content.
     """
@@ -344,7 +346,7 @@ def recall_memory(query: str = "", max_results: int = 5, search_logs: bool = Tru
 
     # Handle empty query - return recent tier 0 content
     if len(query) < 2:
-        recent = memory_manager.get_recent(tier_index=0, max_chars=2000)
+        recent = memory_manager.get_recent(index=0, max_chars=2000)
         if recent:
             lines = ["=== MEMORY RECALL (Tier 0 - recent) ==="]
             lines.append(f"Showing most recent entries\n")
@@ -353,8 +355,8 @@ def recall_memory(query: str = "", max_results: int = 5, search_logs: bool = Tru
         else:
             return "No recent memories in Tier 0. Memory is empty."
 
-    # Search across all tiers using AC-Memory
-    results = memory_manager.search(query, max_tiers=5)
+    # Search across all tiers using AC-Memory (tier0-2 injected, tier3+ reference)
+    results = memory_manager.search(query, max_tiers=10)
 
     if results:
         lines = ["=== MEMORY RECALL ==="]

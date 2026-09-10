@@ -5,21 +5,29 @@ Simple markdown-based tiered memory with compression.
 
 Structure:
   memory/
-  ├── tier0.md  ← Current session (raw accumulation)
-  ├── tier1.md  ← Compressed from tier0
-  ├── tier2.md  ← Compressed from tier1
-  └── tier3.md  ← Compressed from tier2 (and so on)
+  ├── tier0.md  ← Raw session buffer (10KB threshold)
+  ├── tier1.md  ← Recent: injected as "### Recent" (50KB)
+  ├── tier2.md  ← Archive: injected as "### Archive" (200KB)
+  └── tier3+.md ← Reference only: searchable, NOT injected (500KB+)
+
+Injection (hub.py):
+  - tier1 + tier2 → injected into agent prompts
+  - tier3+ → exist on disk, queryable via search(), not auto-injected
 
 Flow:
   Hub chat → tier0 grows → threshold → compress →
   KEEP stays in tier0, PUSH appends to tier1 → tier1 grows → ...
+  (cascades up to tier10+ as needed)
 """
 
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Callable
 
+from .logging_config import get_logger
 from .paths import get_memory_dir
+
+logger = get_logger("Memory")
 
 # Compression callback type
 # Takes: content, tier_index, prev_tier_context
@@ -27,12 +35,19 @@ from .paths import get_memory_dir
 CompressCallback = Callable[[str, int, str], dict]
 
 # Size thresholds per tier (characters)
+# tier0-2: injected into prompts (Recent/Archive)
+# tier3+: reference only (searchable, not injected)
 TIER_THRESHOLDS = {
-    0: 10_000,      # ~10KB
-    1: 50_000,      # ~50KB
-    2: 200_000,     # ~200KB
+    0: 10_000,       # ~10KB  - raw session buffer
+    1: 50_000,       # ~50KB  - recent (injected)
+    2: 200_000,      # ~200KB - archive (injected)
+    # tier3+: reference tiers - larger thresholds, not injected
+    3: 500_000,      # ~500KB
+    4: 1_000_000,    # ~1MB
+    5: 2_000_000,    # ~2MB
 }
-DEFAULT_THRESHOLD = 200_000
+# Tiers beyond defined use this (grows indefinitely)
+DEFAULT_THRESHOLD = 5_000_000  # ~5MB
 
 
 class MemoryManager:
@@ -42,11 +57,22 @@ class MemoryManager:
     then compresses: KEEP replaces file, PUSH appends to next tier.
     """
 
+    # Loop prevention constants
+    COMPRESSION_COOLDOWN_SECONDS = 60  # Min time between compressions
+    MAX_COMPRESSIONS_PER_HOUR = 10     # Hard limit
+
     def __init__(self, project_name: Optional[str] = None):
         self._project_name = project_name
         self._memory_dir = get_memory_dir(project_name)
         self._ensure_dirs()
         self._compress_callback: Optional[CompressCallback] = None
+        # Loop prevention state
+        self._is_compressing = False
+        self._last_compression_time: Optional[datetime] = None
+        self._compression_count_this_hour = 0
+        self._hour_start: Optional[datetime] = None
+        # Friction buffer to prevent file contention during cascades
+        self._friction_buffer: list[str] = []
 
     def set_project(self, project_name: Optional[str]):
         """Switch to a different project's memory."""
@@ -55,7 +81,7 @@ class MemoryManager:
         self._project_name = project_name
         self._memory_dir = get_memory_dir(project_name)
         self._ensure_dirs()
-        print(f"[Memory] Switched to project: {project_name or 'default'}")
+        logger.info("Switched to project: %s", project_name or 'default')
 
     def set_compress_callback(self, callback: CompressCallback):
         """Set callback for Context agent compression."""
@@ -109,25 +135,82 @@ class MemoryManager:
 
     # ============ APPEND (main entry point) ============
 
+    def add_hot(self, content: str, source: str = "", tags: list = None,
+                task_ids: list = None, agent: str = None, outcome: str = None):
+        """Add content to tier0 (hot buffer) with metadata.
+
+        Used by tasks.py to log completed/failed tasks.
+        """
+        # Format entry with metadata
+        parts = [content]
+        if outcome:
+            parts.insert(0, f"[{outcome.upper()}]")
+        if agent:
+            parts.append(f"(agent: {agent})")
+        if tags:
+            parts.append(f"tags: {', '.join(tags)}")
+
+        entry = " ".join(parts)
+        self.append(0, entry)
+
     def append(self, index: int, content: str):
         """Append content to a tier. Auto-compresses if threshold exceeded."""
         self._append_tier(index, content)
         size = self.tier_size(index)
-        print(f"[Memory] Appended to tier{index}, size: {size}")
+        logger.info("Appended to tier%d, size: %d", index, size)
 
         # Auto-compress if needed
         if self.tier_needs_compression(index):
             threshold = self.tier_threshold(index)
-            print(f"[Memory] Tier{index} exceeded threshold ({size}/{threshold}), compressing...")
+            logger.info("Tier%d exceeded threshold (%d/%d), compressing...", index, size, threshold)
             self.compress_tier(index)
 
     # ============ COMPRESSION ============
 
+    def _can_compress(self) -> tuple[bool, str]:
+        """Check if compression is allowed (loop prevention)."""
+        now = datetime.now()
+
+        # Already compressing
+        if self._is_compressing:
+            return False, "compression already in progress"
+
+        # Cooldown check
+        if self._last_compression_time:
+            elapsed = (now - self._last_compression_time).total_seconds()
+            if elapsed < self.COMPRESSION_COOLDOWN_SECONDS:
+                return False, f"cooldown ({int(self.COMPRESSION_COOLDOWN_SECONDS - elapsed)}s remaining)"
+
+        # Hourly limit check
+        if self._hour_start and (now - self._hour_start).total_seconds() < 3600:
+            if self._compression_count_this_hour >= self.MAX_COMPRESSIONS_PER_HOUR:
+                return False, f"hourly limit reached ({self.MAX_COMPRESSIONS_PER_HOUR}/hour)"
+        else:
+            # Reset hourly counter
+            self._hour_start = now
+            self._compression_count_this_hour = 0
+
+        return True, "ok"
+
     def compress_tier(self, index: int) -> bool:
         """Compress a tier: KEEP stays, PUSH goes to next tier."""
+        # Loop prevention
+        can_compress, reason = self._can_compress()
+        if not can_compress:
+            logger.debug("Skipping compression: %s", reason)
+            return False
+
         content = self.get_tier(index)
         if not content:
+            self._is_compressing = False
+            self._flush_friction()  # Flush any buffered friction
             return False
+
+        # Set compression lock
+        self._is_compressing = True
+        self._last_compression_time = datetime.now()
+        self._compression_count_this_hour += 1
+        logger.info("Starting compression #%d this hour", self._compression_count_this_hour)
 
         # Get previous tier context for relevance
         prev_context = ""
@@ -140,7 +223,7 @@ class MemoryManager:
             try:
                 result = self._compress_callback(content, index, prev_context)
             except Exception as e:
-                print(f"[Memory] Compression callback failed: {e}")
+                logger.error("Compression callback failed: %s", e)
                 result = self._fallback_compress(content)
         else:
             result = self._fallback_compress(content)
@@ -151,7 +234,7 @@ class MemoryManager:
 
         # Replace current tier with KEEP
         self._write_tier(index, keep)
-        print(f"[Memory] Tier{index} compressed: kept {len(keep)} chars")
+        logger.info("Tier%d compressed: kept %d chars", index, len(keep))
 
         # Append PUSH to next tier
         if push:
@@ -163,6 +246,9 @@ class MemoryManager:
         if friction:
             self._log_friction(friction)
 
+        # Release compression lock and flush buffered friction
+        self._is_compressing = False
+        self._flush_friction()
         return True
 
     def _fallback_compress(self, content: str) -> dict:
@@ -176,13 +262,22 @@ class MemoryManager:
         }
 
     def _log_friction(self, friction: str):
-        """Append friction events to friction.md."""
-        friction_file = self._memory_dir / "friction.md"
+        """Buffer friction event (flushed after cascade completes)."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
         entry = f"\n## [{timestamp}]\n{friction}\n"
+        self._friction_buffer.append(entry)
 
-        with open(friction_file, "a", encoding="utf-8") as f:
-            f.write(entry)
+    def _flush_friction(self):
+        """Write all buffered friction events to friction.md in one operation."""
+        if not self._friction_buffer:
+            return
+        friction_file = self._memory_dir / "friction.md"
+        try:
+            with open(friction_file, "a", encoding="utf-8") as f:
+                f.write("".join(self._friction_buffer))
+            self._friction_buffer.clear()
+        except IOError as e:
+            logger.warning("Failed to write friction log: %s", e)
 
     # ============ QUERIES ============
 
@@ -213,6 +308,30 @@ class MemoryManager:
                 })
 
         return results
+
+    def check_and_compress_all(self) -> int:
+        """Check all tiers and compress any that exceed thresholds.
+
+        Returns number of tiers compressed.
+        Uses existing rate limiting from _can_compress().
+        """
+        compressed_count = 0
+
+        for i in range(20):  # Check up to 20 tiers
+            filepath = self._tier_path(i)
+            if not filepath.exists():
+                if i > 0:
+                    break
+                continue
+
+            if self.tier_needs_compression(i):
+                if self.compress_tier(i):
+                    compressed_count += 1
+                else:
+                    # Rate limited, stop checking further tiers
+                    break
+
+        return compressed_count
 
     def get_stats(self) -> dict:
         """Get stats for all existing tiers."""

@@ -9,7 +9,6 @@ let agentStats = {};
 let tasks = [];
 let routines = [];
 let suggestions = [];
-let configAgent = null;
 let autoApprove = localStorage.getItem('autoApprove') === 'true';
 let isThinking = false;
 let agentStatuses = {};  // Track agent activity states
@@ -68,34 +67,93 @@ async function fetchHistory() {
     }
 }
 
-// Render agent cards
+// Track expanded agent cards
+let expandedAgents = new Set();
+
+// Render agent cards - sorted by tokens (descending), expandable
 function renderAgentCards() {
     const panel = document.getElementById('panel-agents');
     panel.innerHTML = '';
 
-    for (const [name, info] of Object.entries(roles)) {
+    // Build array with stats and sort by tokens descending
+    const agentList = Object.entries(roles).map(([name, info]) => {
         const stats = agentStats[name] || {};
+        return { name, info, stats, tokens: stats.tokens || 0 };
+    }).sort((a, b) => b.tokens - a.tokens);
+
+    for (const { name, info, stats } of agentList) {
         const status = stats.status || 'idle';
         const taskCount = stats.tasks?.assigned || 0;
         const tokens = formatTokens(stats.tokens || 0);
+        const rawTokens = stats.tokens || 0;
         const uptime = formatUptime(stats.uptime_seconds || 0);
+        const isExpanded = expandedAgents.has(name);
 
         const card = document.createElement('div');
-        card.className = 'agent-card';
+        card.className = `agent-card ${isExpanded ? 'expanded' : ''}`;
         card.style.setProperty('--agent-color', info.color);
         card.innerHTML = `
-            <span class="status-dot ${status}" title="${status}"></span>
-            <span class="name">${name}</span>
-            <span class="stats">
-                <span class="stat"><span class="stat-value">${tokens}</span> tokens</span>
-                <span class="stat"><span class="stat-value">${taskCount}</span> tasks</span>
-                <span class="stat"><span class="stat-value">${uptime}</span></span>
-            </span>
+            <div class="agent-card-header" onclick="toggleAgentCard('${name}')">
+                <span class="status-dot ${status}" title="${status}"></span>
+                <span class="name">${name}</span>
+                <span class="stats">
+                    <span class="stat"><span class="stat-value">${tokens}</span> tokens</span>
+                    <span class="stat"><span class="stat-value">${taskCount}</span> tasks</span>
+                    <span class="stat"><span class="stat-value">${uptime}</span></span>
+                </span>
+                <span class="expand-icon">${isExpanded ? '▲' : '▼'}</span>
+            </div>
+            <div class="agent-card-details" id="agent-details-${name}" style="display: ${isExpanded ? 'block' : 'none'};">
+                <div class="agent-token-details">
+                    <div class="agent-detail-label">Token Usage</div>
+                    <div class="agent-detail-value">${rawTokens.toLocaleString()} total</div>
+                </div>
+                <div class="agent-role-content" id="agent-role-${name}">
+                    <div class="agent-detail-label">Role Definition</div>
+                    <pre class="agent-role-text">Loading...</pre>
+                </div>
+            </div>
         `;
 
-        // Click opens config modal
-        card.addEventListener('click', () => showConfigModal(name));
         panel.appendChild(card);
+
+        // Load role content if expanded
+        if (isExpanded) {
+            loadAgentRole(name);
+        }
+    }
+}
+
+// Toggle agent card expand/collapse
+function toggleAgentCard(name) {
+    if (expandedAgents.has(name)) {
+        expandedAgents.delete(name);
+    } else {
+        expandedAgents.add(name);
+        loadAgentRole(name);
+    }
+    renderAgentCards();
+}
+
+// Load role.md content for an agent
+async function loadAgentRole(name) {
+    const container = document.getElementById(`agent-role-${name}`);
+    if (!container) return;
+
+    const textEl = container.querySelector('.agent-role-text');
+    if (!textEl || textEl.dataset.loaded === 'true') return;
+
+    try {
+        const res = await fetch(`${API_URL}/agents/${name}/role`);
+        const data = await res.json();
+        if (data.error) {
+            textEl.textContent = `Error: ${data.error}`;
+        } else {
+            textEl.textContent = data.content || '(empty)';
+            textEl.dataset.loaded = 'true';
+        }
+    } catch (e) {
+        textEl.textContent = `Error loading: ${e}`;
     }
 }
 
@@ -121,63 +179,6 @@ async function fetchAgentStats() {
         renderAgentCards();
     } catch (e) {
         console.error('Failed to fetch agent stats:', e);
-    }
-}
-
-// Config modal functions
-function showConfigModal(agentName) {
-    configAgent = agentName;
-    const info = roles[agentName] || {};
-    const stats = agentStats[agentName] || {};
-
-    document.getElementById('configAgentName').textContent = agentName;
-    document.getElementById('configModel').value = info.model || 'claude-cli';
-
-    // Show agent stats
-    const statsEl = document.getElementById('configStats');
-    const tokens = formatTokens(stats.tokens || 0);
-    const taskCount = stats.tasks?.assigned || 0;
-    const uptime = formatUptime(stats.uptime_seconds || 0);
-    statsEl.innerHTML = `
-        <span class="config-stat"><span class="config-stat-value">${tokens}</span> tokens</span>
-        <span class="config-stat"><span class="config-stat-value">${taskCount}</span> tasks</span>
-        <span class="config-stat"><span class="config-stat-value">${uptime}</span> uptime</span>
-    `;
-
-    // Show skills (read-only)
-    const skillsEl = document.getElementById('configSkills');
-    const skills = info.skills || [];
-    if (skills.length > 0) {
-        skillsEl.innerHTML = skills.map(s => `<span class="config-skill">${s}</span>`).join('');
-    } else {
-        skillsEl.innerHTML = '<span style="color: #666;">No skills configured</span>';
-    }
-
-    document.getElementById('configModal').classList.add('active');
-}
-
-function hideConfigModal() {
-    document.getElementById('configModal').classList.remove('active');
-    configAgent = null;
-}
-
-async function saveAgentConfig() {
-    if (!configAgent) return;
-    const model = document.getElementById('configModel').value;
-
-    try {
-        const res = await fetch(`${API_URL}/agents/${configAgent}/config`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model })
-        });
-        if (res.ok) {
-            hideConfigModal();
-            await fetchRoles();
-            log('agentLogs', `Updated ${configAgent} config`, 'success');
-        }
-    } catch (e) {
-        log('agentLogs', `Failed to save config: ${e}`, 'error');
     }
 }
 
@@ -418,6 +419,19 @@ async function clearAllTasks() {
     }
 }
 
+async function resetTokenMetrics() {
+    if (!confirm('Reset token counts? This clears token data from all tasks.')) return;
+    try {
+        const res = await fetch(`${API_URL}/tokens/reset`, { method: 'POST' });
+        const data = await res.json();
+        log('wsLogs', data.message, 'success');
+        sessionTokens = null;  // Clear cached session tokens
+        await fetchSessionTokens();  // Refresh from server
+    } catch (e) {
+        log('wsLogs', `Failed to reset tokens: ${e}`, 'error');
+    }
+}
+
 async function cancelTask(taskId) {
     try {
         const res = await fetch(`${API_URL}/tasks/${taskId}/cancel`, { method: 'POST' });
@@ -463,8 +477,20 @@ async function deleteTask(taskId) {
 
 // ===== HUB TASKS SIDEBAR =====
 let taskFilter = localStorage.getItem('taskFilter') || 'active';
+let sessionTokens = null;  // Cached session token data from /api/tokens/session
 
-// Compute aggregate quality metrics from all tasks
+// Fetch session tokens (includes BOSS interactions)
+async function fetchSessionTokens() {
+    try {
+        const res = await fetch(`${API_URL}/tokens/session`);
+        sessionTokens = await res.json();
+        renderHubMetricsBar();
+    } catch (e) {
+        console.error('Failed to fetch session tokens:', e);
+    }
+}
+
+// Compute aggregate quality metrics from tasks + session tokens
 function computeAggregateMetrics() {
     let totalCost = 0;
     let totalRetries = 0;
@@ -477,14 +503,20 @@ function computeAggregateMetrics() {
     let totalToolUses = 0;
     let errorCount = 0;
 
+    // Include session tokens (BOSS + all agents tracked via track_tokens)
+    if (sessionTokens) {
+        totalInputTokens += sessionTokens.total_input_tokens || 0;
+        totalOutputTokens += sessionTokens.total_output_tokens || 0;
+    }
+
+    // Note: Task costs are already included in session tokens via track_tokens()
+    // Only add retries, tool errors, and other task-specific metrics
     tasks.forEach(task => {
-        totalCost += task.cost_usd || 0;
+        totalCost += task.cost?.usd || 0;
         totalRetries += task.api_retries || 0;
         totalToolErrors += (task.tool_errors?.length || 0);
-        totalInputTokens += task.total_input_tokens || 0;
-        totalOutputTokens += task.total_output_tokens || 0;
-        totalCacheCreation += task.cache_creation_tokens || 0;
-        totalCacheRead += task.cache_read_tokens || 0;
+        totalCacheCreation += task.cost?.cache_creation_tokens || 0;
+        totalCacheRead += task.cost?.cache_read_tokens || 0;
         totalTurns += task.num_turns || 0;
         totalToolUses += task.num_tool_uses || 0;
         if (task.is_error) errorCount++;
@@ -561,6 +593,9 @@ function renderHubMetricsBar() {
         </span>`);
     }
 
+    // Reset button (small, unobtrusive)
+    items.push(`<button class="metrics-reset-btn" onclick="resetTokenMetrics()" title="Reset token counts">↺</button>`);
+
     bar.innerHTML = items.join('');
 }
 
@@ -621,12 +656,19 @@ function renderHubTasks() {
             ? task.description.substring(0, 60) + '...'
             : task.description;
 
+        // Per-task token display (compact format)
+        const totalTokens = (task.cost?.input_tokens || 0) + (task.cost?.output_tokens || 0);
+        const tokenDisplay = totalTokens > 0
+            ? `<span class="hub-task-tokens" title="${(task.cost?.input_tokens || 0).toLocaleString()} in / ${(task.cost?.output_tokens || 0).toLocaleString()} out">${formatTokens(totalTokens)}</span>`
+            : '';
+
         return `
             <div class="hub-task-item ${task.status}" onclick="showTaskDetailModal('${task.id}')">
                 <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <span class="hub-task-id">${task.id}</span>
                     <span class="hub-task-agent" style="color: ${agentColor}">${task.assignee}</span>
                     <span class="hub-task-status ${task.status}">${task.status.replace('_', ' ')}</span>
+                    ${tokenDisplay}
                 </div>
                 <div class="hub-task-desc" title="${escapeHtml(task.description)}">${escapeHtml(shortDesc)}</div>
             </div>
@@ -639,9 +681,9 @@ function showTaskDetailModal(taskId) {
     if (!task) return;
 
     const agentColor = roles[task.assignee]?.color || '#888';
-    const hasTokens = (task.total_input_tokens || 0) + (task.total_output_tokens || 0) > 0;
-    const hasCacheTokens = (task.cache_creation_tokens || 0) + (task.cache_read_tokens || 0) > 0;
-    const hasQualityMetrics = (task.api_retries || 0) > 0 || (task.tool_errors?.length || 0) > 0 || (task.cost_usd || 0) > 0;
+    const hasTokens = (task.cost?.input_tokens || 0) + (task.cost?.output_tokens || 0) > 0;
+    const hasCacheTokens = (task.cost?.cache_creation_tokens || 0) + (task.cost?.cache_read_tokens || 0) > 0;
+    const hasQualityMetrics = (task.api_retries || 0) > 0 || (task.tool_errors?.length || 0) > 0 || (task.cost?.usd || 0) > 0;
     const hasExecutionMetrics = (task.num_turns || 0) > 0 || (task.num_tool_uses || 0) > 0;
 
     // Build token stats
@@ -653,11 +695,11 @@ function showTaskDetailModal(taskId) {
             cacheRow = `
                 <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #333;">
                     <div>
-                        <span style="color: #f39c12;">${(task.cache_creation_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #f39c12;">${(task.cost?.cache_creation_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> cache write</span>
                     </div>
                     <div>
-                        <span style="color: #27ae60;">${(task.cache_read_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #27ae60;">${(task.cost?.cache_read_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> cache read</span>
                     </div>
                 </div>
@@ -668,15 +710,15 @@ function showTaskDetailModal(taskId) {
                 <div style="font-size: 0.75rem; color: #888; margin-bottom: 0.5rem;">TOKEN USAGE</div>
                 <div style="display: flex; gap: 1.5rem;">
                     <div>
-                        <span style="color: #5dade2;">${(task.total_input_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #5dade2;">${(task.cost?.input_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> input</span>
                     </div>
                     <div>
-                        <span style="color: #9b59b6;">${(task.total_output_tokens || 0).toLocaleString()}</span>
+                        <span style="color: #9b59b6;">${(task.cost?.output_tokens || 0).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> output</span>
                     </div>
                     <div>
-                        <span style="color: #2ecc71;">${((task.total_input_tokens || 0) + (task.total_output_tokens || 0)).toLocaleString()}</span>
+                        <span style="color: #2ecc71;">${((task.cost?.input_tokens || 0) + (task.cost?.output_tokens || 0)).toLocaleString()}</span>
                         <span style="color: #666; font-size: 0.8rem;"> total</span>
                     </div>
                 </div>
@@ -690,7 +732,7 @@ function showTaskDetailModal(taskId) {
     if (hasQualityMetrics || hasExecutionMetrics) {
         const retries = task.api_retries || 0;
         const toolErrors = task.tool_errors || [];
-        const cost = task.cost_usd || 0;
+        const cost = task.cost?.usd || 0;
         const duration = task.duration_ms || 0;
         const numTurns = task.num_turns || 0;
         const numToolUses = task.num_tool_uses || 0;
@@ -824,6 +866,7 @@ function renderRoutines() {
         const nextRun = routine.next_run ? formatRelativeTime(new Date(routine.next_run)) : '--';
         const lastRun = routine.last_run ? formatRelativeTime(new Date(routine.last_run)) : 'Never';
         const runCount = routine.run_count || 0;
+        const lastRunFailed = routine.last_run_status === 'failed';
 
         // Build agent chain summary (e.g., "Taxonomy → Programmer")
         const agentChain = routine.tasks.map(t => t.assignee).join(' → ');
@@ -859,11 +902,25 @@ function renderRoutines() {
             `;
         }).join('');
 
+        // Error indicator for header (compact)
+        const errorIndicatorHeader = lastRunFailed
+            ? `<span class="routine-error-indicator" title="${escapeHtml(routine.last_run_error || 'Last run failed')}"><span class="error-icon">!</span></span>`
+            : '';
+
+        // Error details for expanded view
+        const errorDetailsExpanded = lastRunFailed && routine.last_run_error
+            ? `<div class="routine-error-details">Last run error: ${escapeHtml(routine.last_run_error)}</div>`
+            : '';
+
+        // Add 'failed' class to card if last run failed
+        const cardClass = lastRunFailed ? `${statusClass} failed` : statusClass;
+
         return `
-            <div class="routine-card ${statusClass}">
+            <div class="routine-card ${cardClass}">
                 <div class="routine-header" onclick="toggleRoutineDetails('${routine.id}')" style="cursor: pointer;">
                     <span class="routine-id">${routine.id}</span>
                     <span class="routine-title">${escapeHtml(routine.name)}</span>
+                    ${errorIndicatorHeader}
                     <span class="routine-interval">⏱ ${routine.interval_human}</span>
                     <span class="routine-status ${statusClass}">${statusLabel}</span>
                     <span class="routine-agent-chain">${agentChain}</span>
@@ -876,6 +933,7 @@ function renderRoutines() {
                 </div>
                 <div class="routine-details" id="details-${routine.id}" style="display: none;">
                     ${routine.description ? `<div class="routine-description">${escapeHtml(routine.description)}</div>` : ''}
+                    ${errorDetailsExpanded}
                     <div class="routine-chain">
                         <div class="routine-chain-header">
                             <span>Chain Progress</span>
@@ -967,7 +1025,8 @@ function addRoutineChainTask() {
     ` : '';
 
     const taskHtml = `
-        <div class="routine-chain-item" id="routineTask${routineChainCount}" data-task-num="${routineChainCount}">
+        <div class="routine-chain-item" id="routineTask${routineChainCount}" data-task-num="${routineChainCount}" draggable="true">
+            <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
             <div class="routine-chain-header">
                 <div class="routine-chain-step-num">
                     <span class="routine-chain-num">${taskNum}</span>
@@ -1018,7 +1077,81 @@ function addRoutineChainTask() {
         </div>
     `;
     builder.insertAdjacentHTML('beforeend', taskHtml);
+
+    // Add drag-drop event listeners to the new task
+    const newTask = document.getElementById(`routineTask${routineChainCount}`);
+    initChainTaskDragEvents(newTask);
+
     renumberChainTasks();
+}
+
+// Drag-drop reordering for chain builder tasks
+let draggedChainTask = null;
+
+function initChainTaskDragEvents(taskEl) {
+    taskEl.addEventListener('dragstart', handleChainDragStart);
+    taskEl.addEventListener('dragend', handleChainDragEnd);
+    taskEl.addEventListener('dragover', handleChainDragOver);
+    taskEl.addEventListener('dragenter', handleChainDragEnter);
+    taskEl.addEventListener('dragleave', handleChainDragLeave);
+    taskEl.addEventListener('drop', handleChainDrop);
+}
+
+function handleChainDragStart(e) {
+    draggedChainTask = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', this.id);
+}
+
+function handleChainDragEnd(e) {
+    this.classList.remove('dragging');
+    // Remove drag-over class from all items
+    document.querySelectorAll('.routine-chain-item').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+    draggedChainTask = null;
+}
+
+function handleChainDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleChainDragEnter(e) {
+    e.preventDefault();
+    if (this !== draggedChainTask) {
+        this.classList.add('drag-over');
+    }
+}
+
+function handleChainDragLeave(e) {
+    // Only remove class if leaving the element entirely
+    if (!this.contains(e.relatedTarget)) {
+        this.classList.remove('drag-over');
+    }
+}
+
+function handleChainDrop(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+
+    if (draggedChainTask && this !== draggedChainTask) {
+        const builder = document.getElementById('routineChainBuilder');
+        const items = Array.from(builder.querySelectorAll('.routine-chain-item'));
+        const draggedIndex = items.indexOf(draggedChainTask);
+        const dropIndex = items.indexOf(this);
+
+        // Insert dragged item before or after drop target based on position
+        if (draggedIndex < dropIndex) {
+            this.parentNode.insertBefore(draggedChainTask, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedChainTask, this);
+        }
+
+        // Renumber all tasks after reorder
+        renumberChainTasks();
+    }
 }
 
 function removeRoutineChainTask(id) {
@@ -1608,12 +1741,15 @@ console.log('[INIT] API_URL:', API_URL);
 fetchRoles();
 fetchHistory();
 fetchSuggestions();
+fetchSessionTokens();  // Fetch session token stats (includes BOSS)
 connect();
 updateAutoApproveUI();  // Set initial toggle state
 initTaskFilter();  // Set task filter from localStorage
 
 // Poll agent stats every 5 seconds
 setInterval(fetchAgentStats, 5000);
+// Poll session tokens every 10 seconds
+setInterval(fetchSessionTokens, 10000);
 
 // Dev helper: expose state to console
 window.studioDebug = {

@@ -16,6 +16,9 @@ import urllib.error
 from datetime import datetime
 from pathlib import Path
 
+from studio.core.logging_config import get_logger
+
+logger = get_logger("Gemini Research")
 
 # Project root
 ROOT = Path(__file__).parent.parent
@@ -85,7 +88,7 @@ Be specific. Include numbers, dates, and concrete examples from your search."""
             error_body = e.read().decode("utf-8")
             if e.code == 429 and attempt < max_retries - 1:
                 wait_time = 15 * (attempt + 1)
-                print(f"[Gemini Research] Rate limited, waiting {wait_time}s...")
+                logger.warning("Rate limited, waiting %ds...", wait_time)
                 time.sleep(wait_time)
                 continue
             raise RuntimeError(f"Gemini API error {e.code}: {error_body}")
@@ -173,15 +176,15 @@ def save_report(topic: str, result: dict, category: str = "research") -> Path:
 
 def run(topic: str, category: str = "research") -> Path:
     """Run research and save report. Returns filepath."""
-    print(f"[Gemini Research] Topic: {topic}")
-    print(f"[Gemini Research] Querying with Google Search grounding...")
+    logger.info("Topic: %s", topic)
+    logger.info("Querying with Google Search grounding...")
 
     result = gemini_research(topic, category)
 
-    print(f"[Gemini Research] Got {len(result['content'])} chars, {len(result['sources'])} sources")
+    logger.info("Got %d chars, %d sources", len(result['content']), len(result['sources']))
 
     filepath = save_report(topic, result, category)
-    print(f"[Gemini Research] Saved: {filepath}")
+    logger.info("Saved: %s", filepath)
 
     return filepath
 

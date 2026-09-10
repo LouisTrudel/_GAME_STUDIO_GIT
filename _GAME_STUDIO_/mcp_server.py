@@ -42,6 +42,15 @@ logger = logging.getLogger("game-studio-mcp")
 # Import MCP SDK
 from mcp.server import MCPServer
 
+# Pre-import common modules to avoid lazy loading delays on first tool call
+logger.info("Pre-loading studio modules...")
+try:
+    from studio.agents.boss import tools as boss_tools
+    from studio.core import tasks, hub, employee_tools
+    logger.info("Studio modules pre-loaded successfully")
+except Exception as e:
+    logger.warning("Failed to pre-load some modules: %s", e)
+
 # Initialize MCP server
 mcp = MCPServer("game-studio")
 

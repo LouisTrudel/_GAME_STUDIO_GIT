@@ -9,7 +9,7 @@ import json
 import urllib.request
 import urllib.error
 
-from .base import Backend
+from .base import Backend, with_retry
 
 
 class OllamaBackend(Backend):
@@ -56,6 +56,19 @@ class OllamaBackend(Backend):
             },
         }
 
+        result = self._make_request(url, payload)
+
+        # Track token usage from Ollama response as single step
+        # Ollama returns prompt_eval_count (input) and eval_count (output)
+        input_tokens = result.get("prompt_eval_count", 0)
+        output_tokens = result.get("eval_count", 0)
+        self._log_step("response", input_tokens, output_tokens)
+
+        return result.get("message", {}).get("content", "No response")
+
+    @with_retry
+    def _make_request(self, url: str, payload: dict) -> dict:
+        """Make HTTP request to Ollama with retry on transient failures."""
         req = urllib.request.Request(
             url,
             data=json.dumps(payload).encode("utf-8"),
@@ -65,17 +78,9 @@ class OllamaBackend(Backend):
 
         try:
             with urllib.request.urlopen(req, timeout=120) as response:
-                result = json.loads(response.read().decode("utf-8"))
-
-            # Track token usage from Ollama response as single step
-            # Ollama returns prompt_eval_count (input) and eval_count (output)
-            input_tokens = result.get("prompt_eval_count", 0)
-            output_tokens = result.get("eval_count", 0)
-            self._log_step("response", input_tokens, output_tokens)
-
-            return result.get("message", {}).get("content", "No response")
-
+                return json.loads(response.read().decode("utf-8"))
         except urllib.error.URLError as e:
-            raise RuntimeError(f"Ollama not running? {e}")
+            # URLError is retryable (Ollama might be starting up)
+            raise ConnectionError(f"Ollama connection failed: {e}")
         except Exception as e:
             raise RuntimeError(f"Ollama request failed: {e}")

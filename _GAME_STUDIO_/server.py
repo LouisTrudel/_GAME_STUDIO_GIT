@@ -22,6 +22,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from studio.core.hub import hub
+from studio.core.tasks import task_manager
 from studio.studio import Studio
 
 from server_modules.broadcast import (
@@ -40,6 +41,11 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start broadcast loops on startup."""
+    # Reset any stale IN_PROGRESS tasks from previous crash (web server owns task dispatch)
+    reset_ids = task_manager.reset_in_progress_tasks(force_all=True)
+    if reset_ids:
+        logger.info("Reset %d stale tasks on startup: %s", len(reset_ids), reset_ids)
+
     # Start all background broadcast loops
     start_broadcast_loops(studio)
 

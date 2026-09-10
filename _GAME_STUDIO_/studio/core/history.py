@@ -19,7 +19,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Callable, Literal
 
+from .logging_config import get_logger
 from .paths import get_history_dir
+
+logger = get_logger("History")
 
 # Tier names
 TierName = Literal["draft", "chapter", "book", "collection"]
@@ -63,6 +66,10 @@ class HistoryManager:
     appends to next tier.
     """
 
+    # Loop prevention constants
+    COMPRESSION_COOLDOWN_SECONDS = 60  # Min time between compressions
+    MAX_COMPRESSIONS_PER_HOUR = 10     # Hard limit
+
     def __init__(self, project_name: Optional[str] = None):
         self._project_name = project_name
         self._history_dir = get_history_dir(project_name)
@@ -70,6 +77,11 @@ class HistoryManager:
         self._narrative_callback: Optional[NarrativeCallback] = None
         self._compression_counts: dict[str, int] = {}
         self._load_counts()
+        # Loop prevention state
+        self._is_compressing = False
+        self._last_compression_time: Optional[datetime] = None
+        self._compression_count_this_hour = 0
+        self._hour_start: Optional[datetime] = None
 
     def set_project(self, project_name: Optional[str]):
         """Switch to a different project's history."""
@@ -80,7 +92,7 @@ class HistoryManager:
         self._compression_counts.clear()
         self._ensure_dirs()
         self._load_counts()
-        print(f"[History] Switched to project: {project_name or 'default'}")
+        logger.info("Switched to project: %s", project_name or 'default')
 
     def set_narrative_callback(self, callback: NarrativeCallback):
         """Set callback for Writer narrative generation."""
@@ -162,21 +174,69 @@ class HistoryManager:
         """Accumulate raw content to draft tier. Auto-compresses if needed."""
         self._append_tier("draft", content)
         size = self.tier_size("draft")
-        print(f"[History] Appended to draft, size: {size}")
+        logger.info("Appended to draft, size: %d", size)
 
         # Auto-compress if needed
         if self.tier_needs_compression("draft"):
             threshold = self.tier_threshold("draft")
-            print(f"[History] Draft exceeded threshold ({size}/{threshold}), compressing...")
+            logger.info("Draft exceeded threshold (%d/%d), compressing...", size, threshold)
             self.compress_tier("draft")
 
     # ============ COMPRESSION ============
 
-    def compress_tier(self, tier: TierName) -> bool:
-        """Compress a tier via Writer narrative."""
+    def _can_compress(self) -> tuple[bool, str]:
+        """Check if compression is allowed (loop prevention)."""
+        now = datetime.now()
+
+        # Already compressing
+        if self._is_compressing:
+            return False, "compression already in progress"
+
+        # Cooldown check
+        if self._last_compression_time:
+            elapsed = (now - self._last_compression_time).total_seconds()
+            if elapsed < self.COMPRESSION_COOLDOWN_SECONDS:
+                return False, f"cooldown ({int(self.COMPRESSION_COOLDOWN_SECONDS - elapsed)}s remaining)"
+
+        # Hourly limit check
+        if self._hour_start and (now - self._hour_start).total_seconds() < 3600:
+            if self._compression_count_this_hour >= self.MAX_COMPRESSIONS_PER_HOUR:
+                return False, f"hourly limit reached ({self.MAX_COMPRESSIONS_PER_HOUR}/hour)"
+        else:
+            # Reset hourly counter
+            self._hour_start = now
+            self._compression_count_this_hour = 0
+
+        return True, "ok"
+
+    def compress_tier(self, tier: TierName, _depth: int = 0) -> bool:
+        """Compress a tier via Writer narrative.
+
+        Args:
+            tier: The tier to compress
+            _depth: Internal recursion depth counter (max 5 to prevent stack overflow)
+        """
+        # Recursion depth limit to prevent stack overflow
+        MAX_CASCADE_DEPTH = 5
+        if _depth >= MAX_CASCADE_DEPTH:
+            logger.warning("Cascade depth limit reached (%d), stopping at %s", MAX_CASCADE_DEPTH, tier)
+            return False
+
+        # Loop prevention
+        can_compress, reason = self._can_compress()
+        if not can_compress:
+            logger.debug("Skipping compression: %s", reason)
+            return False
+
         content = self.get_tier(tier)
         if not content:
             return False
+
+        # Set compression lock
+        self._is_compressing = True
+        self._last_compression_time = datetime.now()
+        self._compression_count_this_hour += 1
+        logger.info("Starting compression #%d this hour", self._compression_count_this_hour)
 
         config = TIER_CONFIG[tier]
         next_tier = config["next"]
@@ -191,7 +251,7 @@ class HistoryManager:
             try:
                 narrative = self._narrative_callback(content, tier, count)
             except Exception as e:
-                print(f"[History] Narrative callback failed: {e}")
+                logger.error("Narrative callback failed: %s", e)
                 narrative = self._fallback_compress(content, tier, count)
         else:
             narrative = self._fallback_compress(content, tier, count)
@@ -201,7 +261,7 @@ class HistoryManager:
 
         # Replace current tier with narrative
         self._write_tier(tier, narrative)
-        print(f"[History] {tier} compressed: {len(narrative)} chars (entry #{count})")
+        logger.info("%s compressed: %d chars (entry #%d)", tier, len(narrative), count)
 
         # Append summary to next tier
         if next_tier:
@@ -213,9 +273,11 @@ class HistoryManager:
 
             # Check if next tier needs compression (cascade)
             if self.tier_needs_compression(next_tier):
-                print(f"[History] {next_tier} needs compression, cascading...")
-                self.compress_tier(next_tier)
+                logger.info("%s needs compression, cascading (depth=%d)...", next_tier, _depth + 1)
+                self.compress_tier(next_tier, _depth=_depth + 1)
 
+        # Release compression lock
+        self._is_compressing = False
         return True
 
     def _extract_summary(self, narrative: str) -> str:

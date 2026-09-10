@@ -17,7 +17,9 @@ ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
 from studio.gemini_research import check_health, run as run_research
+from studio.core.logging_config import get_logger
 
+logger = get_logger("Routine")
 
 # Rotating research topics for game development
 RESEARCH_TOPICS = [
@@ -58,30 +60,30 @@ def run_routine() -> dict:
     }
 
     # Step 1: Health check
-    print("[Routine] Step 1: Checking Gemini health...")
+    logger.info("Step 1: Checking Gemini health...")
     health = check_health()
     result["health_check"] = health
 
     if not health["ok"]:
         result["error"] = f"Health check failed: {health['error']}"
-        print(f"[Routine] FAILED: {result['error']}")
+        logger.error("FAILED: %s", result["error"])
         return result
 
-    print(f"[Routine] Health OK (model: {health['model']})")
+    logger.info("Health OK (model: %s)", health['model'])
 
     # Step 2: Get topic and run research
     topic = get_next_topic()
-    print(f"[Routine] Step 2: Researching '{topic}'...")
+    logger.info("Step 2: Researching '%s'...", topic)
 
     try:
         report_path = run_research(topic, category="research")
         result["research"] = {"topic": topic, "success": True}
         result["report_path"] = str(report_path)
-        print(f"[Routine] SUCCESS: Report saved to {report_path}")
+        logger.info("SUCCESS: Report saved to %s", report_path)
     except Exception as e:
         result["research"] = {"topic": topic, "success": False}
         result["error"] = f"Research failed: {str(e)}"
-        print(f"[Routine] FAILED: {result['error']}")
+        logger.error("FAILED: %s", result["error"])
         return result
 
     return result

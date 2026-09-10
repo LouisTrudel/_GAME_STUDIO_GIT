@@ -336,12 +336,21 @@ async function performApproval(id, rating) {
             showNotification(`Failed to approve: ${data.error || 'Unknown error'}`, 'error');
         }
     } catch (e) {
-        console.error('[Suggestions] Failed to approve suggestion:', e);
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = 'Approve';
+        console.error('[Suggestions] Approve request error:', e);
+
+        // Network error might mean request succeeded but response was lost
+        if (e.message === 'Failed to fetch' || e.name === 'TypeError') {
+            console.log('[Suggestions] Network error - refreshing to check state...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await fetchSuggestions();
+            showNotification('Action may have completed - check status', 'warning');
+        } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Approve';
+            }
+            showNotification(`Failed to approve: ${e.message}`, 'error');
         }
-        showNotification(`Failed to approve: ${e.message}`, 'error');
     }
 }
 
@@ -434,12 +443,21 @@ async function rejectSuggestion(id) {
             showNotification(`Failed to reject: ${data.error || 'Unknown error'}`, 'error');
         }
     } catch (e) {
-        console.error('[Suggestions] Failed to reject suggestion:', e);
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = 'Reject';
+        console.error('[Suggestions] Reject request error:', e);
+
+        // Network error might mean request succeeded but response was lost
+        if (e.message === 'Failed to fetch' || e.name === 'TypeError') {
+            console.log('[Suggestions] Network error - refreshing to check state...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await fetchSuggestions();
+            showNotification('Action may have completed - check status', 'warning');
+        } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Reject';
+            }
+            showNotification(`Failed to reject: ${e.message}`, 'error');
         }
-        showNotification(`Failed to reject: ${e.message}`, 'error');
     }
 }
 
@@ -591,12 +609,21 @@ async function deferSuggestion(id) {
             showNotification(`Failed to defer: ${data.error || 'Unknown error'}`, 'error');
         }
     } catch (e) {
-        console.error('[Suggestions] Failed to defer suggestion:', e);
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = 'Later';
+        console.error('[Suggestions] Defer request error:', e);
+
+        // Network error might mean request succeeded but response was lost
+        if (e.message === 'Failed to fetch' || e.name === 'TypeError') {
+            console.log('[Suggestions] Network error - refreshing to check state...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await fetchSuggestions();
+            showNotification('Action may have completed - check status', 'warning');
+        } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Later';
+            }
+            showNotification(`Failed to defer: ${e.message}`, 'error');
         }
-        showNotification(`Failed to defer: ${e.message}`, 'error');
     }
 }
 
@@ -675,11 +702,26 @@ async function discussSuggestion(id) {
         }
 
     } catch (e) {
-        console.error('[Suggestions] Discussion request failed:', e);
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = 'Discuss';
+        console.error('[Suggestions] Discussion request error:', e);
+
+        // Network error might mean request succeeded but response was lost
+        // Wait briefly then check if tasks were created
+        if (e.message === 'Failed to fetch' || e.name === 'TypeError') {
+            console.log('[Suggestions] Network error - checking if action succeeded...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await fetchSuggestions();  // Refresh to see if tasks appeared
+
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Discuss';
+            }
+            showNotification('Discussion may have started - check Tasks tab', 'warning');
+        } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Discuss';
+            }
+            showNotification(`Discussion failed: ${e.message}`, 'error');
         }
-        showNotification(`Discussion failed: ${e.message}`, 'error');
     }
 }
