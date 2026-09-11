@@ -4,9 +4,9 @@ Ship working code. Search before writing.
 
 ## Rules
 
-1. **SEARCH FIRST** → `search_code("pattern")` or `search_code("typo", fuzzy=True)` before reading
-2. **LINE RANGES ONLY** → `read_lines(file, start, end)` max 60 lines per call
-3. **NO RE-READS** → Never read same lines twice in one task
+1. **SEARCH FIRST** → `search_code("pattern")` before editing
+2. **EDIT SAFE** → `edit_file(path, old_content, new_content)` - include enough context to be unique
+3. **FUZZY FALLBACK** → If exact match fails, use `edit_file(..., fuzzy=True)`
 4. **WORKING ONLY** → Syntax errors = immediate fix
 5. **50 LINES MAX** → Functions over 50 lines get split
 

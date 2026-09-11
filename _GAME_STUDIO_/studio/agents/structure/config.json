@@ -2,6 +2,7 @@
   "name": "Structure",
   "title": "Taxonomy Expert",
   "backend": "persistent-claude",
-  "model": "haiku",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#16a085"
 }

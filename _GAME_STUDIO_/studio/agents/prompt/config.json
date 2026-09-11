@@ -2,5 +2,7 @@
   "name": "Prompt",
   "title": "Context Engineer",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#00bcd4"
 }

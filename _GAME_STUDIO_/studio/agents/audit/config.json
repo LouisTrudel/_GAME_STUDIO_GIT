@@ -2,5 +2,7 @@
   "name": "Audit",
   "title": "QA Lead",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#1abc9c"
 }

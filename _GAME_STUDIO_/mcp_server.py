@@ -31,6 +31,13 @@ from pydantic import Field
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+# Try to import rapidfuzz once at module load
+try:
+    from rapidfuzz import fuzz, process
+    RAPIDFUZZ_AVAILABLE = True
+except ImportError:
+    RAPIDFUZZ_AVAILABLE = False
+
 # Configure logging to stderr (NEVER use print in MCP servers!)
 logging.basicConfig(
     level=logging.INFO,
@@ -53,6 +60,77 @@ except Exception as e:
 
 # Initialize MCP server
 mcp = MCPServer("game-studio")
+
+
+def _fuzzy_resolve_path(path: str, threshold: int = 80) -> tuple[Path, str]:
+    """Resolve path with fuzzy matching for typos.
+
+    Returns (resolved_path, note) where note explains any correction made.
+    If exact match exists, returns it immediately.
+    If fuzzy match found, returns (corrected_path, "corrected: X -> Y")
+    If no match, returns (original_path, "not found")
+    """
+    file_path = PROJECT_ROOT / path
+
+    # Exact match - fast path
+    if file_path.exists():
+        return file_path, ""
+
+    if not RAPIDFUZZ_AVAILABLE:
+        return file_path, "not found (rapidfuzz unavailable for fuzzy matching)"
+
+    # Try fuzzy matching against existing files
+    path_parts = Path(path).parts
+
+    # Get candidate paths in likely directories
+    candidates = []
+    search_dirs = [PROJECT_ROOT]
+
+    # Add parent directories from the path
+    if len(path_parts) > 1:
+        partial = PROJECT_ROOT
+        for part in path_parts[:-1]:
+            # Fuzzy match each directory level
+            if partial.exists():
+                subdirs = [d for d in partial.iterdir() if d.is_dir()]
+                subdir_names = [d.name for d in subdirs]
+                if subdir_names:
+                    matches = process.extract(part, subdir_names, scorer=fuzz.ratio, limit=1)
+                    if matches and matches[0][1] >= threshold:
+                        partial = partial / matches[0][0]
+                    else:
+                        partial = partial / part
+                else:
+                    partial = partial / part
+            else:
+                break
+        if partial.exists():
+            search_dirs = [partial]
+
+    # Collect candidate files
+    for search_dir in search_dirs:
+        if search_dir.exists():
+            for ext in ("*.py", "*.js", "*.ts", "*.lua", "*.json", "*.md"):
+                candidates.extend(search_dir.rglob(ext))
+
+    if not candidates:
+        return file_path, "not found"
+
+    # Get just filenames for matching
+    target_name = path_parts[-1] if path_parts else path
+    candidate_names = [c.name for c in candidates]
+
+    matches = process.extract(target_name, candidate_names, scorer=fuzz.ratio, limit=3)
+
+    if matches and matches[0][1] >= threshold:
+        best_name = matches[0][0]
+        # Find the actual path
+        for c in candidates:
+            if c.name == best_name:
+                rel_path = c.relative_to(PROJECT_ROOT)
+                return c, f"corrected: {path} -> {rel_path}"
+
+    return file_path, "not found"
 
 
 # =============================================================================
@@ -134,9 +212,11 @@ async def add_discussion(
 
 @mcp.tool()
 async def recall_memory(
-    query: Annotated[str, Field(description="Search term (keyword match). Examples: 'economy', 'T123', 'inventory bug'")] = "",
+    query: Annotated[str, Field(description="Search term. Examples: 'economy', 'T123', 'inventory bug'")] = "",
     max_results: Annotated[int, Field(description="Max results to return", ge=1, le=20)] = 5,
     search_logs: Annotated[bool, Field(description="Also search raw logs if tiers have no match")] = True,
+    fuzzy: Annotated[bool, Field(description="Enable fuzzy matching for typos/variations")] = False,
+    threshold: Annotated[int, Field(description="Fuzzy match threshold 0-100")] = 70,
 ) -> str:
     """Search memory tiers for relevant context.
 
@@ -145,9 +225,63 @@ async def recall_memory(
     - Tier 1+: Compressed summaries from older sessions
 
     Call with no query to see recent memories.
+    Set fuzzy=True to find results with typos (e.g., 'economi' finds 'economy').
     """
     from studio.agents.boss.tools import recall_memory as handler
-    return handler(query=query, max_results=max_results, search_logs=search_logs)
+
+    # Try exact match first
+    result = handler(query=query, max_results=max_results, search_logs=search_logs)
+
+    # If no results and fuzzy enabled, try fuzzy search
+    if fuzzy and RAPIDFUZZ_AVAILABLE and "No matches" in result and query:
+        fuzzy_result = await _fuzzy_memory_search(query, max_results, threshold)
+        if fuzzy_result:
+            return fuzzy_result
+
+    return result
+
+
+async def _fuzzy_memory_search(query: str, max_results: int, threshold: int) -> str:
+    """Fuzzy search through memory tiers."""
+    from studio.core.memory import memory_manager
+
+    query_lower = query.lower()
+    matches = []
+
+    # Search through tiers
+    for tier_idx in range(10):
+        content = memory_manager.get_tier(tier_idx)
+        if not content:
+            break
+
+        # Split into chunks and fuzzy match
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            if not line.strip():
+                continue
+
+            score = fuzz.partial_ratio(query_lower, line.lower())
+            if score >= threshold:
+                # Get context (surrounding lines)
+                start = max(0, i - 1)
+                end = min(len(lines), i + 2)
+                snippet = '\n'.join(lines[start:end])
+                matches.append((score, tier_idx, snippet))
+
+    if not matches:
+        return ""
+
+    # Sort by score, limit results
+    matches.sort(key=lambda x: x[0], reverse=True)
+    matches = matches[:max_results]
+
+    lines = [f"=== FUZZY MEMORY RECALL: '{query}' ===\n"]
+    for score, tier, snippet in matches:
+        lines.append(f"[Tier {tier}] ({score}% match)")
+        lines.append(f"  {snippet[:200]}")
+        lines.append("")
+
+    return '\n'.join(lines)
 
 
 @mcp.tool()
@@ -253,9 +387,32 @@ async def check_files(
     """Verify that expected files exist.
 
     Use to confirm deliverables were created.
+    Auto-corrects path typos using fuzzy matching.
     """
-    from studio.agents.audit.tools import check_files as handler
-    return handler(paths=paths)
+    results = []
+    corrections = []
+
+    for path in paths:
+        file_path, correction_note = _fuzzy_resolve_path(path)
+
+        if file_path.exists():
+            size = file_path.stat().st_size
+            if correction_note and "corrected" in correction_note:
+                corrections.append(f"  [{correction_note}]")
+                results.append(f"  [OK] {file_path.relative_to(PROJECT_ROOT)} ({size} bytes)")
+            else:
+                results.append(f"  [OK] {path} ({size} bytes)")
+        else:
+            results.append(f"  [MISSING] {path}")
+
+    missing = sum(1 for r in results if "[MISSING]" in r)
+    header = f"File check: {len(paths) - missing}/{len(paths)} found"
+
+    output = header + "\n" + "\n".join(results)
+    if corrections:
+        output += "\n\nPath corrections:\n" + "\n".join(corrections)
+
+    return output
 
 
 @mcp.tool()
@@ -431,9 +588,29 @@ async def write_report(
 async def read_file(
     filename: Annotated[str, Field(description="The filename to read (with extension)")],
 ) -> str:
-    """Read a file from the reports folder."""
-    from studio.core.file_tools import read_file as handler
-    return handler(filename=filename)
+    """Read a file from the reports folder.
+
+    Auto-corrects filename typos using fuzzy matching.
+    """
+    from studio.core.file_tools import read_file as handler, REPORTS_DIR
+
+    # Try direct read first
+    result = handler(filename=filename)
+
+    # If not found and fuzzy available, try fuzzy match
+    if "File not found" in result and RAPIDFUZZ_AVAILABLE:
+        # Get all report files
+        report_files = list(REPORTS_DIR.glob("*"))
+        if report_files:
+            file_names = [f.name for f in report_files]
+            matches = process.extract(filename, file_names, scorer=fuzz.ratio, limit=1)
+            if matches and matches[0][1] >= 70:
+                corrected = matches[0][0]
+                result = handler(corrected)
+                if "File not found" not in result:
+                    return f"[corrected: {filename} -> {corrected}]\n\n{result}"
+
+    return result
 
 
 @mcp.tool()
@@ -540,9 +717,7 @@ async def search_code(
 
 async def _fuzzy_search(pattern: str, search_path: Path, threshold: int = 70) -> str:
     """Fuzzy search using rapidfuzz for typo-tolerant matching."""
-    try:
-        from rapidfuzz import fuzz
-    except ImportError:
+    if not RAPIDFUZZ_AVAILABLE:
         return "Error: rapidfuzz not installed. Run: pip install rapidfuzz"
 
     matches = []
@@ -598,11 +773,16 @@ async def read_lines(
 
     Max 200 lines per call - covers most functions/classes with context.
     For larger sections, make multiple calls or reconsider your approach.
+    Auto-corrects path typos using fuzzy matching.
     """
-    file_path = PROJECT_ROOT / path
+    file_path, correction_note = _fuzzy_resolve_path(path)
 
     if not file_path.exists():
         return f"File not found: {path}"
+
+    # Show correction if path was fixed
+    path_display = str(file_path.relative_to(PROJECT_ROOT)) if correction_note else path
+    correction_msg = f"\n[{correction_note}]\n" if correction_note and "corrected" in correction_note else ""
 
     # Enforce max 200 lines
     if end_line - start_line > 200:
@@ -618,13 +798,13 @@ async def read_lines(
 
         selected = lines[start_idx:end_idx]
 
-        result = f"# {path} (lines {start_line}-{end_line} of {total_lines})\n\n"
+        result = f"{correction_msg}# {path_display} (lines {start_line}-{end_line} of {total_lines})\n\n"
         for i, line in enumerate(selected, start=start_line):
             result += f"{i:4}: {line}"
 
         return result
     except Exception as e:
-        return f"Error reading {path}: {e}"
+        return f"Error reading {path_display}: {e}"
 
 
 @mcp.tool()
@@ -634,17 +814,22 @@ async def file_outline(
     """Get structure of a file (functions, classes, imports) WITHOUT reading full content.
 
     Use this to understand file structure before deciding what to read.
+    Auto-corrects path typos using fuzzy matching.
     """
-    file_path = PROJECT_ROOT / path
+    file_path, correction_note = _fuzzy_resolve_path(path)
 
     if not file_path.exists():
         return f"File not found: {path}"
+
+    # Show correction if path was fixed
+    path_display = str(file_path.relative_to(PROJECT_ROOT)) if correction_note else path
+    correction_msg = f"[{correction_note}]\n" if correction_note and "corrected" in correction_note else ""
 
     try:
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
             lines = f.readlines()
 
-        outline = [f"# {path} ({len(lines)} lines)\n"]
+        outline = [f"{correction_msg}# {path_display} ({len(lines)} lines)\n"]
 
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
@@ -672,20 +857,136 @@ async def file_outline(
 
 
 @mcp.tool()
-async def edit_lines(
+async def edit_file(
     path: Annotated[str, Field(description="File path relative to project root")],
-    start_line: Annotated[int, Field(description="First line to replace (1-indexed)")],
-    end_line: Annotated[int, Field(description="Last line to replace (inclusive)")],
-    new_content: Annotated[str, Field(description="New content to insert (will replace lines start_line through end_line)")],
+    old_content: Annotated[str, Field(description="Exact content to find and replace (must match exactly, or use fuzzy=True)")],
+    new_content: Annotated[str, Field(description="New content to replace it with")],
+    fuzzy: Annotated[bool, Field(description="Enable fuzzy matching for whitespace/minor differences (default: False)")] = False,
+    threshold: Annotated[int, Field(description="Fuzzy match threshold 0-100 (default: 90). Higher = stricter.")] = 90,
 ) -> str:
-    """Replace specific lines in a file. Use search_code + read_lines first to find exact lines.
+    """Replace content in a file - safe string-based editing.
 
-    Surgical edits - only modifies the lines you specify.
+    SAFER than line-based edits because:
+    - Fails if old_content not found (no silent corruption)
+    - Fails if multiple matches (forces you to be specific)
+    - Works correctly across multiple edits (no line number shift issues)
+
+    Use search_code + read_lines first to find the exact content to replace.
+    Include enough context (surrounding lines) to make old_content unique.
+
+    Fuzzy mode: Set fuzzy=True to handle whitespace/minor differences.
     """
     file_path = PROJECT_ROOT / path
 
     if not file_path.exists():
-        return f"File not found: {path}"
+        return f"ERROR: File not found: {path}"
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        actual_old_content = old_content
+        fuzzy_note = ""
+
+        # Exact match first
+        if old_content not in content:
+            if fuzzy:
+                # Try fuzzy matching
+                match_result = _fuzzy_find_content(content, old_content, threshold)
+                if match_result:
+                    actual_old_content, score = match_result
+                    fuzzy_note = f" (fuzzy match {score}%)"
+                else:
+                    preview = old_content[:50].replace('\n', '\\n')
+                    return f"ERROR: No fuzzy match found (threshold={threshold}%). Looking for: '{preview}...'"
+            else:
+                # Try to help with diagnostics
+                preview = old_content[:50].replace('\n', '\\n')
+                hint = ""
+                # Check for whitespace issues
+                normalized_old = ' '.join(old_content.split())
+                normalized_content = ' '.join(content.split())
+                if normalized_old in normalized_content:
+                    hint = "\nHINT: Content exists but whitespace differs. Try fuzzy=True"
+                return f"ERROR: Content not found in {path}. Looking for: '{preview}...'{hint}\nUse read_lines to verify exact content."
+
+        # Validate: content must be unique
+        match_count = content.count(actual_old_content)
+        if match_count > 1:
+            return f"ERROR: Found {match_count} matches in {path}. Include more surrounding context to make it unique."
+
+        # Validate: new content must be different
+        if actual_old_content == new_content:
+            return f"ERROR: old_content and new_content are identical. Nothing to change."
+
+        # Perform replacement
+        new_file_content = content.replace(actual_old_content, new_content, 1)
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(new_file_content)
+
+        # Report what changed
+        old_lines = len(actual_old_content.split('\n'))
+        new_lines = len(new_content.split('\n'))
+        diff = new_lines - old_lines
+        diff_str = f"+{diff}" if diff > 0 else str(diff) if diff < 0 else "±0"
+
+        return f"OK: Replaced {old_lines} lines with {new_lines} lines ({diff_str}) in {path}{fuzzy_note}"
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+def _fuzzy_find_content(content: str, target: str, threshold: int) -> tuple[str, int] | None:
+    """Find content in file using fuzzy matching.
+
+    Slides a window of similar size to target through content,
+    looking for best fuzzy match above threshold.
+
+    Returns (matched_content, score) or None if no match found.
+    """
+    if not RAPIDFUZZ_AVAILABLE:
+        return None
+
+    target_lines = target.split('\n')
+    target_len = len(target_lines)
+    content_lines = content.split('\n')
+
+    best_match = None
+    best_score = 0
+    best_start = 0
+
+    # Slide window through content
+    for i in range(len(content_lines) - target_len + 1):
+        window = '\n'.join(content_lines[i:i + target_len])
+        score = fuzz.ratio(target, window)
+
+        if score > best_score:
+            best_score = score
+            best_match = window
+            best_start = i
+
+    if best_score >= threshold:
+        return (best_match, best_score)
+
+    return None
+
+
+@mcp.tool()
+async def edit_lines(
+    path: Annotated[str, Field(description="File path relative to project root")],
+    start_line: Annotated[int, Field(description="First line to replace (1-indexed)")],
+    end_line: Annotated[int, Field(description="Last line to replace (inclusive)")],
+    new_content: Annotated[str, Field(description="New content to insert")],
+) -> str:
+    """DEPRECATED: Use edit_file instead for safer string-based editing.
+
+    This line-based edit is fragile - line numbers shift after edits.
+    Kept for backwards compatibility but edit_file is recommended.
+    """
+    file_path = PROJECT_ROOT / path
+
+    if not file_path.exists():
+        return f"ERROR: File not found: {path}"
 
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -693,26 +994,25 @@ async def edit_lines(
 
         # Validate range
         if start_line < 1 or end_line > len(lines) or start_line > end_line:
-            return f"Invalid line range {start_line}-{end_line}. File has {len(lines)} lines."
+            return f"ERROR: Invalid line range {start_line}-{end_line}. File has {len(lines)} lines."
 
-        # Prepare new content
-        new_lines = new_content.split('\n')
-        if not new_content.endswith('\n'):
-            new_lines = [line + '\n' for line in new_lines]
-        else:
-            new_lines = [line + '\n' if not line.endswith('\n') else line for line in new_lines[:-1]]
-            if new_lines:
-                pass  # Last line already handled
+        # Get old content for verification message
+        old_content = ''.join(lines[start_line-1:end_line])
 
         # Replace lines
-        lines[start_line-1:end_line] = [line if line.endswith('\n') else line + '\n' for line in new_content.split('\n')]
+        new_lines = [line if line.endswith('\n') else line + '\n' for line in new_content.split('\n')]
+        # Don't add newline to last line if original didn't have one
+        if new_content and not new_content.endswith('\n') and new_lines:
+            new_lines[-1] = new_lines[-1].rstrip('\n')
+
+        lines[start_line-1:end_line] = new_lines
 
         with open(file_path, 'w', encoding='utf-8') as f:
             f.writelines(lines)
 
-        return f"Replaced lines {start_line}-{end_line} in {path}"
+        return f"OK: Replaced lines {start_line}-{end_line} in {path} (consider using edit_file for safer edits)"
     except Exception as e:
-        return f"Error editing {path}: {e}"
+        return f"ERROR: {e}"
 
 
 # =============================================================================

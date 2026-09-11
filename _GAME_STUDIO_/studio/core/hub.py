@@ -196,11 +196,9 @@ class Hub:
         msg = Message(sender=sender, content=content)
         self.messages.append(msg)
 
-        # Feed raw messages to BOTH compression systems (parallel, independent):
-        # 1. AC-Memory: bullet points for agent recall (Context agent)
-        # 2. History: narrative prose for human reading (Writer agent)
-        self._accumulate_to_tier0(msg, task_id)      # AC-Memory
-        self._accumulate_to_history(msg, task_id)    # History
+        # Feed to History compression (Writer agent generates narrative)
+        # Note: AC-Memory tier0 = messages.json directly (no separate accumulation)
+        self._accumulate_to_history(msg, task_id)
 
         # Trim to max buffer size
         if len(self.messages) > MAX_MESSAGES:
@@ -217,35 +215,6 @@ class Hub:
         # Add to outbox for broadcast
         self.outbox.put(msg)
         return msg
-
-    def _accumulate_to_tier0(self, msg: Message, task_id: Optional[str] = None):
-        """Append message summary to AC-Memory Tier 0.
-
-        AC-Memory: Bullet points for agent recall (Context agent compresses).
-        Format: minimal - timestamp + sender + key content (first 200 chars).
-        """
-        # Skip Prompt/Text messages - they ARE the compression output, not input
-        # This prevents infinite loops where compression output triggers more compression
-        if msg.sender in ("Prompt", "Text"):
-            return
-
-        try:
-            # Extract key content - first meaningful line, max 200 chars
-            content_lines = msg.content.strip().split('\n')
-            key_content = content_lines[0][:200] if content_lines else ""
-
-            # Minimal format: [timestamp] sender: key_content
-            timestamp = msg.timestamp.strftime("%H:%M")
-            entry = f"[{timestamp}] {msg.sender}"
-            if task_id:
-                entry += f" ({task_id})"
-            entry += f": {key_content}"
-
-            # Append to AC-Memory tier 0
-            memory_manager.append(0, entry)
-        except Exception as e:
-            # Non-fatal - don't break message posting if memory fails
-            logger.error("AC-Memory accumulation error (non-fatal): %s", e)
 
     def _accumulate_to_history(self, msg: Message, task_id: Optional[str] = None):
         """Append message to History Draft tier.
@@ -297,68 +266,40 @@ class Hub:
         """
         lines = []
 
-        # BOSS gets studio purpose block for strategic context
+        # BOSS: unified memory tiers (tier0 = messages.json, no duplicate access)
         if agent_name == "BOSS":
             lines.append(self._get_boss_purpose_block())
-            limit = 15  # Reduced from 20 - BOSS needs overview, not details
 
-        # Inject AC-Memory tiers for historical context
-        # Tier 1: recent compressed history, Tier 2: older compressed history
-        # Input tokens are cheap (5x less than output) - inject full context
-        tier1 = memory_manager.get_tier(1)
-        tier2 = memory_manager.get_tier(2)
-        if tier1 or tier2:
-            memory_block = "## MEMORY\n\n"
-            if tier1:
-                memory_block += "### Recent\n" + tier1 + "\n"
-            if tier2:
-                memory_block += "\n### Archive\n" + tier2 + "\n"
-            lines.append(memory_block)
+            # Memory tiers only - tier0 IS the hub chat
+            tier0 = memory_manager.get_tier(0)
+            tier1 = memory_manager.get_tier(1)
+            tier2 = memory_manager.get_tier(2)
 
-        # Add recent messages
+            if tier0 or tier1 or tier2:
+                lines.append("## MEMORY\n")
+                if tier2:
+                    lines.append("### Archive\n" + tier2)
+                if tier1:
+                    lines.append("### Compressed\n" + tier1)
+                if tier0:
+                    lines.append("### Recent Chat\n" + tier0)
+
+            # Active tasks
+            active_tasks = task_manager.to_active_context_string()
+            if active_tasks:
+                lines.append("\n" + active_tasks)
+
+            return "\n".join(lines)
+
+        # Non-BOSS: recent messages verbatim (no memory injection)
         recent = self.messages[-limit:]
-
-        # Noise senders to skip entirely
         skip_senders = {"System", "TEST", "test_sender"}
-
-        # T389: BOSS gets two-tier message display
-        # - Older messages (positions 6-N): trimmed for efficiency
-        # - Last 5 messages: full verbatim for recency detail
-        if agent_name == "BOSS":
-            full_count = 5
-            older_messages = recent[:-full_count] if len(recent) > full_count else []
-            recent_messages = recent[-full_count:] if len(recent) >= full_count else recent
-
-            # Block 1: Trimmed older messages
-            if older_messages:
-                lines.append("### EARLIER (trimmed)")
-                for msg in older_messages:
-                    if msg.sender in skip_senders:
-                        continue
-                    prefix = "YOU" if msg.sender == agent_name else msg.sender
-                    if msg.sender == "user":
-                        content = self._truncate_message(msg.content, max_chars=300)
-                    elif msg.sender == agent_name:
-                        content = self._truncate_message(msg.content, max_chars=200)
-                    else:
-                        content = self._truncate_message(msg.content, max_chars=100)
-                    lines.append(f"[{prefix}]: {content}")
-
-            # Block 2: Full recent messages
-            lines.append("\n### RECENT (full)")
-            for msg in recent_messages:
-                if msg.sender in skip_senders:
-                    continue
-                prefix = "YOU" if msg.sender == agent_name else msg.sender
-                lines.append(f"[{prefix}]: {msg.content}")
-        else:
-            # Non-BOSS: all messages verbatim
-            lines.append("RECENT MESSAGES:")
-            for msg in recent:
-                if msg.sender in skip_senders:
-                    continue
-                prefix = "YOU" if msg.sender == agent_name else msg.sender
-                lines.append(f"[{prefix}]: {msg.content}")
+        lines.append("RECENT MESSAGES:")
+        for msg in recent:
+            if msg.sender in skip_senders:
+                continue
+            prefix = "YOU" if msg.sender == agent_name else msg.sender
+            lines.append(f"[{prefix}]: {msg.content}")
         return "\n".join(lines)
 
     def _truncate_message(self, content: str, max_chars: int = 100) -> str:

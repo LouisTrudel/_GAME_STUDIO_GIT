@@ -2,7 +2,8 @@
   "name": "BOSS",
   "title": "Studio Coordinator",
   "backend": "persistent-claude",
-  "model": "sonnet",
+  "model": "haiku",
+  "max_turns": 8,
   "color": "#e74c3c",
   "delegation_fixes": {
     "primacy_identity": false,

@@ -4,8 +4,8 @@ AC-Memory: Accumulated-Compacted Memory Tier System
 Simple markdown-based tiered memory with compression.
 
 Structure:
+  tier0 = messages.json (hub chat, rolling 50 buffer, no separate file)
   memory/
-  ├── tier0.md  ← Raw session buffer (10KB threshold)
   ├── tier1.md  ← Recent: injected as "### Recent" (50KB)
   ├── tier2.md  ← Archive: injected as "### Archive" (200KB)
   └── tier3+.md ← Reference only: searchable, NOT injected (500KB+)
@@ -15,17 +15,18 @@ Injection (hub.py):
   - tier3+ → exist on disk, queryable via search(), not auto-injected
 
 Flow:
-  Hub chat → tier0 grows → threshold → compress →
-  KEEP stays in tier0, PUSH appends to tier1 → tier1 grows → ...
+  Hub chat (tier0/messages.json) → threshold → compress →
+  PUSH appends to tier1 (messages.json keeps rolling) → tier1 grows → ...
   (cascades up to tier10+ as needed)
 """
 
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Callable
 
 from .logging_config import get_logger
-from .paths import get_memory_dir
+from .paths import get_memory_dir, get_base_path
 
 logger = get_logger("Memory")
 
@@ -92,25 +93,74 @@ class MemoryManager:
         self._memory_dir.mkdir(parents=True, exist_ok=True)
 
     def _tier_path(self, index: int) -> Path:
-        """Get file path for a tier: tier0.md, tier1.md, etc."""
+        """Get file path for a tier: tier1.md, tier2.md, etc.
+
+        Note: tier0 has no file - it reads from messages.json.
+        """
+        if index == 0:
+            return None  # tier0 = messages.json, not a separate file
         return self._memory_dir / f"tier{index}.md"
+
+    def _messages_json_path(self) -> Path:
+        """Get messages.json path for current project (tier0 source)."""
+        base = get_base_path(self._project_name)
+        if self._project_name and self._project_name != "default":
+            return base / "data" / "messages.json"
+        return base / "messages.json"
+
+    def _read_messages_json(self) -> str:
+        """Read messages.json and format as tier0 content."""
+        path = self._messages_json_path()
+        if not path.exists():
+            return ""
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            messages = data.get("messages", [])
+            # Format as tier0: [HH:MM] sender: content
+            lines = []
+            for msg in messages:
+                ts = msg.get("timestamp", "")[:16].split("T")[-1][:5]  # HH:MM
+                sender = msg.get("sender", "?")
+                content = msg.get("content", "")
+                lines.append(f"[{ts}] {sender}: {content}")
+            return "\n".join(lines)
+        except Exception as e:
+            logger.error("Failed to read messages.json: %s", e)
+            return ""
 
     # ============ READ/WRITE ============
 
     def get_tier(self, index: int) -> str:
-        """Get content of a tier. Returns empty string if not exists."""
+        """Get content of a tier. Returns empty string if not exists.
+
+        tier0 = messages.json (hub chat)
+        tier1+ = tierN.md files
+        """
+        if index == 0:
+            return self._read_messages_json()
         filepath = self._tier_path(index)
-        if filepath.exists():
+        if filepath and filepath.exists():
             return filepath.read_text(encoding="utf-8")
         return ""
 
     def _write_tier(self, index: int, content: str):
-        """Write content to a tier file."""
+        """Write content to a tier file.
+
+        tier0 = messages.json (managed by hub, not written here)
+        """
+        if index == 0:
+            return  # tier0 is messages.json, managed by hub.py
         filepath = self._tier_path(index)
         filepath.write_text(content, encoding="utf-8")
 
     def _append_tier(self, index: int, content: str):
-        """Append content to a tier file."""
+        """Append content to a tier file.
+
+        tier0 = messages.json (managed by hub, not appended here)
+        """
+        if index == 0:
+            return  # tier0 is messages.json, managed by hub.py
         filepath = self._tier_path(index)
         existing = self.get_tier(index)
 
@@ -137,8 +187,9 @@ class MemoryManager:
 
     def add_hot(self, content: str, source: str = "", tags: list = None,
                 task_ids: list = None, agent: str = None, outcome: str = None):
-        """Add content to tier0 (hot buffer) with metadata.
+        """Add task completion log to tier1.
 
+        tier0 = messages.json (hub chat), so task logs go to tier1 directly.
         Used by tasks.py to log completed/failed tasks.
         """
         # Format entry with metadata
@@ -151,10 +202,15 @@ class MemoryManager:
             parts.append(f"tags: {', '.join(tags)}")
 
         entry = " ".join(parts)
-        self.append(0, entry)
+        self.append(1, entry)  # tier1, not tier0
 
     def append(self, index: int, content: str):
-        """Append content to a tier. Auto-compresses if threshold exceeded."""
+        """Append content to a tier. Auto-compresses if threshold exceeded.
+
+        tier0 = messages.json (managed by hub.py, not here)
+        """
+        if index == 0:
+            return  # tier0 is messages.json, managed by hub.py
         self._append_tier(index, content)
         size = self.tier_size(index)
         logger.info("Appended to tier%d, size: %d", index, size)
@@ -232,11 +288,14 @@ class MemoryManager:
         push = result.get("push", "")
         friction = result.get("friction", "")
 
-        # Replace current tier with KEEP
-        self._write_tier(index, keep)
-        logger.info("Tier%d compressed: kept %d chars", index, len(keep))
+        # Replace current tier with KEEP (tier0 is messages.json, keeps rolling)
+        if index == 0:
+            logger.info("Tier0 (messages.json) compressed: discarded KEEP, pushing %d chars to tier1", len(push))
+        else:
+            self._write_tier(index, keep)
+            logger.info("Tier%d compressed: kept %d chars", index, len(keep))
 
-        # Append PUSH to next tier
+        # Append PUSH to next tier (may trigger cascade)
         if push:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
             push_entry = f"[{timestamp}] From tier{index}:\n{push}"
@@ -319,6 +378,9 @@ class MemoryManager:
 
         for i in range(20):  # Check up to 20 tiers
             filepath = self._tier_path(i)
+            # tier0 has no file (reads from messages.json)
+            if filepath is None:
+                continue
             if not filepath.exists():
                 if i > 0:
                     break
@@ -339,6 +401,9 @@ class MemoryManager:
 
         for i in range(20):  # Check up to 20 tiers
             filepath = self._tier_path(i)
+            # tier0 has no file (reads from messages.json)
+            if filepath is None:
+                continue
             if not filepath.exists():
                 if i > 0:
                     break

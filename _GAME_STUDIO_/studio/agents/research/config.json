@@ -2,5 +2,7 @@
   "name": "Research",
   "title": "Research Analyst",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#9c27b0"
 }

@@ -2,5 +2,7 @@
   "name": "ArtSpec",
   "title": "Art Director",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#2ecc71"
 }

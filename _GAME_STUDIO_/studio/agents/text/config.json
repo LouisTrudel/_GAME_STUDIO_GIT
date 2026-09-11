@@ -2,5 +2,7 @@
   "name": "Text",
   "title": "Narrative Designer",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#f39c12"
 }

@@ -9,6 +9,9 @@ let agentStats = {};
 let tasks = [];
 let routines = [];
 let suggestions = [];
+let projects = [];
+let currentProject = null;
+let showArchivedProjects = false;
 let autoApprove = localStorage.getItem('autoApprove') === 'true';
 let isThinking = false;
 let agentStatuses = {};  // Track agent activity states
@@ -244,6 +247,13 @@ function addMessage(msg) {
 
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
+    // Check for task ID in message and add deliverable link
+    const taskMatch = msg.content.match(/^(T\d+)\s+(FIXED|ADDED|UPDATED|FOUND|TRACED|BLOCKED|COMPLETE)/i);
+    console.log('[Deliverable] Regex test:', msg.content.substring(0, 30), '-> match:', taskMatch ? taskMatch[1] : 'none');
+    if (taskMatch && !isUser) {
+        addDeliverableLink(div, taskMatch[1]);
+    }
+
     // Log to routines
     log('wsLogs', `${msg.sender}: ${msg.content.substring(0, 50)}...`, 'info');
 }
@@ -293,6 +303,29 @@ function showThinking(agentName = 'Agent') {
 function hideThinking() {
     isThinking = false;
     document.getElementById('thinkingIndicator').classList.remove('show');
+}
+
+// Agent error notification - shows error toast
+function showAgentError(agent, time, error) {
+    // Create error toast
+    let container = document.getElementById('errorToasts');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'errorToasts';
+        container.style.cssText = 'position:fixed;top:60px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px;';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'error-toast';
+    toast.style.cssText = 'background:#ff4444;color:white;padding:12px 16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:400px;animation:slideIn 0.3s ease;cursor:pointer;';
+    toast.innerHTML = `<strong>${agent}</strong> [${time}]<br><span style="font-size:0.9em;opacity:0.9;">${error}</span>`;
+    toast.onclick = () => toast.remove();
+
+    container.appendChild(toast);
+
+    // Auto-remove after 10 seconds
+    setTimeout(() => toast.remove(), 10000);
 }
 
 // Activity bar - shows all active agents with minimum display time
@@ -861,6 +894,65 @@ function showTaskDetailModal(taskId) {
     document.body.appendChild(modal);
 }
 
+// ===== DELIVERABLE VIEWER =====
+async function showDeliverableModal(taskId) {
+    try {
+        const response = await fetch(`${API_URL}/tasks/${taskId}/deliverable`);
+        const data = await response.json();
+
+        if (!data.exists) {
+            return; // No deliverable
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.style.display = 'flex';
+        modal.innerHTML = `
+            <div class="modal deliverable-modal">
+                <div class="deliverable-header">
+                    <span class="deliverable-title">${taskId} Deliverable</span>
+                    <button class="deliverable-close" onclick="this.closest('.modal-overlay').remove();">&times;</button>
+                </div>
+                <div class="deliverable-content">${escapeHtml(data.content)}</div>
+            </div>
+        `;
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        document.body.appendChild(modal);
+    } catch (err) {
+        console.error('Failed to load deliverable:', err);
+    }
+}
+
+// Check deliverable and add link to message element
+async function addDeliverableLink(messageEl, taskId) {
+    try {
+        console.log('[Deliverable] Checking:', taskId);
+        const response = await fetch(`${API_URL}/tasks/${taskId}/deliverable/exists`);
+        const data = await response.json();
+        console.log('[Deliverable] Response:', taskId, data);
+
+        if (data.exists) {
+            const link = document.createElement('span');
+            link.className = 'deliverable-link';
+            link.innerHTML = '&#128196;'; // Document icon
+            link.title = `View ${taskId} deliverable`;
+            link.onclick = (e) => {
+                e.stopPropagation();
+                showDeliverableModal(taskId);
+            };
+
+            const header = messageEl.querySelector('.message-header');
+            console.log('[Deliverable] Header found:', !!header, taskId);
+            if (header) {
+                header.appendChild(link);
+                console.log('[Deliverable] Link added:', taskId);
+            }
+        }
+    } catch (err) {
+        console.error('[Deliverable] Error:', taskId, err);
+    }
+}
+
 // ===== ROUTINES =====
 function renderRoutines() {
     const list = document.getElementById('routineList');
@@ -1286,6 +1378,291 @@ function deleteRoutine(id) {
     if (confirm('Delete this routine?')) {
         ws.send(JSON.stringify({ type: 'delete_schedule', id }));
     }
+}
+
+// ===== PROJECTS TAB =====
+async function fetchProjects() {
+    try {
+        const res = await fetch(`${API_URL}/projects`);
+        projects = await res.json();
+        renderProjectList();
+        updateProjectSwitcher();
+    } catch (e) {
+        console.error('Failed to fetch projects:', e);
+        projects = [];
+    }
+}
+
+function renderProjectList() {
+    const list = document.getElementById('projectList');
+    if (!list) return;
+    
+    const filtered = showArchivedProjects 
+        ? projects 
+        : projects.filter(p => !p.archived);
+    
+    if (filtered.length === 0) {
+        list.innerHTML = '<div style="color: #666; padding: 1rem; text-align: center;">No projects</div>';
+        return;
+    }
+    
+    list.innerHTML = filtered.map(p => {
+        const isActive = currentProject && currentProject.id === p.id;
+        const icon = p.type === 'game' ? '🎮' : p.type === 'website' ? '🌐' : p.type === 'research' ? '📊' : '📁';
+        return `
+            <div class="project-item ${isActive ? 'active' : ''} ${p.archived ? 'archived' : ''}" 
+                 onclick="selectProject('${p.id}')">
+                <div class="project-item-icon">${icon}</div>
+                <div class="project-item-content">
+                    <div class="project-item-name">${escapeHtml(p.name)}</div>
+                    <div class="project-item-path">${escapeHtml(p.path)}</div>
+                </div>
+                ${p.archived ? '<span class="project-archived-badge">Archived</span>' : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+async function selectProject(id) {
+    const project = projects.find(p => p.id === id);
+    if (!project) return;
+    
+    currentProject = project;
+    renderProjectList();
+    
+    const details = document.getElementById('projectDetails');
+    if (!details) return;
+    
+    const icon = project.type === 'game' ? '🎮' : project.type === 'website' ? '🌐' : project.type === 'research' ? '📊' : '📁';
+    
+    details.innerHTML = `
+        <div class="project-details-header">
+            <div>
+                <div class="project-details-icon">${icon}</div>
+                <div>
+                    <h2>${escapeHtml(project.name)}</h2>
+                    <div class="project-details-meta">
+                        ${project.type}${project.subtype ? ` · ${project.subtype}` : ''}
+                        ${project.archived ? ' · <span style="color: #e67e22;">Archived</span>' : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="project-actions">
+                <button onclick="openProjectFolder('${project.id}')">Open Folder</button>
+                ${!project.archived 
+                    ? `<button onclick="archiveProject('${project.id}')">Archive</button>`
+                    : `<button onclick="unarchiveProject('${project.id}')">Restore</button>`
+                }
+                <button onclick="deleteProject('${project.id}')" style="background: #e74c3c;">Delete</button>
+            </div>
+        </div>
+        
+        <div class="project-details-section">
+            <h3>Path</h3>
+            <div class="project-path-display">${escapeHtml(project.path)}</div>
+        </div>
+        
+        ${project.description ? `
+            <div class="project-details-section">
+                <h3>Description</h3>
+                <p>${escapeHtml(project.description)}</p>
+            </div>
+        ` : ''}
+        
+        <div class="project-details-section">
+            <h3>Details</h3>
+            <div class="project-details-grid">
+                <div>
+                    <strong>Created:</strong> ${new Date(project.created_at).toLocaleDateString()}
+                </div>
+                <div>
+                    <strong>ID:</strong> ${project.id}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showCreateProject() {
+    document.getElementById('createProjectModal').classList.add('show');
+    document.getElementById('projectNameCreate').value = '';
+    document.getElementById('projectParentDir').value = '';
+    document.getElementById('projectSubtype').value = '';
+    document.getElementById('projectName').value = '';
+    document.getElementById('projectPath').value = '';
+    
+    // Reset type chips
+    document.querySelectorAll('.type-chip').forEach(chip => {
+        chip.classList.remove('selected');
+        if (chip.dataset.type === 'game') chip.classList.add('selected');
+    });
+    
+    setProjectMode('create');
+}
+
+function hideCreateProject() {
+    document.getElementById('createProjectModal').classList.remove('show');
+}
+
+function setProjectMode(mode) {
+    const createTab = document.getElementById('modeCreateNew');
+    const linkTab = document.getElementById('modeLinkExisting');
+    const createForm = document.getElementById('projectCreateForm');
+    const linkForm = document.getElementById('projectLinkForm');
+    
+    if (mode === 'create') {
+        createTab.classList.add('active');
+        linkTab.classList.remove('active');
+        createForm.style.display = 'block';
+        linkForm.style.display = 'none';
+    } else {
+        createTab.classList.remove('active');
+        linkTab.classList.add('active');
+        createForm.style.display = 'none';
+        linkForm.style.display = 'block';
+    }
+}
+
+async function createProject() {
+    const mode = document.getElementById('projectCreateForm').style.display !== 'none' ? 'create' : 'link';
+    
+    let name, path, type, subtype, description;
+    
+    if (mode === 'create') {
+        name = document.getElementById('projectNameCreate').value.trim();
+        const parentDir = document.getElementById('projectParentDir').value.trim();
+        const selectedType = document.querySelector('.type-chip.selected');
+        type = selectedType ? selectedType.dataset.type : 'other';
+        subtype = document.getElementById('projectSubtype').value.trim();
+        
+        if (!name) {
+            alert('Please enter a project name');
+            return;
+        }
+        if (!parentDir) {
+            alert('Please enter a parent directory');
+            return;
+        }
+        
+        path = `${parentDir}/${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    } else {
+        name = document.getElementById('projectName').value.trim();
+        path = document.getElementById('projectPath').value.trim();
+        description = document.getElementById('projectDescription').value.trim();
+        type = 'other';
+        
+        if (!name || !path) {
+            alert('Please enter both name and path');
+            return;
+        }
+    }
+    
+    try {
+        const res = await fetch(`${API_URL}/projects`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, path, type, subtype, description })
+        });
+        
+        if (!res.ok) throw new Error('Failed to create project');
+        
+        await fetchProjects();
+        hideCreateProject();
+    } catch (e) {
+        alert('Error creating project: ' + e.message);
+    }
+}
+
+async function openProjectFolder(id) {
+    const project = projects.find(p => p.id === id);
+    if (!project) return;
+    
+    try {
+        await fetch(`${API_URL}/projects/${id}/open`, { method: 'POST' });
+    } catch (e) {
+        console.error('Failed to open project folder:', e);
+    }
+}
+
+async function archiveProject(id) {
+    if (!confirm('Archive this project?')) return;
+    
+    try {
+        await fetch(`${API_URL}/projects/${id}/archive`, { method: 'POST' });
+        await fetchProjects();
+        if (currentProject && currentProject.id === id) {
+            await selectProject(id);
+        }
+    } catch (e) {
+        alert('Error archiving project: ' + e.message);
+    }
+}
+
+async function unarchiveProject(id) {
+    try {
+        await fetch(`${API_URL}/projects/${id}/unarchive`, { method: 'POST' });
+        await fetchProjects();
+        if (currentProject && currentProject.id === id) {
+            await selectProject(id);
+        }
+    } catch (e) {
+        alert('Error restoring project: ' + e.message);
+    }
+}
+
+async function deleteProject(id) {
+    if (!confirm('Delete this project? This will NOT delete files, only remove it from the list.')) return;
+    
+    try {
+        await fetch(`${API_URL}/projects/${id}`, { method: 'DELETE' });
+        await fetchProjects();
+        if (currentProject && currentProject.id === id) {
+            currentProject = null;
+            document.getElementById('projectDetails').innerHTML = `
+                <div class="project-details-empty">
+                    <div style="color: #666; text-align: center; padding: 2rem;">
+                        Select a project to view details
+                    </div>
+                </div>
+            `;
+        }
+    } catch (e) {
+        alert('Error deleting project: ' + e.message);
+    }
+}
+
+function toggleShowArchived() {
+    showArchivedProjects = !showArchivedProjects;
+    const btn = document.getElementById('showArchivedBtn');
+    btn.textContent = showArchivedProjects ? 'Hide Archived' : 'Show Archived';
+    renderProjectList();
+}
+
+function updateProjectSwitcher() {
+    const switcher = document.getElementById('projectSwitcher');
+    if (!switcher) return;
+    
+    const activeProjects = projects.filter(p => !p.archived);
+    const currentValue = switcher.value;
+    
+    switcher.innerHTML = '<option value="">DEFAULT</option>' + 
+        activeProjects.map(p => 
+            `<option value="${p.id}">${escapeHtml(p.name)}</option>`
+        ).join('');
+    
+    // Restore previous selection if it still exists
+    if (currentValue && activeProjects.find(p => p.id === currentValue)) {
+        switcher.value = currentValue;
+    }
+}
+
+function onProjectSwitcherChange() {
+    const switcher = document.getElementById('projectSwitcher');
+    const projectId = switcher.value;
+    
+    // TODO: Implement project switching logic
+    // This would change the working directory context for agents
+    console.log('Project switched to:', projectId || 'DEFAULT');
 }
 
 // ===== LEARNING TAB =====
@@ -1741,6 +2118,11 @@ function connect() {
             console.log('[WS] suggestions_update - received', data.data.length, 'suggestions');
             suggestions = data.data;
             renderSuggestions();
+        } else if (data.type === 'projects_update') {
+            console.log('[WS] projects_update - received', data.data.length, 'projects');
+            projects = data.data;
+            renderProjectList();
+            updateProjectSwitcher();
         } else if (data.type === 'live_tokens') {
             // Live token updates during agent streaming
             liveTokens[data.agent] = {
@@ -1748,6 +2130,10 @@ function connect() {
                 output: data.output_tokens
             };
             updateLiveTokenDisplay(data.agent);
+        } else if (data.type === 'agent_error') {
+            // Agent error notification - show prominently
+            console.error('[WS] AGENT ERROR:', data.agent, data.error);
+            showAgentError(data.agent, data.time, data.error);
         } else {
             console.log('[WS] Unknown message type:', data.type, data);
         }
@@ -1790,6 +2176,14 @@ async function restartServer() {
 sendBtn.onclick = sendMessage;
 inputEl.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
 
+// Type chip selection
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('type-chip')) {
+        document.querySelectorAll('.type-chip').forEach(chip => chip.classList.remove('selected'));
+        e.target.classList.add('selected');
+    }
+});
+
 // Initialize
 console.log('[INIT] Game Studio frontend starting...');
 console.log('[INIT] WS_URL:', WS_URL);
@@ -1797,6 +2191,7 @@ console.log('[INIT] API_URL:', API_URL);
 fetchRoles();
 fetchHistory();
 fetchSuggestions();
+fetchProjects();
 fetchSessionTokens();  // Fetch session token stats (includes BOSS)
 connect();
 updateAutoApproveUI();  // Set initial toggle state

@@ -39,35 +39,99 @@ async function reloadHubForProject() {
     await fetchHistory();
 }
 
+// Track expanded agent cards
+const expandedAgents = new Set();
+
 // Render agent cards
 function renderAgentCards() {
     const panel = document.getElementById('panel-agents');
     panel.innerHTML = '';
 
-    for (const [name, info] of Object.entries(roles)) {
+    // Sort agents by tokens (highest first)
+    const sortedAgents = Object.entries(roles).sort((a, b) => {
+        const tokensA = agentStats[a[0]]?.tokens || 0;
+        const tokensB = agentStats[b[0]]?.tokens || 0;
+        return tokensB - tokensA;
+    });
+
+    for (const [name, info] of sortedAgents) {
         const stats = agentStats[name] || {};
         const status = stats.status || 'idle';
         const taskCount = stats.tasks?.assigned || 0;
         const tokens = formatTokens(stats.tokens || 0);
         const uptime = formatUptime(stats.uptime_seconds || 0);
 
+        // Token breakdown
+        const inputTokens = stats.tokens_input || 0;
+        const outputTokens = stats.tokens_output || 0;
+        const cacheRead = stats.tokens_cache_read || 0;
+        const cacheCreation = stats.tokens_cache_creation || 0;
+
+        // Preserve expanded state
+        const isExpanded = expandedAgents.has(name);
+
         const card = document.createElement('div');
-        card.className = 'agent-card';
+        card.className = 'agent-card' + (isExpanded ? ' expanded' : '');
+        card.dataset.agent = name;
         card.style.setProperty('--agent-color', info.color);
         card.innerHTML = `
-            <span class="status-dot ${status}" title="${status}"></span>
-            <span class="name">${name}</span>
-            <span class="stats">
-                <span class="stat"><span class="stat-value">${tokens}</span> tokens</span>
-                <span class="stat"><span class="stat-value">${taskCount}</span> tasks</span>
-                <span class="stat"><span class="stat-value">${uptime}</span></span>
-            </span>
+            <div class="agent-card-header">
+                <span class="status-dot ${status}" title="${status}"></span>
+                <span class="name">${name}</span>
+                <span class="stats">
+                    <span class="stat"><span class="stat-value token-total">${tokens}</span> tokens</span>
+                    <span class="stat"><span class="stat-value">${taskCount}</span> tasks</span>
+                    <span class="stat"><span class="stat-value">${uptime}</span></span>
+                </span>
+                <span class="expand-icon">${isExpanded ? '▲' : '▼'}</span>
+            </div>
+            <div class="agent-card-details" style="display: ${isExpanded ? 'block' : 'none'};">
+                <div class="agent-token-grid">
+                    <div class="agent-token-item">
+                        <span class="agent-token-label">Input</span>
+                        <span class="agent-token-value input">${formatTokens(inputTokens)}</span>
+                    </div>
+                    <div class="agent-token-item">
+                        <span class="agent-token-label">Output</span>
+                        <span class="agent-token-value output">${formatTokens(outputTokens)}</span>
+                    </div>
+                    <div class="agent-token-item">
+                        <span class="agent-token-label">Cache Read</span>
+                        <span class="agent-token-value cache-read">${formatTokens(cacheRead)}</span>
+                    </div>
+                    <div class="agent-token-item">
+                        <span class="agent-token-label">Cache Write</span>
+                        <span class="agent-token-value cache-write">${formatTokens(cacheCreation)}</span>
+                    </div>
+                </div>
+                <div class="agent-actions">
+                    <button class="agent-action-btn" onclick="showConfigModal('${name}')">Configure</button>
+                    <button class="agent-action-btn" onclick="handlePromptAction('${name}', 'checkin')">Check In</button>
+                </div>
+            </div>
         `;
 
-        card.addEventListener('click', () => showConfigModal(name));
+        // Toggle expand on header click
+        const header = card.querySelector('.agent-card-header');
+        header.addEventListener('click', (e) => {
+            const details = card.querySelector('.agent-card-details');
+            const icon = card.querySelector('.expand-icon');
+            const wasExpanded = details.style.display !== 'none';
+            details.style.display = wasExpanded ? 'none' : 'block';
+            icon.textContent = wasExpanded ? '▼' : '▲';
+            card.classList.toggle('expanded', !wasExpanded);
+            // Track expanded state
+            if (wasExpanded) {
+                expandedAgents.delete(name);
+            } else {
+                expandedAgents.add(name);
+            }
+        });
+
         panel.appendChild(card);
     }
 }
+
 
 // Fetch agent stats
 async function fetchAgentStats() {

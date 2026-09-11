@@ -27,3 +27,9 @@
 - [RESOLVED] Incremental prompts only sent `## TASK` header without user message content - BOSS couldn't see messages
 - [RESOLVED] Project Chat validation error "Error: 'Project Name'" - was calling non-existent `gemini.chat()`
 - [RESOLVED] BOSS repeatedly said "No user message received" due to incremental prompt bug
+
+## [2026-09-10 21:26]
+- [UNRESOLVED] Live token counts disappear on tasks_update DOM rebuild (race condition bug T456)
+- [RESOLVED] Git CRLF + stray `nul` file staging issues - cleaned up
+- [RESOLVED] RuntimeError: CLI exited early with unknown option '--autocompact'
+- [RESOLVED] BOSS "no user message detected" loop - session cleared to fix

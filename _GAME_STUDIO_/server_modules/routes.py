@@ -175,6 +175,28 @@ def register_routes(app: FastAPI):
             return {"success": True, "message": f"Task {task_id} deleted"}
         return {"success": False, "error": "Task not found"}
 
+    @app.get("/api/tasks/{task_id}/deliverable")
+    async def get_task_deliverable(task_id: str, project: Optional[str] = Query(None)):
+        """Get deliverable content for a task (T561)."""
+        from studio.core.tasks import get_base_path
+        base = get_base_path(project)
+        filepath = base / "deliverables" / f"{task_id}.md"
+        if not filepath.exists():
+            return {"exists": False}
+        try:
+            content = filepath.read_text(encoding="utf-8")
+            return {"exists": True, "content": content}
+        except Exception as e:
+            return {"exists": False, "error": str(e)}
+
+    @app.get("/api/tasks/{task_id}/deliverable/exists")
+    async def check_deliverable_exists(task_id: str, project: Optional[str] = Query(None)):
+        """Check if deliverable exists for a task (T561)."""
+        from studio.core.tasks import get_base_path
+        base = get_base_path(project)
+        filepath = base / "deliverables" / f"{task_id}.md"
+        return {"exists": filepath.exists()}
+
     # ============ REPORTS ============
 
     @app.get("/api/reports")

@@ -1,333 +1,381 @@
 {
-  "counter": 447,
+  "counter": 609,
   "tasks": [
     {
-      "id": "T435",
-      "description": "[CONTEXT]\nDesigner completed T434 with a refined 6-phase Project Creation Pipeline spec. User wants to implement it.\n\nKey features from the spec:\n- Type/Subtype as suggestion chips (not dropdowns)\n- Warmup web search before first whitepaper draft\n- Project Chat panel (40/60 split with whitepaper view)\n- Star rating system with <4 star warning\n- Pipeline state tracking (setup\u2192draft\u2192clarify\u2192dispatch\u2192delivered)\n- Dependency checkpoint, cancel/rollback support\n- Cost preview before dispatch\n\n[FILES]\n- reports/T434-project-creation-pipeline-spec_20260909_213034.md (full implementation spec)\n- studio/core/projects.py (project state, pipeline)\n- server_modules/routes.py (new endpoints)\n- studio.js + studio-projects.js (Project Chat UI)\n- studio.css (40/60 split layout, chips)\n\n[CONSTRAINTS]\n- Read the full spec from reports/ first\n- UX first priority (chips, chat panel)\n- Integrate with existing external project tooling (T427)\n- Pipeline state must persist across sessions\n- Server restart may be required for backend changes\n\n[WHAT]\nImplement the Project Creation Pipeline per T434 spec. Start with backend (project state, pipeline phases), then frontend (Project Chat UI, suggestion chips, star rating).",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-09T21:33:08.435468",
-      "started_at": "2026-09-09T21:33:09.014411",
-      "completed_at": "2026-09-09T21:39:07.827720",
-      "claimed_by": "Programmer",
-      "claimed_at": "2026-09-09T21:33:09.014411",
-      "claimed_process_id": null,
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 1588,
-          "skills": 0,
-          "context_md": 0,
-          "task_prompt": 1329
-        }
-      },
-      "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
-      },
-      "friction": null
-    },
-    {
-      "id": "T436",
-      "description": "[WHAT] Research suggestion S008\n\n[CONTEXT]\nTitle: Handle brief internet outages gracefully\nCategory: architecture\nContent: Brief internet shutdowns may be causing Boss or agent CLIs to crash. Investigate connection resilience, retry logic, and graceful degradation when network drops momentarily.\n\n[DELIVERABLE]\nInvestigate this suggestion:\n1. Search for relevant best practices or prior art\n2. Find evidence for or against this approach\n3. Identify any technical considerations\n\nProvide a brief research summary (3-5 key findings). Include sources if available.\n\nIMPORTANT: After completing research, call add_discussion tool with suggestion_id=\"S008\" to record your findings.",
-      "assignee": "Research",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-09T21:38:17.042984",
-      "started_at": "2026-09-09T21:38:17.707548",
-      "completed_at": "2026-09-09T21:39:28.873493",
-      "claimed_by": "Research",
-      "claimed_at": "2026-09-09T21:38:17.707548",
-      "claimed_process_id": null,
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 1292,
-          "skills": 0,
-          "context_md": 0,
-          "task_prompt": 794
-        }
-      },
-      "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
-      },
-      "friction": null
-    },
-    {
-      "id": "T437",
-      "description": "[CONTEXT]\nResearch (T436) found retry logic is only partial - Gemini retries rate limits but not network errors. Need LLM-agnostic retry solution that works across all backends.\n\nResearch findings:\n- Gemini has partial retry (HTTP 429 only)\n- Claude CLI has no network retry\n- Task-level retry restarts entire task (expensive)\n- Best practice: exponential backoff (2s\u21924s\u21928s) at HTTP layer\n\n[FILES]\n- backends/backends/base.py (base class - ideal location for shared retry logic)\n- backends/backends/gemini.py (needs retry wrapper)\n- backends/backends/ollama.py (needs retry wrapper)\n- backends/backends/anthropic.py (needs retry wrapper)\n- backends/backends/claude_cli.py (harder - subprocess stderr detection)\n\n[CONSTRAINTS]\n- MUST be LLM-agnostic - implement in base.py or as decorator/wrapper\n- Retry for: URLError, ConnectionResetError, socket.timeout, ConnectionRefusedError\n- Do NOT retry: auth errors (401/403), bad request (400), model not found\n- Exponential backoff: 2s \u2192 4s \u2192 8s (3 attempts max)\n- Claude CLI is subprocess - may need different approach (stderr pattern detection)\n\n[WHAT]\nImplement LLM-agnostic exponential backoff retry wrapper. Add to base.py as reusable decorator/method. Apply to all HTTP-based backends (gemini, ollama, anthropic). Handle Claude CLI separately if needed.",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-09T21:42:21.617307",
-      "started_at": "2026-09-09T21:42:23.465055",
-      "completed_at": "2026-09-09T21:45:52.946574",
-      "claimed_by": "Programmer",
-      "claimed_at": "2026-09-09T21:42:23.465055",
-      "claimed_process_id": null,
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 1588,
-          "skills": 0,
-          "context_md": 0,
-          "task_prompt": 1420
-        }
-      },
-      "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
-      },
-      "friction": null
-    },
-    {
-      "id": "T438",
-      "description": "[CONTEXT]\nUser wants to improve the Agents tab in the Studio UI with better organization and visibility.\n\n[FILES]\n- studio.js (Agents tab rendering)\n- studio.css (card styling, expandable sections)\n- server_modules/routes.py (API endpoints for agent data)\n- studio/agents/*/role.md (role content to display)\n\n[CONSTRAINTS]\n- Auto-sort agents by tokens used (highest first)\n- Make agent cards expandable/collapsible\n- When expanded, show: full role.md content + complete token data\n- Keep collapsed state compact (name + token summary)\n\n[WHAT]\nUpdate Agents tab: auto-sort by token usage descending, make cards expandable, display role.md content and full token metrics when expanded.",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-09T21:50:55.261398",
-      "started_at": "2026-09-09T21:50:56.462907",
-      "completed_at": "2026-09-09T21:52:46.741984",
-      "claimed_by": "Programmer",
-      "claimed_at": "2026-09-09T21:50:56.462907",
-      "claimed_process_id": null,
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 1588,
-          "skills": 0,
-          "context_md": 0,
-          "task_prompt": 800
-        }
-      },
-      "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
-      },
-      "friction": null
-    },
-    {
-      "id": "T439",
-      "description": "[CONTEXT]\nProject Creation Pipeline UI is implemented (T435), but the Project Chat agent that generates whitepapers is not connected. User sees placeholder message: \"Project Chat agent not yet implemented\".\n\nThe pipeline spec (T434) defines:\n- User submits project description\n- AI returns whitepaper draft with libraries, dependencies, requirements\n- Clarify loop with star rating (1-5) until user approves\n- Then BOSS dispatches worktree phases\n\n[FILES]\n- studio.js (Project Chat panel - already has UI framework)\n- studio/studio.py (need to handle project chat messages)\n- server_modules/routes.py (need project chat API endpoint)\n- reports/T434-project-creation-pipeline-spec_20260909_213034.md (full spec)\n\n[CONSTRAINTS]\n- Use existing Designer or dedicated agent for whitepaper generation\n- Project Chat should be separate from Hub chat\n- Messages tied to specific project (project_id)\n- Star rating injected prompt per spec\n\n[WHAT]\nImplement Project Chat agent integration. Connect the Project Chat panel to a whitepaper drafting agent that can generate/refine whitepapers based on user input. Add API endpoint for project-specific chat.",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-09T22:04:46.846684",
-      "started_at": "2026-09-09T22:04:47.420627",
-      "completed_at": "2026-09-09T22:07:34.705184",
-      "claimed_by": "Programmer",
-      "claimed_at": "2026-09-09T22:04:47.420627",
-      "claimed_process_id": null,
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 1588,
-          "skills": 0,
-          "context_md": 0,
-          "task_prompt": 1261
-        }
-      },
-      "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
-      },
-      "friction": null
-    },
-    {
-      "id": "T440",
-      "description": "[CONTEXT]\nUser is testing Project Chat and encountered error: \"Error: 'Project Name'\" when submitting project description. The Project Chat panel seems to have a validation issue - requiring project name field or similar.\n\nUser's project description: \"Calculator Crush - click highlighted calculator buttons fast, lifebar drains faster over time, good button = +life, wrong = -life + reset equation, valid equations only, enter adds result to score, crush calculator when exceeding int32, babylon.js, difficulty modes\"\n\n[FILES]\n- studio-projects.js (Project Chat send function, validation)\n- server_modules/routes.py (project chat endpoint)\n- studio/project_chat.py (whitepaper agent)\n\n[CONSTRAINTS]\n- Error mentions 'Project Name' - likely form validation issue\n- User already has project description ready\n- Should work without requiring separate project name field (derive from description)\n\n[WHAT]\nFix the \"Error: 'Project Name'\" error in Project Chat. Debug the validation and ensure users can submit project descriptions without hitting this error.",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-09T22:15:06.809480",
-      "started_at": "2026-09-09T22:15:10.163830",
-      "completed_at": "2026-09-09T22:16:09.291571",
-      "claimed_by": "Programmer",
-      "claimed_at": "2026-09-09T22:15:10.163830",
-      "claimed_process_id": null,
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 1588,
-          "skills": 0,
-          "context_md": 0,
-          "task_prompt": 1171
-        }
-      },
-      "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
-      },
-      "friction": null
-    },
-    {
-      "id": "T444",
-      "description": "[CONTEXT] BOSS receives full context stack (### RECENT, ## CONTEXT, ## TASK, memory pointers, role constraints) on every incremental prompt. This causes redundant context reloading and wasted tokens.\n\n[CONSTRAINTS] \n- BOSS should receive full context only ONCE on initialization\n- Incremental prompts should contain ONLY ### RECENT (new user message + last response)\n- Must preserve ability to access memory/file tree when needed via MCP tools\n\n[WHAT] Refactor BOSS prompt injection to separate initial context load from incremental updates. Investigate how prompts are currently assembled and optimize to reduce context duplication.",
+      "id": "T596",
+      "description": "[F] studio/core/tasks.py\n[>] Count total functions in studio/core/tasks.py",
       "assignee": "Code",
       "status": "approved",
       "dependencies": [],
       "error": null,
       "retry_count": 0,
       "backend": null,
-      "created_at": "2026-09-10T19:00:26.354175",
-      "started_at": "2026-09-10T19:00:26.930205",
-      "completed_at": "2026-09-10T19:02:59.042614",
+      "created_at": "2026-09-11T13:31:59.789504",
+      "started_at": "2026-09-11T13:32:17.350841",
+      "completed_at": "2026-09-11T13:32:25.360807",
       "claimed_by": "Code",
-      "claimed_at": "2026-09-10T19:00:26.930205",
+      "claimed_at": "2026-09-11T13:32:17.350841",
       "claimed_process_id": null,
       "execution": {
-        "errors": [],
+        "errors": [
+          "MCP: {'type': 'system', 'subtype': 'init', 'cwd': 'C:\\\\"
+        ],
         "context_injected": {
-          "role_md": 737,
+          "role_md": 888,
           "skills": 0,
           "context_md": 0,
-          "task_prompt": 750
-        }
+          "task_prompt": 244
+        },
+        "num_turns": 1,
+        "num_tool_uses": 0,
+        "duration_ms": 2325
       },
       "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
+        "input_tokens": 15251,
+        "output_tokens": 36,
+        "cache_creation_tokens": 15285,
+        "cache_read_tokens": 15248,
+        "usd": 0.06244215
       },
-      "friction": null
+      "friction": "tool_error"
     },
     {
-      "id": "T445",
-      "description": "[CONTEXT] User expects agent names to display with a \"Mr\" prefix in hub chat (e.g., \"Mr Text\" instead of just \"Text\"). Backend agent names should NOT change.\n\n[CONSTRAINTS] \n- Only modify DISPLAY names, never backend agent names\n- Search for where agent names are rendered in chat/hub UI\n- Find if this feature exists, partially exists, or is missing\n\n[WHAT] Find where and how agent names are displayed in the hub chat interface. Determine if prefix feature (Mr, Ms, etc.) exists and if it's working.",
-      "assignee": "Research",
+      "id": "T597",
+      "description": "[F] studio/core/tasks.py\n[>] List all function names from studio/core/tasks.py",
+      "assignee": "Code",
       "status": "approved",
-      "dependencies": [],
+      "dependencies": [
+        "T596"
+      ],
       "error": null,
       "retry_count": 0,
       "backend": null,
-      "created_at": "2026-09-10T19:18:04.300025",
-      "started_at": "2026-09-10T19:18:05.514021",
-      "completed_at": "2026-09-10T19:18:43.563294",
-      "claimed_by": "Research",
-      "claimed_at": "2026-09-10T19:18:05.514021",
+      "created_at": "2026-09-11T13:32:00.575632",
+      "started_at": "2026-09-11T13:32:25.412136",
+      "completed_at": "2026-09-11T13:32:36.480409",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T13:32:25.412136",
       "claimed_process_id": null,
       "execution": {
-        "errors": [],
+        "errors": [
+          "MCP: {'type': 'system', 'subtype': 'init', 'cwd': 'C:\\\\"
+        ],
         "context_injected": {
-          "role_md": 809,
+          "role_md": 888,
           "skills": 0,
           "context_md": 0,
-          "task_prompt": 618
-        }
+          "task_prompt": 248
+        },
+        "num_turns": 1,
+        "num_tool_uses": 0,
+        "duration_ms": 4758
       },
       "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
+        "input_tokens": 15251,
+        "output_tokens": 197,
+        "cache_creation_tokens": 15435,
+        "cache_read_tokens": 15248,
+        "usd": 0.06541965
       },
-      "friction": null
+      "friction": "tool_error"
     },
     {
-      "id": "T446",
-      "description": "[CONTEXT] \"Mr\" prefix feature exists at studio.js:211 and works in some places, but user sees nothing in hub chat interface. Backend names must stay unchanged.\n\n[FILES] studio.js:211 (prefix logic location)\n\n[CONSTRAINTS]\n- Only modify DISPLAY in chat UI, never backend agent names\n- Prefix should show: \"Mr Text\", \"Mr Code\", etc. (except BOSS and user)\n- Agent panel/cards use raw names (keep correct)\n\n[WHAT] Debug why \"Mr\" prefix isn't appearing in hub chat messages. Fix the display logic so prefix shows correctly.",
+      "id": "T598",
+      "description": "[F] studio/core/tasks.py\n[>] Calculate average lines per function in studio/core/tasks.py",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [
+        "T597"
+      ],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-11T13:32:01.267565",
+      "started_at": "2026-09-11T13:32:36.540423",
+      "completed_at": "2026-09-11T13:33:02.557004",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T13:32:36.540423",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [
+          "MCP: {'type': 'system', 'subtype': 'init', 'cwd': 'C:\\\\"
+        ],
+        "context_injected": {
+          "role_md": 888,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 259
+        },
+        "num_turns": 4,
+        "num_tool_uses": 0,
+        "duration_ms": 20445
+      },
+      "cost": {
+        "input_tokens": 113333,
+        "output_tokens": 626,
+        "cache_creation_tokens": 20377,
+        "cache_read_tokens": 113315,
+        "usd": 0.11985225
+      },
+      "friction": "tool_error"
+    },
+    {
+      "id": "T601",
+      "description": "[F] studio/agents/boss/tools.py, studio/core/tasks.py\n[>] Add default assignee 'Code' when task assignee field is empty",
       "assignee": "Code",
       "status": "approved",
       "dependencies": [],
       "error": null,
       "retry_count": 0,
       "backend": null,
-      "created_at": "2026-09-10T19:21:25.934875",
-      "started_at": "2026-09-10T19:21:27.673955",
-      "completed_at": "2026-09-10T19:22:26.739357",
+      "created_at": "2026-09-11T13:35:06.734707",
+      "started_at": "2026-09-11T13:35:07.688539",
+      "completed_at": "2026-09-11T13:35:36.744328",
       "claimed_by": "Code",
-      "claimed_at": "2026-09-10T19:21:27.673955",
+      "claimed_at": "2026-09-11T13:35:07.688539",
       "claimed_process_id": null,
       "execution": {
-        "errors": [],
+        "errors": [
+          "MCP: {'type': 'system', 'subtype': 'init', 'cwd': 'C:\\\\"
+        ],
         "context_injected": {
-          "role_md": 737,
+          "role_md": 888,
           "skills": 0,
           "context_md": 0,
-          "task_prompt": 636
-        }
+          "task_prompt": 289
+        },
+        "num_turns": 6,
+        "num_tool_uses": 0,
+        "duration_ms": 23539
       },
       "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
+        "input_tokens": 198742,
+        "output_tokens": 766,
+        "cache_creation_tokens": 22971,
+        "cache_read_tokens": 198714,
+        "usd": 0.15732944999999998
       },
-      "friction": null
+      "friction": "tool_error"
     },
     {
-      "id": "T447",
-      "description": "[CONTEXT] User expects per-agent token livestream/broadcast on tasks (showing token usage in real-time as agents work). Currently not visible in UI.\n\n[CONSTRAINTS]\n- Feature should show live token count per agent during task execution\n- Should appear on task display/status\n- Should not affect backend task processing\n\n[WHAT] Find where token livestream feature should be implemented. Determine if it exists, is partially implemented, or is completely missing. Locate relevant code for token broadcast/streaming logic.",
-      "assignee": "Research",
+      "id": "T602",
+      "description": "[F] server_modules/, studio/, backends/\n[>] Find where instruction footer is crafted in server and replace with compact MCP tools reference",
+      "assignee": "Code",
       "status": "approved",
       "dependencies": [],
       "error": null,
       "retry_count": 0,
       "backend": null,
-      "created_at": "2026-09-10T19:22:48.046167",
-      "started_at": "2026-09-10T19:22:49.840539",
-      "completed_at": "2026-09-10T19:23:36.899743",
-      "claimed_by": "Research",
-      "claimed_at": "2026-09-10T19:22:49.840539",
+      "created_at": "2026-09-11T13:46:16.069532",
+      "started_at": "2026-09-11T13:46:17.197743",
+      "completed_at": "2026-09-11T13:47:01.312586",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T13:46:17.197743",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [
+          "MCP: {'type': 'system', 'subtype': 'init', 'cwd': 'C:\\\\"
+        ],
+        "context_injected": {
+          "role_md": 888,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 309
+        },
+        "num_turns": 16,
+        "num_tool_uses": 0,
+        "duration_ms": 38692
+      },
+      "cost": {
+        "input_tokens": 298196,
+        "output_tokens": 1514,
+        "cache_creation_tokens": 18759,
+        "cache_read_tokens": 298140,
+        "usd": 0.18266625000000003
+      },
+      "friction": "tool_error"
+    },
+    {
+      "id": "T604",
+      "description": "[F] studio/core/tasks.py\n[>] Count total functions in studio/core/tasks.py",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-11T13:57:11.166153",
+      "started_at": "2026-09-11T13:57:13.695067",
+      "completed_at": "2026-09-11T13:57:30.693195",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T13:57:13.695067",
       "claimed_process_id": null,
       "execution": {
         "errors": [],
         "context_injected": {
-          "role_md": 809,
+          "role_md": 888,
           "skills": 0,
           "context_md": 0,
-          "task_prompt": 635
-        }
+          "task_prompt": 327
+        },
+        "num_turns": 3,
+        "num_tool_uses": 0,
+        "duration_ms": 12153
       },
       "cost": {
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "cache_creation_tokens": 0,
-        "cache_read_tokens": 0,
-        "usd": 0.0
+        "input_tokens": 74098,
+        "output_tokens": 240,
+        "cache_creation_tokens": 15244,
+        "cache_read_tokens": 74085,
+        "usd": 0.08302949999999999
+      },
+      "friction": null
+    },
+    {
+      "id": "T605",
+      "description": "[F] studio/core/tasks.py\n[>] List all function names from studio/core/tasks.py",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [
+        "T604"
+      ],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-11T13:57:12.032167",
+      "started_at": "2026-09-11T13:57:30.752209",
+      "completed_at": "2026-09-11T13:57:44.809309",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T13:57:30.752209",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 888,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 331
+        },
+        "num_turns": 1,
+        "num_tool_uses": 0,
+        "duration_ms": 8726
+      },
+      "cost": {
+        "input_tokens": 15251,
+        "output_tokens": 646,
+        "cache_creation_tokens": 15448,
+        "cache_read_tokens": 15248,
+        "usd": 0.0722034
+      },
+      "friction": null
+    },
+    {
+      "id": "T606",
+      "description": "[F] studio/core/tasks.py\n[>] Calculate average lines per function in studio/core/tasks.py",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [
+        "T605"
+      ],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-11T13:57:12.814075",
+      "started_at": "2026-09-11T13:57:44.866383",
+      "completed_at": "2026-09-11T13:57:58.886382",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T13:57:44.866383",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 888,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 342
+        },
+        "num_turns": 2,
+        "num_tool_uses": 0,
+        "duration_ms": 8279
+      },
+      "cost": {
+        "input_tokens": 46744,
+        "output_tokens": 213,
+        "cache_creation_tokens": 17265,
+        "cache_read_tokens": 46736,
+        "usd": 0.08198355
+      },
+      "friction": null
+    },
+    {
+      "id": "T608",
+      "description": "[>] Cancel T607 - Projects tab work halted",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-11T14:12:22.903426",
+      "started_at": "2026-09-11T14:12:52.697246",
+      "completed_at": "2026-09-11T14:13:18.766217",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T14:12:52.697246",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 888,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 295
+        },
+        "num_turns": 6,
+        "num_tool_uses": 0,
+        "duration_ms": 21071
+      },
+      "cost": {
+        "input_tokens": 165007,
+        "output_tokens": 533,
+        "cache_creation_tokens": 15361,
+        "cache_read_tokens": 164977,
+        "usd": 0.11518184999999999
+      },
+      "friction": null
+    },
+    {
+      "id": "T609",
+      "description": "[F] studio/core/tasks.py, backends/backends/persistent_claude_cli.py, studio/agents/boss/tools.py\n[X] Graceful shutdown only - don't force kill; Preserve partial results if any; Mark task as CANCELLED with reason\n[>] Implement agent task termination - allow BOSS to stop agents mid-execution",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-11T14:14:28.439170",
+      "started_at": "2026-09-11T14:14:29.991750",
+      "completed_at": "2026-09-11T14:18:05.534077",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-11T14:14:29.991750",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 888,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 544
+        },
+        "num_turns": 45,
+        "num_tool_uses": 0,
+        "duration_ms": 210832
+      },
+      "cost": {
+        "input_tokens": 1755656,
+        "output_tokens": 9700,
+        "cache_creation_tokens": 43484,
+        "cache_read_tokens": 1755469,
+        "usd": 0.8357666999999998
       },
       "friction": null
     }

@@ -1420,6 +1420,66 @@ button.secondary:hover {
     justify-content: flex-end;
 }
 
+/* Deliverable viewer (T561) */
+.deliverable-link {
+    cursor: pointer;
+    margin-left: 0.5rem;
+    opacity: 0.6;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+}
+
+.deliverable-link:hover {
+    opacity: 1;
+}
+
+.deliverable-modal {
+    max-width: 800px;
+    max-height: 85vh;
+    width: 90%;
+}
+
+.deliverable-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #333;
+}
+
+.deliverable-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #e94560;
+}
+
+.deliverable-close {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 0.5rem;
+}
+
+.deliverable-close:hover {
+    color: #fff;
+}
+
+.deliverable-content {
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #ccc;
+    max-height: calc(85vh - 100px);
+    overflow-y: auto;
+    padding: 1rem;
+    background: #0d1117;
+    border-radius: 0.3rem;
+}
+
 .log-entry {
     margin: 0.2rem 0;
     color: #888;
@@ -1446,33 +1506,39 @@ button.secondary:hover {
     border-radius: 4px;
     border-left: 3px solid var(--agent-color);
     transition: all 0.2s;
+    margin-bottom: 4px;
 }
 
 .agent-card:hover {
-    background: #1a2340;
+    background: #1a2740;
+}
+
+.agent-card.expanded {
+    background: #1a2740;
 }
 
 .agent-card-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 32px;
+    height: 36px;
     padding: 0 12px 0 8px;
     cursor: pointer;
     font-size: 11px;
 }
 
 .agent-card .status-dot {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
-.agent-card .status-dot.idle { background: #666; }
-.agent-card .status-dot.working { background: #2ecc71; animation: pulse 1s infinite; }
-.agent-card .status-dot.thinking { background: #9b59b6; animation: pulse 1.5s infinite; }
-.agent-card .status-dot.rate-limited { background: #e74c3c; }
+/* AA-compliant status colors (4.5:1 contrast minimum) */
+.agent-card .status-dot.idle { background: #8E8E93; }
+.agent-card .status-dot.working { background: #34C759; animation: pulse 1s infinite; }
+.agent-card .status-dot.thinking { background: #AF52DE; animation: pulse 1.5s infinite; }
+.agent-card .status-dot.rate-limited { background: #FF3B30; }
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
@@ -1480,15 +1546,16 @@ button.secondary:hover {
 }
 
 .agent-card .name {
-    font-weight: 500;
-    color: #eee;
+    font-weight: 600;
+    color: #F5F5F7;
     flex-shrink: 0;
+    min-width: 70px;
 }
 
 .agent-card .stats {
     display: flex;
-    gap: 12px;
-    color: #888;
+    gap: 16px;
+    color: #A1A1A6;
     font-size: 10px;
     margin-left: auto;
 }
@@ -1496,25 +1563,103 @@ button.secondary:hover {
 .agent-card .stat {
     display: flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
 }
 
 .agent-card .stat-value {
-    color: #aaa;
+    color: #D1D1D6;
+    font-weight: 500;
+}
+
+.agent-card .stat-value.token-total {
+    color: #5AC8FA;
 }
 
 .agent-card .expand-icon {
-    color: #555;
-    font-size: 9px;
+    color: #636366;
+    font-size: 8px;
     margin-left: 8px;
+    transition: transform 0.2s;
+}
+
+.agent-card.expanded .expand-icon {
+    transform: rotate(180deg);
 }
 
 /* Expanded agent card details */
 .agent-card-details {
-    border-top: 1px solid #0f3460;
-    padding: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.15);
 }
 
+/* Token breakdown grid */
+.agent-token-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.agent-token-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.agent-token-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: #8E8E93;
+    letter-spacing: 0.5px;
+}
+
+.agent-token-value {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* AA-compliant token type colors */
+.agent-token-value.input {
+    color: #64D2FF;  /* Blue - 4.5:1 on dark bg */
+}
+
+.agent-token-value.output {
+    color: #BF5AF2;  /* Purple - 4.5:1 on dark bg */
+}
+
+.agent-token-value.cache-read {
+    color: #30D158;  /* Green - 4.5:1 on dark bg */
+}
+
+.agent-token-value.cache-write {
+    color: #FFD60A;  /* Yellow - 4.5:1 on dark bg */
+}
+
+/* Agent action buttons */
+.agent-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.agent-action-btn {
+    padding: 4px 10px;
+    font-size: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    color: #D1D1D6;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.agent-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #F5F5F7;
+}
+
+/* Legacy support */
 .agent-token-details {
     margin-bottom: 12px;
 }
@@ -1522,14 +1667,14 @@ button.secondary:hover {
 .agent-detail-label {
     font-size: 10px;
     text-transform: uppercase;
-    color: #666;
+    color: #8E8E93;
     margin-bottom: 4px;
     letter-spacing: 0.5px;
 }
 
 .agent-detail-value {
     font-size: 13px;
-    color: #5dade2;
+    color: #64D2FF;
     font-weight: 500;
 }
 
@@ -1551,6 +1696,7 @@ button.secondary:hover {
     white-space: pre-wrap;
     margin: 0;
 }
+
 
 /* ===== EXPLORER TAB ===== */
 .explorer-panel {
@@ -2421,6 +2567,9 @@ button.secondary:hover {
 }
 
 .project-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     padding: 0.6rem 0.8rem;
     margin: 0.3rem 0;
     background: #1a1a2e;
@@ -2428,10 +2577,16 @@ button.secondary:hover {
     border-left: 3px solid #3498db;
     cursor: pointer;
     transition: background 0.2s;
+    position: relative;
 }
 
 .project-item:hover {
     background: #252540;
+}
+
+.project-item.active {
+    background: #0f3460;
+    border-left-color: #e94560;
 }
 
 .project-item.selected {
@@ -2442,6 +2597,16 @@ button.secondary:hover {
 .project-item.archived {
     border-left-color: #666;
     opacity: 0.6;
+}
+
+.project-item-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.project-item-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .project-item-header {
@@ -2469,11 +2634,34 @@ button.secondary:hover {
 }
 
 .project-item-name {
-    font-size: 0.8rem;
-    color: #ccc;
+    font-size: 0.85rem;
+    color: #eee;
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-bottom: 0.1rem;
+}
+
+.project-item-path {
+    font-size: 0.7rem;
+    color: #666;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-archived-badge {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.4rem;
+    background: #e67e22;
+    color: #fff;
+    border-radius: 0.2rem;
+    font-weight: 600;
 }
 
 .project-path-warning {
@@ -2516,15 +2704,46 @@ button.secondary:hover {
 
 .project-details-header {
     display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.project-details-header > div:first-child {
+    display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+}
+
+.project-details-icon {
+    font-size: 2rem;
+}
+
+.project-details-header h2 {
+    font-size: 1.5rem;
+    color: #eee;
+    margin: 0 0 0.2rem 0;
 }
 
 .project-details-header h3 {
     font-size: 1.2rem;
     color: #eee;
     margin: 0;
+}
+
+.project-details-meta {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.project-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.project-actions button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
 }
 
 .project-active-badge {
@@ -2536,7 +2755,41 @@ button.secondary:hover {
     font-weight: 600;
 }
 
-.project-details-meta {
+.project-details-section {
+    margin-bottom: 1.5rem;
+}
+
+.project-details-section h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #888;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: 0.5px;
+}
+
+.project-path-display {
+    background: #16213e;
+    border-radius: 0.4rem;
+    padding: 0.8rem 1rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #3498db;
+    word-break: break-all;
+}
+
+.project-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+.project-details-grid strong {
+    color: #888;
+    font-weight: 500;
+}
+
+.project-details-meta-old {
     background: #16213e;
     border-radius: 0.4rem;
     padding: 0.8rem 1rem;

@@ -2,5 +2,7 @@
   "name": "Video",
   "title": "Video Producer",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#ff5722"
 }

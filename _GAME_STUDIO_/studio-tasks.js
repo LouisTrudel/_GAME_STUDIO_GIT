@@ -77,19 +77,47 @@ function computeAggregateMetrics() {
     let totalTurns = 0;
     let totalToolUses = 0;
     let errorCount = 0;
+    let useAgentStats = false;
 
+    // Primary: Use agent session data (matches agents tab)
+    if (typeof agentStats !== 'undefined' && Object.keys(agentStats).length > 0) {
+        useAgentStats = true;
+        for (const [name, stats] of Object.entries(agentStats)) {
+            totalInputTokens += stats.tokens_input || 0;
+            totalOutputTokens += stats.tokens_output || 0;
+            totalCacheRead += stats.tokens_cache_read || 0;
+            totalCacheCreation += stats.tokens_cache_creation || 0;
+        }
+        // Calculate cost from tokens using Sonnet 4.5 pricing
+        // Input: $3/M, Cache read: $0.30/M, Cache write: $3.75/M, Output: $15/M
+        const inputCost = (totalInputTokens - totalCacheRead) * 3.0 / 1_000_000;
+        const cacheReadCost = totalCacheRead * 0.30 / 1_000_000;
+        const cacheWriteCost = totalCacheCreation * 3.75 / 1_000_000;
+        const outputCost = totalOutputTokens * 15.0 / 1_000_000;
+        totalCost = inputCost + cacheReadCost + cacheWriteCost + outputCost;
+    }
+
+    // Always aggregate task-specific metrics (non-cost)
     tasks.forEach(task => {
-        totalCost += task.cost?.usd || 0;
+        if (!useAgentStats) {
+            totalCost += task.cost?.usd || 0;
+        }
         totalRetries += task.api_retries || 0;
         totalToolErrors += (task.tool_errors?.length || 0);
-        totalInputTokens += task.cost?.input_tokens || 0;
-        totalOutputTokens += task.cost?.output_tokens || 0;
-        totalCacheCreation += task.cost?.cache_creation_tokens || 0;
-        totalCacheRead += task.cost?.cache_read_tokens || 0;
         totalTurns += task.num_turns || 0;
         totalToolUses += task.num_tool_uses || 0;
         if (task.is_error) errorCount++;
     });
+
+    // Fallback: Use task.cost tokens if no agent data
+    if (!useAgentStats) {
+        tasks.forEach(task => {
+            totalInputTokens += task.cost?.input_tokens || 0;
+            totalOutputTokens += task.cost?.output_tokens || 0;
+            totalCacheCreation += task.cost?.cache_creation_tokens || 0;
+            totalCacheRead += task.cost?.cache_read_tokens || 0;
+        });
+    }
 
     return {
         cost: totalCost,
@@ -105,6 +133,7 @@ function computeAggregateMetrics() {
         errors: errorCount
     };
 }
+
 
 function initTaskFilter() {
     const select = document.getElementById('taskFilter');
@@ -211,12 +240,21 @@ function renderHubTasks() {
             ? task.description.substring(0, 60) + '...'
             : task.description;
 
-        // Show live token stream for in_progress tasks
-        let tokenStream = '';
+        // Show token info - live stream for in_progress, breakdown for completed
+        let tokenInfo = '';
         if (task.status === 'in_progress' && liveTokens[task.assignee]) {
             const lt = liveTokens[task.assignee];
             const total = (lt.input || 0) + (lt.output || 0);
-            tokenStream = `<span class="live-token-stream">${formatTokens(total)}</span>`;
+            tokenInfo = `<span class="live-token-stream">${formatTokens(total)}</span>`;
+        } else if (task.cost) {
+            const inp = task.cost.input_tokens || 0;
+            const out = task.cost.output_tokens || 0;
+            const cached = task.cost.cache_read_tokens || 0;
+            const cost = task.cost.usd || 0;
+            if (inp + out > 0) {
+                const tooltip = `Input: ${inp.toLocaleString()}\nOutput: ${out.toLocaleString()}${cached > 0 ? `\nCached: ${cached.toLocaleString()}` : ''}\nCost: $${cost.toFixed(2)}`;
+                tokenInfo = `<span class="task-token-compact" title="${tooltip}">${formatTokens(inp + out)}${cached > 0 ? ` <span style="color:#27ae60">(${formatTokens(cached)})</span>` : ''} <span style="color:#f39c12">$${cost.toFixed(2)}</span></span>`;
+            }
         }
 
         return `
@@ -224,7 +262,7 @@ function renderHubTasks() {
                 <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <span class="hub-task-id">${task.id}</span>
                     <span class="hub-task-agent" style="color: ${agentColor}">${task.assignee}</span>
-                    ${tokenStream}
+                    ${tokenInfo}
                     <span class="hub-task-status ${task.status}">${task.status.replace('_', ' ')}</span>
                 </div>
                 <div class="hub-task-desc" title="${escapeHtml(task.description)}">${escapeHtml(shortDesc)}</div>

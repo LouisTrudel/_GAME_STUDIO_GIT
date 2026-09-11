@@ -1,5 +1,5 @@
 {
-  "counter": 5,
+  "counter": 6,
   "schedules": [
     {
       "id": "SCH001",
@@ -9,16 +9,16 @@
       "interval_human": "1d",
       "schedule_type": "tasks",
       "status": "paused",
-      "last_run": "2026-09-09T09:52:42.024359",
-      "next_run": "2026-09-10T09:52:42.024359",
-      "run_count": 6,
-      "last_run_status": "none",
+      "last_run": "2026-09-11T11:59:41.410565",
+      "next_run": "2026-09-12T11:59:41.410565",
+      "run_count": 9,
+      "last_run_status": "success",
       "last_run_error": null,
       "order": 0,
       "tasks": [
         {
-          "description": "[CONTEXT] Review codebase organization and structure. Focus on architecture, not bugs.\n\n[FILES] studio/**/*.py, server_modules/**/*.py, backends/**/*.py\n\n[CONSTRAINTS] ONE suggestion only. Use create_suggestion with category 'codebase'.\n\n[WHAT] Audit for:\n\n**ORGANIZATION:**\n- Files >500 lines that should be split\n- Modules in wrong directories\n- Inconsistent naming (mixedCase vs snake_case)\n- Dead/unused files\n- Missing __init__.py or improper exports\n\n**ARCHITECTURE:**\n- God classes (>10 public methods)\n- Circular imports between modules\n- Business logic in wrong layer (routes doing DB work, etc.)\n- Tight coupling between unrelated modules\n\n**SKIP:**\n- Code bugs (QA handles those)\n- Style preferences\n- Missing docstrings\n- Type hints\n\nOutput: create_suggestion titled 'Structure Review - {date}' listing 3-5 issues with file paths and recommended reorganization.",
-          "assignee": "Taxonomy",
+          "description": "[F] studio/**/*.py, server_modules/**/*.py, backends/**/*.py\n[X] ONE suggestion only. Skip code bugs (Audit handles), style preferences, docstrings, type hints.\n[>] Review codebase organization: files >500 lines, modules in wrong directories, inconsistent naming, dead files, god classes, circular imports, business logic in wrong layer. Output: create_suggestion titled 'Structure Review - {date}' listing 3-5 issues with file paths and fixes.",
+          "assignee": "Structure",
           "context": "",
           "skills": [],
           "output": "hub",
@@ -26,50 +26,36 @@
         }
       ],
       "created_task_ids": [
-        "T375"
+        "T574"
       ]
     },
     {
       "id": "SCH003",
       "name": "Daily Bug Audit",
-      "description": "QA analyzes code for bugs and creates suggestion for human review",
+      "description": "Audit analyzes code for bugs and creates suggestion for human review",
       "interval_seconds": 86400,
       "interval_human": "1d",
       "schedule_type": "tasks",
       "status": "paused",
-      "last_run": null,
-      "next_run": "2026-09-10T10:00:00",
-      "run_count": 0,
-      "last_run_status": "none",
+      "last_run": "2026-09-11T12:56:11.221966",
+      "next_run": "2026-09-12T12:56:11.221966",
+      "run_count": 2,
+      "last_run_status": "success",
       "last_run_error": null,
       "order": 0,
       "tasks": [
         {
-          "description": "[CONTEXT] Find real bugs that would fail code review. Trace execution flow before reporting.\n\n[FILES] studio/**/*.py, server_modules/**/*.py, backends/**/*.py\n\n[CONSTRAINTS] ONE suggestion only. Only report bugs you can prove. Use create_suggestion with category 'codebase'.\n\n[WHAT] Audit for:\n\n**EXECUTION BUGS:**\n- Unhandled exceptions that crash (trace the call path)\n- Resource leaks (files, connections not closed)\n- Logic errors (off-by-one, wrong operator, inverted condition)\n- Null/None access without guards\n\n**CONCURRENCY (trace carefully):**\n- Race conditions in ASYNC code (not sync)\n- Thread-unsafe shared state in ThreadPoolExecutor callbacks\n- Missing locks on mutable globals accessed from multiple threads\n\n**ERROR HANDLING:**\n- External calls (API, file I/O) without try/except\n- Swallowed exceptions (except: pass)\n- Error states that leave system inconsistent\n\n**BEFORE REPORTING:**\n- Trace the actual execution flow\n- Confirm the bug can actually happen\n- Identify sync vs async code\n\n**SKIP:**\n- Structure issues (Taxonomy handles those)\n- Style preferences\n- Theoretical issues that can't happen\n\nOutput: create_suggestion titled 'Bug Audit - {date}' listing 3-5 confirmed bugs with file:line, execution trace, and fix.",
-          "assignee": "QA",
+          "description": "[F] studio/**/*.py, server_modules/**/*.py, backends/**/*.py\n[X] ONE suggestion only. Only report provable bugs. Skip structure issues (Taxonomy handles), style preferences, theoretical issues.\n[>] Find real bugs: unhandled exceptions, resource leaks, logic errors, null access, race conditions in async code, swallowed exceptions. Trace execution flow before reporting. Output: create_suggestion titled 'Bug Audit - {date}' listing 3-5 confirmed bugs with file:line, execution trace, and fix.",
+          "assignee": "Audit",
           "context": "",
           "skills": [],
           "output": "hub",
           "parallel": false
         }
       ],
-      "created_task_ids": []
-    },
-    {
-      "id": "SCH002",
-      "name": "Git Auto-Commit",
-      "description": "Automatically commit and push all changes to git with auto-generated commit message",
-      "interval_seconds": 86400,
-      "interval_human": "1d",
-      "schedule_type": "script",
-      "status": "paused",
-      "last_run": "2026-09-09T09:53:17.921901",
-      "next_run": "2026-09-10T09:53:17.921901",
-      "run_count": 2,
-      "last_run_status": "none",
-      "last_run_error": null,
-      "order": 0,
-      "script_module": null
+      "created_task_ids": [
+        "T582"
+      ]
     }
   ]
 }

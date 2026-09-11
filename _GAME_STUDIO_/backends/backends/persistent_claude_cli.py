@@ -66,6 +66,10 @@ class PersistentClaudeCLI(Backend):
     # Class-level: tracks which agents are initialized THIS boot
     # Resets when module reloads (server restart)
     _initialized: dict[str, bool] = {}
+    _initialized_sessions: dict[str, bool] = {}
+    _task_counts: dict[str, int] = {}
+    _running_processes: dict[str, subprocess.Popen] = {}  # agent_name -> process
+    _lock = threading.Lock()
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
@@ -93,8 +97,19 @@ class PersistentClaudeCLI(Backend):
         self.last_cache_read_tokens = 0
         self.last_is_error = False
         self.last_error_message = None
+        self._tool_use_count = 0
         self._streaming_input_tokens = 0
         self._streaming_output_tokens = 0
+        self._friction_events = []  # Detailed friction log for deliverables
+        self._current_turn = 0
+
+    def _add_friction(self, category: str, detail: str):
+        """Record a friction event with current turn number."""
+        self._friction_events.append({
+            "turn": self._current_turn,
+            "category": category,
+            "detail": detail[:100]
+        })
 
     def _broadcast_live_tokens(self, input_tokens: int, output_tokens: int):
         """Broadcast live token count during streaming."""
@@ -162,6 +177,12 @@ class PersistentClaudeCLI(Backend):
             self.last_is_error = True
             self.last_error_message = str(e)
             logger.error("[%s] CLI error: %s\n%s", self.agent_name, e, traceback.format_exc())
+            # Broadcast error to UI
+            try:
+                from server_modules.broadcast import broadcast_error_sync
+                broadcast_error_sync(self.agent_name, f"{type(e).__name__}: {e}")
+            except ImportError:
+                pass  # Server modules not available
             return f"Error: {type(e).__name__}: {e}"
 
     def _build_full_prompt(self, messages: list[dict], system_prompt: str) -> str:
@@ -196,21 +217,41 @@ class PersistentClaudeCLI(Backend):
                 pass
 
     def _run_with_retry(self, temp_path: str, prompt: str, is_init: bool) -> str:
-        """Run with exponential backoff retry."""
+        """Run with exponential backoff retry for transient errors."""
         delay = INITIAL_DELAY
         last_error = None
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                return self._run_subprocess(temp_path, prompt, is_init)
-            except RetryableError as e:
-                last_error = e
-                if attempt < MAX_RETRIES:
-                    logger.warning("[%s] Retry %d/%d: %s", self.agent_name, attempt, MAX_RETRIES, e)
+                result = self._run_subprocess(temp_path, prompt, is_init)
+
+                # Check for empty response that might indicate MCP failure
+                if result == "No response from Claude CLI" and attempt < MAX_RETRIES:
+                    logger.warning("[%s] Empty response, retrying %d/%d", self.agent_name, attempt, MAX_RETRIES)
                     time.sleep(delay)
                     delay *= BACKOFF_MULTIPLIER
+                    continue
 
-        raise last_error
+                return result
+
+            except (RetryableError, MCPConnectionError) as e:
+                last_error = e
+                error_type = "MCP" if isinstance(e, MCPConnectionError) else "Transient"
+                if attempt < MAX_RETRIES:
+                    logger.warning("[%s] %s error, retry %d/%d: %s", self.agent_name, error_type, attempt, MAX_RETRIES, e)
+                    time.sleep(delay)
+                    delay *= BACKOFF_MULTIPLIER
+                else:
+                    # Final attempt failed - broadcast error
+                    try:
+                        from server_modules.broadcast import broadcast_error_sync
+                        broadcast_error_sync(self.agent_name, f"{error_type}: {e}")
+                    except ImportError:
+                        pass
+
+        if last_error:
+            raise last_error
+        return "No response from Claude CLI (retries exhausted)"
 
     def _run_subprocess(self, temp_path: str, prompt: str, is_init: bool) -> str:
         """Run single Claude CLI subprocess."""
@@ -246,11 +287,11 @@ class PersistentClaudeCLI(Backend):
         cmd.extend(["--allowedTools", allowed])
 
         # Limit exploration to prevent token explosion
-        # Configurable via self.max_turns, defaults based on role
+        # Reserve 2 turns for formatting (work gets max_turns - 2)
         if hasattr(self, 'max_turns') and self.max_turns:
-            max_turns = self.max_turns
+            max_turns = max(self.max_turns - 2, 3)  # Reserve 2, min 3
         else:
-            max_turns = 5 if self.agent_name == "BOSS" else 30
+            max_turns = 5 if self.agent_name == "BOSS" else 28  # 30-2 for employees
         cmd.extend(["--max-turns", str(max_turns)])
 
         # Model selection - use haiku for cheaper exploration
@@ -275,33 +316,49 @@ class PersistentClaudeCLI(Backend):
             shell=shell,
         )
 
-        # Send input
-        try:
-            process.stdin.write(prompt_content)
-            process.stdin.close()
-        except BrokenPipeError:
-            process.wait()
-            stderr = process.stderr.read() if process.stderr else ""
-            raise RuntimeError(f"CLI exited early: {stderr[:200]}")
+        # Track running process for graceful termination
+        with PersistentClaudeCLI._lock:
+            PersistentClaudeCLI._running_processes[self.agent_name] = process
 
-        # Collect output
-        return self._collect_output(process, prompt)
+        try:
+            # Send input
+            try:
+                process.stdin.write(prompt_content)
+                process.stdin.close()
+            except BrokenPipeError:
+                process.wait()
+                stderr = process.stderr.read() if process.stderr else ""
+                raise RuntimeError(f"CLI exited early: {stderr[:200]}")
+
+            # Collect output
+            return self._collect_output(process, prompt)
+        finally:
+            # Remove from tracking when done
+            with PersistentClaudeCLI._lock:
+                PersistentClaudeCLI._running_processes.pop(self.agent_name, None)
 
     def _collect_output(self, process: subprocess.Popen, prompt: str) -> str:
-        """Collect and parse stream-json output."""
+        """Collect and parse stream-json output with immediate event processing."""
         text_content = []
-        result_data = None
+        result_data = [None]  # Use list for nonlocal mutation in thread
         last_output_time = time.time()
-
-        stdout_lines = []
         stderr_lines = []
 
-        # Reader threads
+        # Reader threads - stdout now processes events immediately
         def read_stdout():
             nonlocal last_output_time
             for line in process.stdout:
                 last_output_time = time.time()
-                stdout_lines.append(line.strip())
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                    self._process_event(event, text_content)
+                    if event.get("type") == "result":
+                        result_data[0] = event
+                except json.JSONDecodeError:
+                    pass
 
         def read_stderr():
             nonlocal last_output_time
@@ -327,24 +384,27 @@ class PersistentClaudeCLI(Backend):
         # Check exit code
         if process.returncode != 0:
             error = "\n".join(stderr_lines)
-            if "rate limit" in error.lower() or "overloaded" in error.lower():
+            error_lower = error.lower()
+
+            # Rate limit - retryable
+            if "rate limit" in error_lower or "overloaded" in error_lower:
                 raise RetryableError(f"Rate limited: {error[:100]}")
+
+            # MCP connection error - retryable
+            if any(pattern in error_lower for pattern in MCP_ERROR_PATTERNS):
+                raise MCPConnectionError(f"MCP connection failed: {error[:150]}")
+
+            # Exit code 1 with context/token keywords = out of tokens
+            if process.returncode == 1:
+                if any(kw in error_lower for kw in ["context", "token", "limit", "exceeded", "capacity"]):
+                    raise OutOfTokensError(
+                        f"Out of tokens: Context limit exceeded. Consider breaking task into smaller steps. ({error[:100]})"
+                    )
+
             raise RuntimeError(f"CLI error (code {process.returncode}): {error[:200]}")
 
-        # Parse events
-        for line in stdout_lines:
-            if not line:
-                continue
-            try:
-                event = json.loads(line)
-                self._process_event(event, text_content)
-                if event.get("type") == "result":
-                    result_data = event
-            except json.JSONDecodeError:
-                pass
-
         # Extract result
-        return self._extract_result(result_data, text_content, prompt)
+        return self._extract_result(result_data[0], text_content, prompt)
 
     def _process_event(self, event: dict, text_content: list):
         """Process stream event and accumulate text/metrics."""
@@ -372,8 +432,30 @@ class PersistentClaudeCLI(Backend):
             if event.get("content_block", {}).get("type") == "tool_use":
                 self._tool_use_count += 1
 
-        elif event_type == "system" and event.get("subtype") == "api_retry":
-            self.last_retries += 1
+        elif event_type == "system":
+            subtype = event.get("subtype", "")
+            if subtype == "api_retry":
+                self.last_retries += 1
+                self._add_friction("retry", f"API retry #{self.last_retries}")
+            # Detect actual MCP errors (not init/normal events)
+            elif subtype == "mcp_error":
+                error_msg = event.get("message", str(event))
+                logger.warning("[%s] MCP error: %s", self.agent_name, error_msg[:100])
+                self.last_tool_errors.append(f"MCP: {error_msg[:50]}")
+                self._add_friction("mcp_error", error_msg[:80])
+            # Track turn progression
+            elif subtype == "turn_start":
+                self._current_turn += 1
+
+        elif event_type == "tool_result":
+            # Check for MCP tool failures in results
+            result = event.get("result", {})
+            if isinstance(result, dict) and result.get("is_error"):
+                error_content = str(result.get("content", ""))
+                self._add_friction("tool_error", error_content[:80])
+                if any(p in error_content.lower() for p in MCP_ERROR_PATTERNS):
+                    logger.warning("[%s] MCP tool failed: %s", self.agent_name, error_content[:100])
+                    self.last_tool_errors.append(f"MCP tool: {error_content[:50]}")
 
     def _extract_result(self, result_data: dict, text_content: list, prompt: str) -> str:
         """Extract final result and metrics."""
@@ -441,6 +523,12 @@ class PersistentClaudeCLI(Backend):
 
     def get_quality_metrics(self) -> dict:
         """Return quality metrics from last call."""
+        # Add high turn usage friction if applicable
+        if hasattr(self, 'max_turns') and self.max_turns and self._current_turn > 0:
+            turn_pct = (self._current_turn / self.max_turns) * 100
+            if turn_pct >= 80:
+                self._add_friction("high_turns", f"Used {self._current_turn}/{self.max_turns} turns ({turn_pct:.0f}%)")
+
         return {
             "retries": self.last_retries,
             "tool_errors": self.last_tool_errors.copy(),
@@ -455,6 +543,7 @@ class PersistentClaudeCLI(Backend):
             "is_error": self.last_is_error,
             "error_message": self.last_error_message,
             "num_tool_uses": self._tool_use_count,
+            "friction_events": self._friction_events.copy(),
         }
 
     def reset_session(self):
@@ -472,7 +561,7 @@ class PersistentClaudeCLI(Backend):
 
         Returns True if operation succeeded.
         """
-        if not self._is_initialized():
+        if not self.is_initialized():
             logger.debug("[%s] Not initialized, skipping compact", self.agent_name)
             return False
 
@@ -529,10 +618,95 @@ class PersistentClaudeCLI(Backend):
             cls._task_counts.clear()
         logger.info("All sessions marked for reinitialization")
 
+    @classmethod
+    def terminate_agent(cls, agent_name: str, timeout: int = 5) -> dict:
+        """
+        Gracefully terminate a running agent process.
+        
+        Args:
+            agent_name: Name of agent to terminate
+            timeout: Seconds to wait for graceful shutdown before force kill
+            
+        Returns:
+            dict with 'success', 'message', 'terminated'
+        """
+        with cls._lock:
+            process = cls._running_processes.get(agent_name)
+        
+        if not process:
+            return {
+                'success': False,
+                'message': f'Agent {agent_name} is not currently running',
+                'terminated': False
+            }
+        
+        logger.info(f"[TERMINATE] Stopping {agent_name} (PID: {process.pid})")
+        
+        try:
+            # Try graceful termination first
+            process.terminate()
+            
+            # Wait for graceful shutdown
+            try:
+                process.wait(timeout=timeout)
+                logger.info(f"[TERMINATE] {agent_name} stopped gracefully")
+                return {
+                    'success': True,
+                    'message': f'Agent {agent_name} terminated gracefully',
+                    'terminated': True
+                }
+            except subprocess.TimeoutExpired:
+                # Force kill if still running
+                logger.warning(f"[TERMINATE] {agent_name} did not stop gracefully, force killing")
+                process.kill()
+                process.wait()
+                return {
+                    'success': True,
+                    'message': f'Agent {agent_name} force killed after timeout',
+                    'terminated': True
+                }
+        except Exception as e:
+            logger.error(f"[TERMINATE] Failed to terminate {agent_name}: {e}")
+            return {
+                'success': False,
+                'message': f'Failed to terminate {agent_name}: {e}',
+                'terminated': False
+            }
+        finally:
+            # Clean up tracking
+            with cls._lock:
+                cls._running_processes.pop(agent_name, None)
+
 
 class RetryableError(Exception):
     """Error that should trigger retry."""
     pass
+
+
+class OutOfTokensError(Exception):
+    """CLI ran out of tokens (exit code 1 with context limit message)."""
+    pass
+
+
+class MCPConnectionError(Exception):
+    """MCP server connection failed - should trigger retry."""
+    pass
+
+
+# MCP error patterns to detect connection issues
+MCP_ERROR_PATTERNS = [
+    "mcp server",
+    "mcp connection",
+    "failed to connect",
+    "connection refused",
+    "connection reset",
+    "server disconnected",
+    "transport error",
+    "stdio transport",
+    "spawn error",
+    "econnrefused",
+    "epipe",
+]
 
 
 # =============================================================================

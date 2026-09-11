@@ -110,20 +110,25 @@ ARCHIVE_FILE = DEFAULT_ARCHIVE_FILE
 DELIVERABLES_DIR = DEFAULT_DELIVERABLES_DIR
 
 
-def save_deliverable(task_id: str, content: str, description: str = "", project_name: Optional[str] = None) -> bool:
+def save_deliverable(
+    task_id: str,
+    content: str,
+    description: str = "",
+    project_name: Optional[str] = None,
+    friction_events: Optional[list] = None
+) -> bool:
     """
     Save task deliverable to data/deliverables/T###.md.
 
     Preserves deliverable content permanently for reference and training data.
-
-    T332: Project-aware paths - when project is active, saves to
-    projects/<project_id>/deliverables/T###.md
+    Appends friction log if any friction events occurred during execution.
 
     Args:
         task_id: Task ID (e.g., "T163")
         content: The deliverable content (agent's response)
         description: Optional task description for the header
         project_name: Optional project folder name for project-specific storage
+        friction_events: Optional list of friction events from execution
 
     Returns:
         True if saved successfully, False otherwise
@@ -141,8 +146,18 @@ def save_deliverable(task_id: str, content: str, description: str = "", project_
             header += f"> {description[:200]}{'...' if len(description) > 200 else ''}\n\n"
         header += f"*Completed: {datetime.now().isoformat()}*\n\n---\n\n"
 
+        # Build friction log if events exist
+        friction_section = ""
+        if friction_events:
+            friction_section = "\n\n---\n\n## Friction Log\n"
+            for evt in friction_events:
+                turn = evt.get("turn", "?")
+                cat = evt.get("category", "unknown")
+                detail = evt.get("detail", "")
+                friction_section += f"- [turn {turn}] {cat}: {detail}\n"
+
         with open(filepath, "w", encoding="utf-8") as f:
-            f.write(header + content)
+            f.write(header + content + friction_section)
 
         logger.info("Saved deliverable: %s", filepath)
         return True
@@ -163,6 +178,7 @@ class TaskStatus(Enum):
     BLOCKED = "blocked"          # Dependency failed
     ERROR = "error"              # Execution error (malformed task, timeout, etc.)
     PARTIAL = "partial"          # Ran out of context - continuation task created
+    CANCELLED = "cancelled"      # Manually stopped mid-execution
 
     # Reserved (not currently used - kept for backwards compatibility)
     COMPLETED = "completed"      # Reserved: would be "awaiting QA review"
@@ -304,10 +320,13 @@ class Task:
             "claimed_at": self.claimed_at.isoformat() if self.claimed_at else None,
             "claimed_process_id": self.claimed_process_id,
 
-            # Execution: errors + context metrics
+            # Execution: errors + context metrics + turn tracking
             "execution": {
                 "errors": self.exec_errors or self.tool_errors,
                 "context_injected": self.exec_context_injected,  # T215: char counts per input source
+                "num_turns": self.exec_num_turns or self.num_turns,
+                "num_tool_uses": self.exec_num_tool_uses or self.num_tool_uses,
+                "duration_ms": self.exec_duration_ms or self.duration_ms,
             },
 
             # Cost tracking (full - needed for optimization)
@@ -760,8 +779,14 @@ class TaskManager:
             return True
         return False
 
-    def complete_task(self, task_id: str, result: str) -> bool:
-        """Mark task as completed (approved) with result (thread-safe)."""
+    def complete_task(self, task_id: str, result: str, friction_events: list = None) -> bool:
+        """Mark task as completed (approved) with result (thread-safe).
+
+        Args:
+            task_id: Task ID to complete
+            result: Agent's response/deliverable
+            friction_events: Optional list of friction events from execution
+        """
         with self._lock:
             task = self.tasks.get(task_id)
             if not task:
@@ -779,8 +804,8 @@ class TaskManager:
             self._save_tasks()
             # Track metrics
             _track_completed(task_id, task.assignee)
-            # T163/T332: Save deliverable (project-aware path)
-            save_deliverable(task_id, result, task.description, self._project_name)
+            # T163/T332: Save deliverable (project-aware path) with friction log
+            save_deliverable(task_id, result, task.description, self._project_name, friction_events)
             # T248: Log to memory hot tier
             _log_to_memory(task_id, task, "success")
             return True
@@ -1049,13 +1074,45 @@ class TaskManager:
             return None
 
     def _update_dependents(self, completed_task_id: str):
-        """Check if any pending tasks can now be started."""
+        """Check if any pending or blocked tasks can now be started.
+
+        BLOCKED tasks transition to:
+        - READY if all dependencies satisfied
+        - PENDING if some dependencies still pending (unblocked but waiting)
+        """
+        changed_count = 0
         for task in self.tasks.values():
-            if task.status == TaskStatus.PENDING:
+            # Check both PENDING and BLOCKED tasks - blocked tasks may become
+            # ready if their failed dependency was retried and succeeded
+            if task.status in (TaskStatus.PENDING, TaskStatus.BLOCKED):
                 if completed_task_id in task.dependencies:
-                    # Reuse shared logic for consistency
                     if self._all_dependencies_satisfied(task.dependencies):
                         task.status = TaskStatus.READY
+                        changed_count += 1
+                        logger.info("Task %s now READY - all dependencies satisfied", task.id)
+                    elif task.status == TaskStatus.BLOCKED:
+                        # Unblock but not ready - other deps still pending
+                        # Check no remaining deps are failed/error/cancelled
+                        has_failed_dep = False
+                        for dep_id in task.dependencies:
+                            dep = self.tasks.get(dep_id)
+                            if dep and dep.status in (TaskStatus.FAILED, TaskStatus.ERROR, TaskStatus.CANCELLED):
+                                has_failed_dep = True
+                                break
+                        if not has_failed_dep:
+                            task.status = TaskStatus.PENDING
+                            changed_count += 1
+                            logger.info("Task %s now PENDING - unblocked, waiting on other deps", task.id)
+
+        # Broadcast immediately so UI shows updated tasks and agents can pick them up
+        if changed_count > 0:
+            logger.info("Updated %d dependent tasks after %s completed", changed_count, completed_task_id)
+            try:
+                from server_modules.broadcast import broadcast_tasks_sync
+                broadcast_tasks_sync()
+            except ImportError:
+                pass  # Server not running
+
 
     def _block_dependents(self, failed_task_id: str):
         """Block tasks that depend on a failed task.
@@ -1127,13 +1184,54 @@ class TaskManager:
             self._save_tasks()
         return count
 
-    def cancel_task(self, task_id: str) -> bool:
-        """Cancel a task (remove it from the system)."""
-        if task_id in self.tasks:
-            del self.tasks[task_id]
-            self._save_tasks()
-            return True
-        return False
+    def cancel_task(self, task_id: str, reason: str = "Manually cancelled") -> dict:
+        """
+        Gracefully stop a task mid-execution.
+        
+        Returns:
+            dict with 'success', 'message', 'task_id', 'previous_status', 'partial_output'
+        """
+        task = self.tasks.get(task_id)
+        if not task:
+            return {
+                'success': False,
+                'message': f'Task {task_id} not found',
+                'task_id': task_id
+            }
+        
+        previous_status = task.status
+        
+        # Can only cancel active tasks
+        if task.status not in (TaskStatus.PENDING, TaskStatus.READY, TaskStatus.IN_PROGRESS):
+            return {
+                'success': False,
+                'message': f'Task {task_id} is {task.status.value}, cannot cancel',
+                'task_id': task_id,
+                'previous_status': previous_status.value
+            }
+        
+        # Preserve partial results if any
+        partial_output = task.output_response or ""
+        
+        # Mark as cancelled
+        task.status = TaskStatus.CANCELLED
+        task.error = reason
+        task.completed_at = datetime.now().isoformat()
+        
+        # If task was in progress, release the agent
+        if previous_status == TaskStatus.IN_PROGRESS and task.claimed_by:
+            logger.info(f"[CANCEL] Releasing {task.claimed_by} from {task_id}")
+        
+        self._save_tasks()
+        
+        return {
+            'success': True,
+            'message': f'Task {task_id} cancelled: {reason}',
+            'task_id': task_id,
+            'previous_status': previous_status.value,
+            'partial_output': partial_output,
+            'cancelled_at': task.completed_at
+        }
 
     def retry_task(self, task_id: str) -> bool:
         """Retry a failed/error task by resetting it to READY."""
@@ -1197,7 +1295,32 @@ class TaskManager:
                 self._save_tasks()
                 logger.info("Reset %d tasks on startup: %s", len(reset_ids), reset_ids)
 
+            # Re-evaluate dependencies (archived deps may satisfy PENDING tasks)
+            self._reevaluate_pending_dependencies()
+
             return reset_ids
+
+    def _reevaluate_pending_dependencies(self) -> int:
+        """Re-evaluate PENDING/BLOCKED tasks whose dependencies may be archived.
+
+        On startup, dependencies completed in previous sessions are in archive,
+        not active tasks. This checks archive for satisfied dependencies.
+
+        Returns count of tasks transitioned to READY.
+        """
+        ready_count = 0
+        for task in self.tasks.values():
+            if task.status in (TaskStatus.PENDING, TaskStatus.BLOCKED):
+                if task.dependencies and self._all_dependencies_satisfied(task.dependencies):
+                    task.status = TaskStatus.READY
+                    ready_count += 1
+                    logger.info("Task %s now READY - dependencies satisfied (including archived)", task.id)
+
+        if ready_count > 0:
+            self._save_tasks()
+            logger.info("Re-evaluated %d tasks to READY from archived dependencies", ready_count)
+
+        return ready_count
 
     def recover_stale_tasks(self) -> list[str]:
         """
@@ -1279,7 +1402,7 @@ class TaskManager:
         T332: Uses project-aware path via _get_archive_file().
         """
         # Statuses to archive (all "done" states)
-        archive_statuses = {TaskStatus.APPROVED, TaskStatus.FAILED, TaskStatus.ERROR, TaskStatus.PARTIAL}
+        archive_statuses = {TaskStatus.APPROVED, TaskStatus.FAILED, TaskStatus.ERROR, TaskStatus.PARTIAL, TaskStatus.CANCELLED}
 
         # Separate active from archivable
         archivable = [t for t in self.tasks.values() if t.status in archive_statuses]
@@ -1302,14 +1425,21 @@ class TaskManager:
                 archive_data = []
 
         # Add to archive (compressed schema per T230)
+        archived_ids = []
         for task in to_archive:
             archive_data.append(task.to_archive_dict())
+            archived_ids.append(task.id)
             del self.tasks[task.id]
 
         # Save archive (project-aware path)
         archive_file.parent.mkdir(parents=True, exist_ok=True)
         with open(archive_file, "w") as f:
             json.dump(archive_data, f, indent=2)
+
+        # Update dependents for all archived tasks
+        # Dependent tasks may now be ready if all deps are satisfied (including in archive)
+        for task_id in archived_ids:
+            self._update_dependents(task_id)
 
         # Save active tasks
         self._save_tasks()

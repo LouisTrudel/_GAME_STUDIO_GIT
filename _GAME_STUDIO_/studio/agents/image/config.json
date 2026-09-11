@@ -2,5 +2,7 @@
   "name": "Image",
   "title": "Image Producer",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#e91e63"
 }

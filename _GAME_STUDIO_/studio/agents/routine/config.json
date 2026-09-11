@@ -3,5 +3,6 @@
   "title": "Automation Specialist",
   "backend": "persistent-claude",
   "model": "haiku",
+  "max_turns": 8,
   "color": "#9b59b6"
 }

@@ -163,10 +163,10 @@ def get_cache_stats() -> dict:
             # Note: input_tokens includes both cached and non-cached
             hit_rate = round(cache_read / input_tokens * 100, 1) if input_tokens > 0 else 0
 
-            # Cost savings: cache reads are 5x cheaper
-            # Savings = cache_read * (1 - 1/5) = cache_read * 0.8
-            # At $3/M input tokens, savings = cache_read * 0.8 * 3 / 1_000_000
-            savings_usd = round(cache_read * 0.8 * 3 / 1_000_000, 4)
+            # Cost savings: cache reads are 10x cheaper (Sonnet 4.5 pricing)
+            # Input: $3/M, Cache read: $0.30/M, Cache write: $3.75/M, Output: $15/M
+            # Savings = cache_read * ($3 - $0.30) / 1M = cache_read * $2.70 / 1M
+            savings_usd = round(cache_read * 2.70 / 1_000_000, 4)
 
             stats["agents"][agent] = {
                 "cache_hits": cache_read,
@@ -183,7 +183,7 @@ def get_cache_stats() -> dict:
 
         # Summary
         overall_hit_rate = round(total_cache_read / total_input * 100, 1) if total_input > 0 else 0
-        total_savings = round(total_cache_read * 0.8 * 3 / 1_000_000, 4)
+        total_savings = round(total_cache_read * 2.70 / 1_000_000, 4)
 
         stats["summary"] = {
             "total_cache_hits": total_cache_read,

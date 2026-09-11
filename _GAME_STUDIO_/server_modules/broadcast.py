@@ -31,6 +31,11 @@ current_thinking_agent: str | None = None
 agent_statuses: dict[str, dict] = {}
 _agent_statuses_lock = threading.Lock()
 
+# Error tracking: {"AgentName": [{"time": "HH:MM", "error": "msg"}, ...]}
+agent_errors: dict[str, list] = {}
+_agent_errors_lock = threading.Lock()
+MAX_ERRORS_PER_AGENT = 10  # Keep last N errors
+
 # Event loop reference (set at startup for thread-safe access)
 main_loop: asyncio.AbstractEventLoop | None = None
 
@@ -77,6 +82,45 @@ def broadcast_live_tokens_sync(agent: str, input_tokens: int, output_tokens: int
             _do_broadcast_live_tokens(agent, input_tokens, output_tokens),
             main_loop
         )
+
+
+def broadcast_error_sync(agent: str, error: str):
+    """Broadcast an agent error to the UI (called from sync code)."""
+    timestamp = datetime.now().strftime("%H:%M")
+
+    # Store error
+    with _agent_errors_lock:
+        if agent not in agent_errors:
+            agent_errors[agent] = []
+        agent_errors[agent].append({"time": timestamp, "error": error[:200]})
+        # Keep only last N
+        agent_errors[agent] = agent_errors[agent][-MAX_ERRORS_PER_AGENT:]
+
+    # Log it prominently
+    logger.warning("[%s] ERROR: %s", agent, error[:100])
+
+    # Broadcast to UI
+    if main_loop is not None:
+        asyncio.run_coroutine_threadsafe(_do_broadcast_error(agent, timestamp, error), main_loop)
+
+
+async def _do_broadcast_error(agent: str, timestamp: str, error: str):
+    """Send error notification to all clients."""
+    data = json.dumps({
+        "type": "agent_error",
+        "agent": agent,
+        "time": timestamp,
+        "error": error[:200]
+    })
+    await broadcast_to_clients(data)
+
+
+def get_agent_errors(agent: str = None) -> dict:
+    """Get recent errors for an agent or all agents."""
+    with _agent_errors_lock:
+        if agent:
+            return {agent: agent_errors.get(agent, [])}
+        return dict(agent_errors)
 
 
 def broadcast_tasks_sync():
@@ -282,17 +326,26 @@ def _compute_agent_stats(include_task_details: bool = False) -> dict:
     result = {}
     for name in agent_names:
         agent_tokens = tokens_by_agent.get(name, {})
-        total_tokens = agent_tokens.get("input", 0) + agent_tokens.get("output", 0)
+        input_tokens = agent_tokens.get("input", 0)
+        output_tokens = agent_tokens.get("output", 0)
+        cache_read = agent_tokens.get("cache_read", 0)
+        cache_creation = agent_tokens.get("cache_creation", 0)
+        total_tokens = input_tokens + output_tokens
         result[name] = {
             "message_count": msg_counts.get(name, 0),
             "last_active": last_active.get(name),
             "tasks": task_stats.get(name, {}),
             "status": "working" if task_stats.get(name, {}).get("in_progress", 0) > 0 else "idle",
             "tokens": total_tokens,
+            "tokens_input": input_tokens,
+            "tokens_output": output_tokens,
+            "tokens_cache_read": cache_read,
+            "tokens_cache_creation": cache_creation,
             "uptime_seconds": uptime_seconds
         }
 
     return result
+
 
 
 async def _agent_stats_broadcast_loop():

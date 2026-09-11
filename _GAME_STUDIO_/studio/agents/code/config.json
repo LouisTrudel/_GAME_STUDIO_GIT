@@ -2,6 +2,7 @@
   "name": "Code",
   "title": "Lead Programmer",
   "backend": "persistent-claude",
-  "max_turns": 15,
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#3498db"
 }

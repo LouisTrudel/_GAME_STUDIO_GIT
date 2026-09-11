@@ -2,5 +2,7 @@
   "name": "Design",
   "title": "Game Designer",
   "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
   "color": "#9b59b6"
 }

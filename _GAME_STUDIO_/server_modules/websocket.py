@@ -38,15 +38,13 @@ async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[
     T327: project_id from URL query param sets the active project context.
     """
     await websocket.accept()
-    connections.append(websocket)
 
     # T327: Switch to project context if specified
     if project_id:
         hub.set_active_project(project_id)
         logger.info("Client connected with project context: %s", project_id)
-    logger.info("Client connected. Total: %d", len(connections))
 
-    # Send current tasks (reload from disk to sync with MCP server)
+    # Send initial state before adding to broadcast list (prevents race condition)
     task_manager.reload_from_disk()
     tasks_data = json.dumps({
         "type": "tasks_update",
@@ -54,21 +52,22 @@ async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[
     })
     await websocket.send_text(tasks_data)
 
-    # Send current schedules
     schedules = schedule_manager.get_all()
-    logger.debug("Sending %d schedules to new client", len(schedules))
     schedules_data = json.dumps({
         "type": "schedules_update",
         "data": [s.to_dict() for s in schedules]
     })
     await websocket.send_text(schedules_data)
 
-    # Send current agent statuses
     statuses_data = json.dumps({
         "type": "agent_statuses",
         "data": agent_statuses
     })
     await websocket.send_text(statuses_data)
+
+    # Add to broadcast list only after connection is fully initialized
+    connections.append(websocket)
+    logger.info("Client connected. Total: %d", len(connections))
 
     try:
         while True:

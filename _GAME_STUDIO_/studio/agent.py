@@ -27,39 +27,50 @@ logger = get_logger("Agent")
 
 
 def _truncate_for_hub(response: str, max_chars: int = 300) -> str:
-    """Truncate agent response for hub chat.
+    """Extract hub summary from agent response.
 
-    Full deliverables go to files - hub just needs confirmation/summary.
-    Extracts DONE: line + bullets if present, otherwise first paragraph.
-    Output tokens cost 5x input - keep hub responses minimal.
+    Format expected:
+        T### VERB: summary
+        - file:line context
+        - +added -removed
+        ---
+        [full deliverable]
+
+    Extracts everything before first '---' separator.
+    Falls back to first paragraph or truncation.
     """
     if len(response) <= max_chars:
         return response
 
-    # Try to extract DONE: summary + bullet points
+    # Try to extract summary block (everything before ---)
+    separator_pos = response.find("\n---")
+    if separator_pos > 0:
+        summary = response[:separator_pos].strip()
+        if len(summary) <= max_chars:
+            return summary
+
+    # Fallback: T### VERB line + bullets
     lines = response.split('\n')
     summary_lines = []
     for line in lines:
         stripped = line.strip()
-        # Capture DONE: line and bullet points
-        if stripped.startswith('DONE:') or stripped.startswith('- '):
-            summary_lines.append(stripped)
-        # Stop at empty line after bullets (start of actual work)
-        elif summary_lines and not stripped:
+        # Stop at separator
+        if stripped.startswith('---'):
             break
+        # Capture T### lines and bullets
+        if stripped.startswith('T') or stripped.startswith('- '):
+            summary_lines.append(stripped)
+        # Also capture FIXED/ADDED/etc lines (legacy or variations)
+        elif any(stripped.startswith(v) for v in ('FIXED', 'ADDED', 'UPDATED', 'FOUND', 'TRACED', 'BLOCKED')):
+            summary_lines.append(stripped)
 
     if summary_lines:
         result = '\n'.join(summary_lines)
         if len(result) <= max_chars:
             return result
 
-    # Fallback: first paragraph
-    first_para_end = response.find("\n\n")
-    if first_para_end > 0 and first_para_end <= max_chars:
-        return response[:first_para_end] + "  ..."
-
     # Last resort: truncate at max_chars
-    return response[:max_chars].rsplit(" ", 1)[0] + "  ..."
+    return response[:max_chars].rsplit(" ", 1)[0] + "..."
 
 
 class StudioAgent:
@@ -156,17 +167,11 @@ class StudioAgent:
 
     def get_context_md(self) -> str:
         """Get dynamic context portion (without trigger) for T215 metrics."""
-        parts = []
-
         if self.is_boss:
-            context = hub.get_context_for_agent(self.name, limit=10)
-            parts.append(f"RECENT MESSAGES:\n{context}")
-            task_context = task_manager.to_active_context_string()
-            parts.append(task_context)
+            # BOSS context: purpose + memory tiers + active tasks (unified in hub)
+            return hub.get_context_for_agent(self.name, limit=10)
         # Non-BOSS agents get no extra context - they work on one task at a time
-        # Full task details come in ## TASK section
-
-        return "\n\n".join(parts)
+        return ""
 
     def _build_context(self, trigger_message: str = None) -> str:
         """Build scoped context for agents.
@@ -190,27 +195,24 @@ class StudioAgent:
         # BOSS INIT: First call - full context injected into session
         # Subsequent calls just append trigger (session remembers via --resume)
         if self.is_boss:
+            from studio.core.memory import memory_manager
             sections = []
 
             # Purpose block (strategic context)
             sections.append(hub._get_boss_purpose_block())
 
-            # Memory tier1 (compressed recent history)
-            from studio.core.memory import memory_manager
+            # Memory tiers (unified source - no duplicate hub access)
+            # tier0 = messages.json (recent chat)
+            # tier1 = compressed recent history
+            tier0 = memory_manager.get_tier(0)
             tier1 = memory_manager.get_tier(1)
-            if tier1:
-                sections.append(f"## MEMORY\n{tier1}")
-
-            # Hub recent messages (trimmed to 16 chars each)
-            hub_messages = hub.get_history(limit=20)
-            if hub_messages:
-                hub_lines = []
-                for msg in hub_messages:
-                    sender = msg.sender
-                    content = msg.content[:16] + "..." if len(msg.content) > 16 else msg.content
-                    content = content.replace("\n", " ")
-                    hub_lines.append(f"[{sender}]: {content}")
-                sections.append("## RECENT CHAT\n" + "\n".join(hub_lines))
+            if tier0 or tier1:
+                memory_block = "## MEMORY\n"
+                if tier1:
+                    memory_block += "### Compressed\n" + tier1 + "\n\n"
+                if tier0:
+                    memory_block += "### Recent Chat\n" + tier0
+                sections.append(memory_block)
 
             # User message
             sections.append(f"## USER MESSAGE\n{trigger}")
@@ -244,8 +246,9 @@ class StudioAgent:
             tokens_out = usage.get("total_output_tokens", 0)
             logger.info("[%s] Done. (%.1fs, %d+%d tokens)", self.name, elapsed, tokens_in, tokens_out)
 
-            # Post full response to hub (truncation happens when injecting into agent context)
-            hub.post(self.name, response)
+            # Post truncated summary to hub (full deliverable saved separately)
+            hub_message = _truncate_for_hub(response)
+            hub.post(self.name, hub_message)
             return response
 
         except Exception as e:

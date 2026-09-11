@@ -258,7 +258,7 @@ def create_task(
     desc = "\n".join(parts)
 
     # Normalize assignee
-    assignee = assignee or agent
+    assignee = assignee or agent or "Code"  # Default to Code if no assignee specified
     if assignee:
         if assignee.lower() == "boss":
             assignee = "BOSS"
@@ -401,7 +401,7 @@ def clarify(question: str, options: list = None, context: str = None) -> str:
 
 CANCEL_TASK_SCHEMA = {
     "name": "cancel_task",
-    "description": "Cancel a pending or in-progress task. Use when a task is no longer needed.",
+    "description": "Stop a task mid-execution. Gracefully terminates the agent, preserves partial results, marks task as CANCELLED.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -411,7 +411,7 @@ CANCEL_TASK_SCHEMA = {
             },
             "reason": {
                 "type": "string",
-                "description": "Why the task is being cancelled"
+                "description": "Why the task is being cancelled (e.g., 'Taking too long', 'Wrong approach', 'No longer needed')"
             }
         },
         "required": ["task_id"]
@@ -420,18 +420,42 @@ CANCEL_TASK_SCHEMA = {
 
 
 def cancel_task(task_id: str, reason: str = None) -> str:
-    """Cancel an existing task."""
-    task = task_manager.get_task(task_id)
-    if not task:
-        return f"Task {task_id} not found"
-
-    if task.status.value in ("approved", "completed"):
-        return f"Cannot cancel {task_id} - already {task.status.value}"
-
-    task_manager.update_task(task_id, status="cancelled")
-    msg = f"Cancelled {task_id}"
-    if reason:
-        msg += f": {reason}"
+    """
+    Cancel a task mid-execution.
+    
+    Gracefully stops the agent if running, preserves partial results.
+    """
+    cancel_reason = reason or "Manually cancelled by BOSS"
+    result = task_manager.cancel_task(task_id, reason=cancel_reason)
+    
+    if not result['success']:
+        return result['message']
+    
+    # If task was in progress, try to terminate the agent
+    if result.get('previous_status') == 'in_progress':
+        task = task_manager.get_task(task_id)
+        if task and task.claimed_by:
+            agent_name = task.claimed_by
+            
+            # Try to terminate the running agent process
+            try:
+                from backends.backends.persistent_claude_cli import PersistentClaudeCLI
+                term_result = PersistentClaudeCLI.terminate_agent(agent_name, timeout=5)
+                
+                if term_result['terminated']:
+                    msg = f"✓ Cancelled {task_id} - {agent_name} terminated"
+                else:
+                    msg = f"✓ Cancelled {task_id} - {agent_name} was not running"
+            except Exception as e:
+                msg = f"✓ Cancelled {task_id} - could not terminate agent: {e}"
+        else:
+            msg = f"✓ Cancelled {task_id}"
+    else:
+        msg = f"✓ Cancelled {task_id} ({result['previous_status']})"
+    
+    if result.get('partial_output'):
+        msg += f"\n  Preserved partial output ({len(result['partial_output'])} chars)"
+    
     hub.post("BOSS", msg)
     return msg
 

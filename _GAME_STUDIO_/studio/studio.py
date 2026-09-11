@@ -554,16 +554,15 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
         Returns (full_prompt, trigger, context_metrics).
         """
         # Build task trigger (always needed)
-        trigger = f"""Output format:
-DONE: [one sentence summary]
-- [key point 1]
-- [key point 2]
-[Then your actual work]
+        # Format at END for recency recall
+        trigger = f"""## TASK {task.id}
+
+{task.description}
 
 ---
-
-TASK {task.id}:
-{task.description}"""
+MCP: create_task(what,files,assignee) | recall_memory(query) | search_code(path,pattern) | read_lines(path,start,end) | edit_file(path,old,new)
+Out: {task.id} VERB: summary | file:line | +/-lines | FIXED|ADDED|UPDATED|FOUND|TRACED|BLOCKED
+Friction: If stuck/confused, end with "## Friction: <what was unclear or blocked you>\""""
 
         # Check if agent is initialized (session has context)
         backend = getattr(agent.agent, 'backend', None)
@@ -718,7 +717,22 @@ TASK {task.id}:
 
     def _handle_successful_task(self, task_id: str, agent_name: str, response: str, usage: dict, quality_metrics: dict):
         """Handle successful task completion - logging, archival, and metrics."""
-        task_manager.complete_task(task_id, response)
+        # Extract friction events for deliverable
+        friction_events = quality_metrics.get("friction_events", []) if quality_metrics else []
+
+        # Parse agent's friction reflection from response (## Friction: ...)
+        import re
+        friction_match = re.search(r'##\s*Friction:\s*(.+?)(?:\n##|\Z)', response, re.DOTALL | re.IGNORECASE)
+        if friction_match:
+            agent_friction = friction_match.group(1).strip()
+            if agent_friction:
+                friction_events.append({
+                    "turn": "end",
+                    "category": "agent_note",
+                    "detail": agent_friction[:150]
+                })
+
+        task_manager.complete_task(task_id, response, friction_events)
         logger.info("Completed %s", task_id)
 
         # Compact agent session after task to keep context lean

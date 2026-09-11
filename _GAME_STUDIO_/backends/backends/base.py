@@ -30,8 +30,7 @@ MAX_RETRIES = 3
 INITIAL_DELAY = 2  # seconds
 BACKOFF_MULTIPLIER = 2  # 2s -> 4s -> 8s
 
-
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 def with_retry(func: Callable[..., T]) -> Callable[..., T]:

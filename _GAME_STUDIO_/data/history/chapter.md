@@ -173,3 +173,110 @@ Now I have the full context. Let me write Draft 77.
 **The Context Duplication Problem**
 BOSS was getting the entire context stack—file tree, memory tiers, team roster, decision tables—on every single prompt. That's expensive when each user message triggers a full reload.
 T444 landed a fix: Code added a `_boss_initialized` flag to `StudioAgent`. First call gets the full context injection (FILES, MEMORY, PURPOSE). Subsequent calls use `hub.get_incremental_context_for_boss()` which returns only the...
+
+---
+
+[2026-09-10] Draft #78:
+*2026-09-10*
+BOSS was getting the entire context stack—file tree, memory tiers, team roster, decision tables—on every single prompt. That's expensive when each user message triggers a full reload.
+T444 landed a fix: Code added a `_boss_initialized` flag to `StudioAgent`. First call gets the full context injection (FILES, MEMORY, PURPOSE). Subsequent calls use `hub.get_incremental_context_for_boss()` which returns only the last 5 messages plus active tasks. Cuts ~90% of redundant context after in...
+
+---
+
+[2026-09-10] Draft #79:
+*2026-09-10*
+BOSS was getting the entire context stack—file tree, memory tiers, team roster, decision tables—on every single prompt. That's expensive when each user message triggers a full reload.
+T444 landed a fix: Code added a `_boss_initialized` flag to `StudioAgent`. First call gets the full context injection (FILES, MEMORY, PURPOSE). Subsequent calls use `hub.get_incremental_context_for_boss()` which returns only the last 5 messages plus active tasks. Cuts ~90% of redundant context after in...
+
+---
+
+[2026-09-10] Draft #80:
+*2026-09-10*
+The token visibility saga continues. We confirmed live token broadcast is **fully implemented** end-to-end—backend streams via WebSocket, frontend receives `live_tokens` messages, persistence hits `token_usage.json` with per-agent, per-task granularity. T448-T451 show real numbers: 247K-456K input tokens each. The plumbing works.
+**The disconnect**: User still doesn't see tokens on task cards in the list view. T449 queued to add the display. The data exists, the WebSocket fires, but...
+
+---
+
+[2026-09-10] Draft #81:
+*2026-09-10*
+Token visibility finally clicked. The WebSocket streams `live_tokens`, the backend persists to `token_usage.json`, individual tasks show 247K-456K input tokens—the infrastructure is solid. What's missing is the last mile: wiring the data to task cards in the list view. T449 is on it.
+**Race condition surfaced**: T453 (BOSS Testing) failed. First hard failure in the current sprint. Something's racing somewhere—likely in the agent dispatch or context injection path. Needs a proper pos...
+
+---
+
+[2026-09-10] Draft #82:
+*2026-09-10*
+Pattern confirmed: features work in isolation, break at integration. Token broadcast streams correctly, persists correctly, but doesn't render on task cards. Routines create correctly but don't appear in the UI. The backend-frontend handoff is the consistent failure point.
+**T449 progress**: Code is adding live token display to task cards. The `live_tokens` WebSocket message exists, `token_usage.json` tracks per-agent per-task data (T448-T451 logged 247K-456K input each). Just needs...
+
+---
+
+[2026-09-11] Draft #83:
+*2026-09-11*
+New day, same integration gaps. Frontend rendering remains the bottleneck—data flows correctly through the backend, breaks at the display layer.
+**Token livestream (T449)**: WebSocket sends `live_tokens`, `token_usage.json` captures per-task metrics, but task cards don't render it. Code is wiring the frontend listener to the task card component. Should be a straightforward DOM update on message receipt.
+**Routine visibility (T448)**: SCH006 exists in `data/schedules.json`, confirmed...
+
+---
+
+[2026-09-11] Draft #84:
+*2026-09-11*
+Frontend debt is piling up. Backend features keep landing while the display layer falls behind—users can't see what we've built.
+**Token livestream (T449)**: Status unchanged. WebSocket infrastructure complete, `live_tokens` messages fire, `token_usage.json` persists per-agent per-task data. The missing piece: task card components don't listen for these messages. Code needs to add the WebSocket event handler to the task list renderer.
+**Routine visibility (T448)**: SCH006 confirmed ...
+
+---
+
+[2026-09-11] Draft #85:
+*2026-09-11*
+Frontend debt is piling up. Backend features keep landing while the display layer falls behind—users can't see what we've built.
+**Token livestream (T449)**: Status unchanged. WebSocket infrastructure complete, `live_tokens` messages fire, `token_usage.json` persists per-agent per-task data. The missing piece: task card components don't listen for these messages. Code needs to add the WebSocket event handler to the task list renderer.
+**Audit agent confirmed functional (T456)**: Res...
+
+---
+
+[2026-09-11] Draft #85:
+*2026-09-11*
+Employee dispatch works. T528 landed clean—Code listed files, came back fast. Token stream showed "9" at the end, which Research traced in T529. Not a UI bug; backend buffers stdout until agent finishes speaking.
+**Dependency chain test launched:**
+- T530 → T531 → T532 (sequential Code tasks)
+- T530 completed. T531 blocked until T530 finished—as expected
+- T532 still pending, waiting on T531
+**Open threads:**
+- T535: Code fixing the buffered-output issue so token counts stream live,...
+
+---
+
+[2026-09-11] Draft #86:
+*2026-09-11*
+- T530 → T531 → T532 (sequential Code tasks)
+- T530 completed. T531 blocked until T530 finished—as expected
+Pattern confirmed: small test tasks surface timing issues that logs can't. Keep the habit.
+REF: Now I see `_update_dependents` is called from `complete_task()`. Let me check where tasks get completed and if the archive plays a role.Now let me check the archive flow - when does a task get archived and does that happen before `_update_dependents` is called?I see the archive flow...
+
+---
+
+[2026-09-11] Draft #87:
+Error: RuntimeError: CLI error (code 1):...
+
+---
+
+[2026-09-11] Draft #88:
+We fixed graceful degradation when agents run out of tokens. Code added an `OutOfTokensError` exception class and wired it through the error handling chain so tasks can fail cleanly instead of crashing the system with code 1.
+The hub got deliverable links—task completion messages now show clickable links to open deliverables in a modal. Backend serves them via `/api/deliverables/<task_id>`, frontend renders in an overlay.
+Cache testing: repeated agent count task (14 directories) dropped from 78K...
+
+---
+
+[2026-09-11] Draft #89:
+*2026-09-11*
+We fixed graceful degradation when agents run out of tokens. Code added an `OutOfTokensError` exception class and wired it through the error handling chain so tasks can fail cleanly instead of crashing the system with code 1.
+The hub got deliverable links—task completion messages now show clickable links to open deliverables in a modal. Backend serves them via `/api/deliverables/<task_id>`, frontend renders in an overlay.
+Cache testing: repeated agent count task (14 directories) dro...
+
+---
+
+[2026-09-11] Draft #90:
+*2026-09-11*
+We fixed task dependencies—again. The issue was clean but subtle: when tasks archived, dependents never got notified. Code added a `_update_dependents()` call after archiving (studio/core/tasks.py:1365-1379) so completed tasks now flip their children from PENDING → READY.
+Token/cost display had drift. Tokens would reset while cost stayed cached. The problem was two calculation paths: one using agentStats, one using sessionStats. Code unified the logic—both values now derive from the...
