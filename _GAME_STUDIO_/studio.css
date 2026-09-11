@@ -1659,45 +1659,83 @@ button.secondary:hover {
     color: #F5F5F7;
 }
 
-/* Agent terminal section */
-.agent-terminal-section {
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    margin-top: 12px;
-}
-
-.terminal-header {
+/* Agents panel layout */
+.agents-panel {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    cursor: pointer;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #8b949e;
+    flex-direction: column;
+    height: 100%;
 }
 
-.terminal-header:hover {
+.agents-cards {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+/* Terminal dock (VS Code style) */
+.terminal-dock {
+    height: 250px;
+    min-height: 150px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: #0d1117;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-tabs {
+    display: flex;
+    gap: 0;
+    background: #161b22;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.terminal-tab {
+    padding: 8px 16px;
+    font-size: 11px;
+    color: #8b949e;
+    cursor: pointer;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.terminal-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
     color: #c9d1d9;
 }
 
-.terminal-toggle {
-    font-size: 10px;
-}
-
-.agent-terminal {
-    height: 200px;
+.terminal-tab.active {
     background: #0d1117;
-    border-radius: 4px;
+    color: #f0f0f0;
+    border-bottom: 2px solid #58a6ff;
+}
+
+.terminal-content {
+    flex: 1;
+    position: relative;
     overflow: hidden;
-    margin-bottom: 12px;
 }
 
-.agent-terminal .xterm {
-    padding: 8px;
+.terminal-pane {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
 }
 
-.agent-terminal .xterm-viewport {
+.terminal-pane.active {
+    display: block;
+}
+
+.terminal-pane .xterm {
+    height: 100%;
+}
+
+.terminal-pane .xterm-viewport {
     overflow-y: auto !important;
 }
 
