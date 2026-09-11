@@ -2,6 +2,6 @@
   "name": "Code",
   "title": "Lead Programmer",
   "backend": "persistent-claude",
-  "max_turns": 10,
+  "max_turns": 15,
   "color": "#3498db"
 }
