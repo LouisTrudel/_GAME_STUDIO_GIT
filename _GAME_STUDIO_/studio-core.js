@@ -50,6 +50,7 @@ let fileTree = [];
 let selectedFilePath = null;
 let routineChainCount = 0;
 let wsConnectAttempt = 0;
+let liveTokens = {};  // Real-time token counts from streaming agents
 
 // DOM elements
 const statusEl = document.getElementById('status');
@@ -172,6 +173,13 @@ function connect() {
                 console.log('[WS]   OLD task list:', prevStatuses);
             }
             tasks = data.data;
+            // Clear stale liveTokens for agents no longer in_progress
+            const inProgressAgents = new Set(data.data.filter(t => t.status === 'in_progress').map(t => t.assignee));
+            Object.keys(liveTokens).forEach(agent => {
+                if (!inProgressAgents.has(agent)) {
+                    delete liveTokens[agent];
+                }
+            });
             renderHubTasks();
             console.log('[WS]   renderHubTasks() complete, DOM updated');
         } else if (data.type === 'schedules_update') {
@@ -201,6 +209,19 @@ function connect() {
         } else if (data.type === 'projects_update') {
             console.log('[WS] projects_update - received', data.data.projects.length, 'projects');
             handleProjectsUpdate(data.data);
+        } else if (data.type === 'live_tokens') {
+            // Real-time token updates from streaming agents
+            liveTokens[data.agent] = { 
+                input: data.input_tokens || 0, 
+                output: data.output_tokens || 0 
+            };
+            // Update task cards and metrics bar
+            renderHubTasks();
+            renderHubMetricsBar();
+            // Show in activity bar for BOSS
+            if (data.agent === 'BOSS') {
+                updateBossLiveTokens(data.input_tokens, data.output_tokens);
+            }
         } else {
             console.log('[WS] Unknown message type:', data.type, data);
         }

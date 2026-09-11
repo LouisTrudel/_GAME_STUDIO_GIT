@@ -88,6 +88,16 @@ function hideThinking() {
     document.getElementById('thinkingIndicator').classList.remove('show');
 }
 
+function updateBossLiveTokens(inputTokens, outputTokens) {
+    // Update thinking indicator with live token count during BOSS streaming
+    const thinkingText = document.getElementById('thinkingText');
+    if (thinkingText && isThinking) {
+        const total = (inputTokens || 0) + (outputTokens || 0);
+        const formatted = formatTokens(total);
+        thinkingText.textContent = `BOSS is thinking... (${formatted} tokens)`;
+    }
+}
+
 // Activity bar - shows all active agents with minimum display time
 const MIN_DISPLAY_MS = 500;
 
