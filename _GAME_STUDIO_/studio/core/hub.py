@@ -398,24 +398,16 @@ An abstract self-improving agent fleet that delegates tasks, accumulates data, a
         These static elements are already in the Claude session from initialization.
 
         Returns:
-            Formatted string with last 5 messages (since server start) + active tasks summary.
+            Formatted string with last 5 messages + active tasks summary.
         """
         lines = []
-        skip_senders = {"TEST", "test_sender"}
+        skip_senders = {"System", "TEST", "test_sender"}
 
-        # Find last server start to avoid stale pre-restart messages
-        start_idx = 0
-        for i, msg in enumerate(self.messages):
-            if msg.sender == "System" and "Server started" in msg.content:
-                start_idx = i
-
-        # Only messages since last server start, max 5
-        recent = self.messages[start_idx:][-5:]
+        # Last 5 messages only
+        recent = self.messages[-5:]
         for msg in recent:
             if msg.sender in skip_senders:
                 continue
-            if msg.sender == "System":
-                continue  # Skip system messages in output
             prefix = "YOU" if msg.sender == "BOSS" else msg.sender
             # Keep messages short for incremental updates
             content = self._truncate_message(msg.content, max_chars=300)
