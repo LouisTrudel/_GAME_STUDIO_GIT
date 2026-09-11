@@ -44,7 +44,7 @@ const expandedAgents = new Set();
 
 // Terminal state
 const agentTerminals = {};  // {name: Terminal instance}
-const terminalExpanded = new Set();  // Track which terminals are open
+const terminalCollapsed = new Set();  // Track which terminals are collapsed (default: expanded)
 
 // Render agent cards
 function renderAgentCards() {
@@ -108,12 +108,12 @@ function renderAgentCards() {
                         <span class="agent-token-value cache-write">${formatTokens(cacheCreation)}</span>
                     </div>
                 </div>
-                <div class="agent-terminal-section ${terminalExpanded.has(name) ? 'expanded' : ''}">
+                <div class="agent-terminal-section ${terminalCollapsed.has(name) ? '' : 'expanded'}">
                     <div class="terminal-header" onclick="event.stopPropagation(); toggleTerminal('${name}')">
                         <span>Terminal</span>
-                        <span class="terminal-toggle">${terminalExpanded.has(name) ? '▲' : '▼'}</span>
+                        <span class="terminal-toggle">${terminalCollapsed.has(name) ? '▼' : '▲'}</span>
                     </div>
-                    <div id="terminal-${name}" class="agent-terminal" style="display: ${terminalExpanded.has(name) ? 'block' : 'none'};"></div>
+                    <div id="terminal-${name}" class="agent-terminal" style="display: ${terminalCollapsed.has(name) ? 'none' : 'block'};"></div>
                 </div>
                 <div class="agent-actions">
                     <button class="agent-action-btn" onclick="showConfigModal('${name}')">Configure</button>
@@ -140,6 +140,12 @@ function renderAgentCards() {
         });
 
         panel.appendChild(card);
+
+        // Init terminal if expanded (default)
+        if (!terminalCollapsed.has(name)) {
+            // Delay slightly to ensure DOM is ready
+            setTimeout(() => initTerminal(name), 50);
+        }
     }
 }
 
@@ -246,23 +252,25 @@ function handlePromptAction(name, action) {
 
 // Toggle terminal visibility
 function toggleTerminal(name) {
-    if (terminalExpanded.has(name)) {
-        terminalExpanded.delete(name);
-        const termEl = document.getElementById(`terminal-${name}`);
-        if (termEl) termEl.style.display = 'none';
-    } else {
-        terminalExpanded.add(name);
-        const termEl = document.getElementById(`terminal-${name}`);
+    const termEl = document.getElementById(`terminal-${name}`);
+    if (terminalCollapsed.has(name)) {
+        // Currently collapsed -> expand
+        terminalCollapsed.delete(name);
         if (termEl) termEl.style.display = 'block';
         initTerminal(name);
+    } else {
+        // Currently expanded -> collapse
+        terminalCollapsed.add(name);
+        if (termEl) termEl.style.display = 'none';
     }
     // Update toggle icon
     const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
     if (card) {
         const section = card.querySelector('.agent-terminal-section');
         const toggle = card.querySelector('.terminal-toggle');
-        if (section) section.classList.toggle('expanded', terminalExpanded.has(name));
-        if (toggle) toggle.textContent = terminalExpanded.has(name) ? '▲' : '▼';
+        const isExpanded = !terminalCollapsed.has(name);
+        if (section) section.classList.toggle('expanded', isExpanded);
+        if (toggle) toggle.textContent = isExpanded ? '▲' : '▼';
     }
 }
 
