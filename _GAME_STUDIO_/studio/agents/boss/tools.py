@@ -314,6 +314,7 @@ ACKNOWLEDGE_SCHEMA = {
 
 def acknowledge(message: str = "Acknowledged") -> str:
     """Simple acknowledgment - ensures BOSS always uses a tool."""
+    hub.post("BOSS", message)
     return f"✓ {message}"
 
 
