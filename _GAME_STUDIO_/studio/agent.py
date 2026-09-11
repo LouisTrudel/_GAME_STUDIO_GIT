@@ -185,12 +185,13 @@ class StudioAgent:
         # T444: BOSS incremental mode - skip static context after initialization
         if self.is_boss and StudioAgent._boss_initialized:
             logger.debug("[%s] INCREMENTAL MODE - skipping FILES/MEMORY", self.name)
-            # Only inject recent messages + task (memory/files already in session)
+            # Put USER MESSAGE FIRST (primacy effect), then recent context
+            trigger = trigger_message or "Respond appropriately."
+            sections.append("## YOUR TASK NOW\n\n" + trigger)
+            # Recent context is secondary - don't get distracted by agent outputs
             recent_context = hub.get_incremental_context_for_boss()
             if recent_context:
-                sections.append("### RECENT\n\n" + recent_context)
-            trigger = trigger_message or "Respond appropriately."
-            sections.append("## TASK\n\n" + trigger)
+                sections.append("### Recent Activity (FYI only)\n\n" + recent_context)
             return "\n\n".join(sections)
 
         # Debug: confirm non-vanilla path
