@@ -189,6 +189,44 @@ async def log_step(
     return handler(description=description, tokens_used=tokens_used)
 
 
+@mcp.tool()
+async def get_token_metrics(
+    agent: Annotated[Optional[str], Field(description="Filter by agent name (optional)")] = None,
+    task_id: Annotated[Optional[str], Field(description="Filter by task ID (optional)")] = None,
+) -> str:
+    """Get current session token usage metrics.
+
+    Returns: total tokens, breakdown by agent, cache stats.
+    Use to self-report token usage in research tasks.
+    """
+    from studio.core.studio_metrics import get_session_tokens
+
+    data = get_session_tokens()
+
+    lines = [
+        f"Session: {data['session_start']}",
+        f"Total: {data['total_input_tokens']:,} in / {data['total_output_tokens']:,} out",
+        f"Cache: {data.get('total_cache_read_tokens', 0):,} read / {data.get('total_cache_creation_tokens', 0):,} created",
+        "",
+    ]
+
+    # Filter by agent
+    if agent and agent in data.get('by_agent', {}):
+        a = data['by_agent'][agent]
+        lines.append(f"Agent {agent}: {a.get('input', 0):,} in / {a.get('output', 0):,} out")
+    elif not agent:
+        lines.append("By Agent:")
+        for a_name, a_data in data.get('by_agent', {}).items():
+            lines.append(f"  {a_name}: {a_data.get('input', 0):,} in / {a_data.get('output', 0):,} out")
+
+    # Filter by task
+    if task_id and task_id in data.get('by_task', {}):
+        t = data['by_task'][task_id]
+        lines.append(f"Task {task_id}: {t.get('input', 0):,} in / {t.get('output', 0):,} out")
+
+    return '\n'.join(lines)
+
+
 # =============================================================================
 # QA TOOLS - Testing and bug reporting
 # =============================================================================
@@ -412,25 +450,35 @@ async def list_reports() -> str:
 @mcp.tool()
 async def search_code(
     pattern: Annotated[str, Field(description="Search pattern. Examples: 'def login', 'class User', 'TODO'")],
-    path: Annotated[Optional[str], Field(description="File or folder to search (relative to project). Default: entire project")] = None,
+    path: Annotated[str, Field(description="REQUIRED: File path (studio/core/tasks.py) or folder (studio/core/). Be specific!")] = "",
     context_lines: Annotated[int, Field(description="Lines of context around matches (default: 2)")] = 2,
     fuzzy: Annotated[bool, Field(description="Enable fuzzy matching for typos/variations (default: False)")] = False,
     threshold: Annotated[int, Field(description="Fuzzy match threshold 0-100 (default: 70). Higher = stricter.")] = 70,
 ) -> str:
-    """Search for code patterns - returns ONLY matching lines, not entire files.
+    """Search for code patterns in a SPECIFIC file or folder.
 
-    Use this BEFORE read_lines to find what you need. Much cheaper than reading whole files.
+    ALWAYS provide path parameter to avoid searching entire project.
+    - File: path="studio/core/tasks.py" (searches one file)
+    - Folder: path="studio/core/" (searches folder)
 
-    Set fuzzy=True for typo-tolerant search (e.g., 'recieve' finds 'receive').
+    Returns matching lines with line numbers. Use read_lines() after to get full context.
     """
     import subprocess
     import os
 
-    search_path = PROJECT_ROOT / path if path else PROJECT_ROOT
+    if not path:
+        return "ERROR: path parameter required. Specify file (studio/core/tasks.py) or folder (studio/core/)."
+
+    search_path = PROJECT_ROOT / path
+    if not search_path.exists():
+        return f"ERROR: path '{path}' not found. Check spelling or use file_outline() to discover files."
+
+    scope = "file" if search_path.is_file() else f"folder ({len(list(search_path.rglob('*.py')))} .py files)"
 
     # Fuzzy search mode - uses rapidfuzz
     if fuzzy:
-        return await _fuzzy_search(pattern, search_path, threshold)
+        result = await _fuzzy_search(pattern, search_path, threshold)
+        return f"[Searched: {scope}]\n{result}"
 
     try:
         # Try ripgrep first (fast, cross-platform)
@@ -439,22 +487,27 @@ async def search_code(
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             if result.returncode == 0 and result.stdout:
                 lines = result.stdout.strip().split('\n')
+                header = f"[Searched: {scope}]\n"
                 if len(lines) > 50:
-                    return '\n'.join(lines[:50]) + f"\n\n... ({len(lines) - 50} more matches)"
-                return result.stdout
+                    return header + '\n'.join(lines[:50]) + f"\n\n... ({len(lines) - 50} more matches)"
+                return header + result.stdout
             elif result.returncode == 1:
-                return f"No matches found for '{pattern}'"
+                return f"[Searched: {scope}]\nNo matches found for '{pattern}'"
         except FileNotFoundError:
             pass  # rg not installed, try fallback
 
-        # Windows fallback: use findstr or Python-based search
+        # Windows fallback: Python-based search
         if os.name == 'nt':
-            # Python-based search (more reliable than findstr)
             matches = []
-            search_dir = search_path if search_path.is_dir() else search_path.parent
             pattern_lower = pattern.lower()
 
-            for py_file in search_dir.rglob("*.py"):
+            # If path is a file, search only that file
+            if search_path.is_file():
+                files_to_search = [search_path]
+            else:
+                files_to_search = list(search_path.rglob("*.py"))[:50]  # Limit files
+
+            for py_file in files_to_search:
                 try:
                     with open(py_file, 'r', encoding='utf-8', errors='ignore') as f:
                         for i, line in enumerate(f, 1):
@@ -468,9 +521,10 @@ async def search_code(
                 if len(matches) >= 30:
                     break
 
+            header = f"[Searched: {scope}]\n"
             if matches:
-                return '\n'.join(matches)
-            return f"No matches found for '{pattern}'"
+                return header + '\n'.join(matches)
+            return header + f"No matches found for '{pattern}'"
 
         # Unix fallback: use grep
         cmd = ["grep", "-rn", f"-C{context_lines}", pattern, str(search_path)]
