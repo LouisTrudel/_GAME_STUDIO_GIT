@@ -425,6 +425,16 @@ header h1 {
     animation: token-pulse 1s ease-in-out infinite;
 }
 
+.live-token-stream {
+    font-size: 0.6rem;
+    color: #f39c12;
+    font-family: monospace;
+    padding: 0.1rem 0.3rem;
+    background: rgba(243, 156, 18, 0.15);
+    border-radius: 0.2rem;
+    animation: token-pulse 1s ease-in-out infinite;
+}
+
 @keyframes token-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }

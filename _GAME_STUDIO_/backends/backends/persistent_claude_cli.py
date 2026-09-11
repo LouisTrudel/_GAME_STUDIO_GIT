@@ -281,21 +281,14 @@ class PersistentClaudeCLI(Backend):
 
         cmd.append("--dangerously-skip-permissions")
 
-        # CRITICAL: --allowedTools only auto-approves, does NOT block other tools
-        # Must use --disallowedTools to actually remove tools from context
-
-        # Block token-heavy default tools - agents use MCP tools instead
-        # Read/Write/Glob/Grep can read entire files, causing token explosion
-        blocked = "Read,Write,Glob,Grep,NotebookEdit"
-        cmd.extend(["--disallowedTools", blocked])
-
-        # Auto-approve our tools (no permission prompts)
+        # Auto-approve tools (no permission prompts)
+        # Agents have full access - MCP tools enforce line limits via error messages
         if self.agent_name == "BOSS":
             # BOSS: MCP tools + limited bash (no file access)
             allowed = "mcp__game-studio__*,Bash(git *),Bash(ls *),Task"
         else:
-            # Employees: MCP tools + Edit (surgical) + Bash (run code)
-            allowed = "mcp__game-studio__*,Edit,Bash"
+            # Employees: Full tool access - Read/Write/Edit/Bash + MCP tools
+            allowed = "mcp__game-studio__*,Read,Write,Edit,Glob,Grep,Bash"
         cmd.extend(["--allowedTools", allowed])
 
         # Limit exploration to prevent token explosion

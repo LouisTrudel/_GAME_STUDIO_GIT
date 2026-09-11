@@ -212,11 +212,20 @@ function renderHubTasks() {
             ? task.description.substring(0, 60) + '...'
             : task.description;
 
+        // Show live token stream for in_progress tasks
+        let tokenStream = '';
+        if (task.status === 'in_progress' && liveTokens[task.assignee]) {
+            const lt = liveTokens[task.assignee];
+            const total = (lt.input || 0) + (lt.output || 0);
+            tokenStream = `<span class="live-token-stream">${formatTokens(total)}</span>`;
+        }
+
         return `
             <div class="hub-task-item ${task.status}" onclick="showTaskDetailModal('${task.id}')">
                 <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <span class="hub-task-id">${task.id}</span>
                     <span class="hub-task-agent" style="color: ${agentColor}">${task.assignee}</span>
+                    ${tokenStream}
                     <span class="hub-task-status ${task.status}">${task.status.replace('_', ' ')}</span>
                 </div>
                 <div class="hub-task-desc" title="${escapeHtml(task.description)}">${escapeHtml(shortDesc)}</div>
