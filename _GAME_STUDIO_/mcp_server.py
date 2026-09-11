@@ -414,15 +414,23 @@ async def search_code(
     pattern: Annotated[str, Field(description="Search pattern. Examples: 'def login', 'class User', 'TODO'")],
     path: Annotated[Optional[str], Field(description="File or folder to search (relative to project). Default: entire project")] = None,
     context_lines: Annotated[int, Field(description="Lines of context around matches (default: 2)")] = 2,
+    fuzzy: Annotated[bool, Field(description="Enable fuzzy matching for typos/variations (default: False)")] = False,
+    threshold: Annotated[int, Field(description="Fuzzy match threshold 0-100 (default: 70). Higher = stricter.")] = 70,
 ) -> str:
     """Search for code patterns - returns ONLY matching lines, not entire files.
 
     Use this BEFORE read_lines to find what you need. Much cheaper than reading whole files.
+
+    Set fuzzy=True for typo-tolerant search (e.g., 'recieve' finds 'receive').
     """
     import subprocess
     import os
 
     search_path = PROJECT_ROOT / path if path else PROJECT_ROOT
+
+    # Fuzzy search mode - uses rapidfuzz
+    if fuzzy:
+        return await _fuzzy_search(pattern, search_path, threshold)
 
     try:
         # Try ripgrep first (fast, cross-platform)
@@ -474,6 +482,56 @@ async def search_code(
 
     except Exception as e:
         return f"Search error: {e}"
+
+
+async def _fuzzy_search(pattern: str, search_path: Path, threshold: int = 70) -> str:
+    """Fuzzy search using rapidfuzz for typo-tolerant matching."""
+    try:
+        from rapidfuzz import fuzz
+    except ImportError:
+        return "Error: rapidfuzz not installed. Run: pip install rapidfuzz"
+
+    matches = []
+    search_dir = search_path if search_path.is_dir() else search_path.parent
+    pattern_lower = pattern.lower()
+
+    # Search common code files
+    extensions = ("*.py", "*.js", "*.ts", "*.lua", "*.json", "*.md")
+
+    for ext in extensions:
+        for code_file in search_dir.rglob(ext):
+            try:
+                with open(code_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    lines = f.readlines()
+                    for i, line in enumerate(lines, 1):
+                        # Check each word/token in the line
+                        line_lower = line.lower()
+                        # Quick exact check first (fast path)
+                        if pattern_lower in line_lower:
+                            score = 100
+                        else:
+                            # Fuzzy match against line content
+                            score = fuzz.partial_ratio(pattern_lower, line_lower)
+
+                        if score >= threshold:
+                            rel_path = code_file.relative_to(PROJECT_ROOT)
+                            matches.append((score, f"{rel_path}:{i}: {line.rstrip()[:100]}"))
+                            if len(matches) >= 30:
+                                break
+            except Exception:
+                continue
+            if len(matches) >= 30:
+                break
+        if len(matches) >= 30:
+            break
+
+    if matches:
+        # Sort by score descending
+        matches.sort(key=lambda x: x[0], reverse=True)
+        result_lines = [f"[{m[0]}%] {m[1]}" for m in matches[:20]]
+        return '\n'.join(result_lines)
+
+    return f"No fuzzy matches found for '{pattern}' (threshold: {threshold}%)"
 
 
 @mcp.tool()
