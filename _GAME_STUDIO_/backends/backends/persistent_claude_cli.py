@@ -14,7 +14,8 @@ Token savings:
 - 90%+ reduction after initialization
 
 Auto-compaction:
-- Sessions auto-compact at 50K tokens (--autocompact 50k)
+- Per-task compaction via /compact command after each task
+- Full reinit every 10 tasks for fresh role.md injection
 - Keeps role.md (system prompt) intact
 - Summarizes conversation history to preserve key decisions
 - Prevents session bloat that caused 691K token issues
@@ -308,11 +309,6 @@ class PersistentClaudeCLI(Backend):
         # Model selection - use haiku for cheaper exploration
         if hasattr(self, 'model') and self.model and self.model != "claude":
             cmd.extend(["--model", self.model])
-
-        # Auto-compaction: compress session when approaching token threshold
-        # Keeps role.md intact, summarizes conversation history
-        # 50k threshold = ~4-5 task conversations before compaction
-        cmd.extend(["--autocompact", "50k"])
 
         logger.debug("[%s] CMD: %s", self.agent_name, " ".join(cmd[:5]))
 

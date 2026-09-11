@@ -298,10 +298,6 @@ class ClaudeCLIBackend(Backend):
         if self.model and self.model != "claude":
             cmd.extend(["--model", self.model])
 
-        # Auto-compaction: compress session when approaching token threshold
-        # Keeps role.md intact, summarizes conversation history
-        cmd.extend(["--autocompact", "50k"])
-
         # Debug: print full command
         logger.debug("Command: %s", ' '.join(cmd))
 
