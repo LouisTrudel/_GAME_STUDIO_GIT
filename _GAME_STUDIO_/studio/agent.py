@@ -187,19 +187,33 @@ class StudioAgent:
             logger.debug("[%s] INCREMENTAL - trigger only", self.name)
             return trigger
 
-        # BOSS INIT: First call - purpose + trigger only
-        # Memory exists (BOSS knows via role.md) but not injected - too much noise
-        # Cannot rely on --resume to enforce role.md
+        # BOSS INIT: First call - full context injected into session
+        # Subsequent calls just append trigger (session remembers via --resume)
         if self.is_boss:
             sections = []
 
             # Purpose block (strategic context)
             sections.append(hub._get_boss_purpose_block())
 
-            # THE USER MESSAGE - timestamped and prominent
-            from datetime import datetime
-            now = datetime.now().strftime("%H:%M:%S")
-            sections.append(f"## NEW MESSAGE [{now}] - RESPOND TO THIS\n{trigger}")
+            # Memory tier1 (compressed recent history)
+            from studio.core.memory import memory_manager
+            tier1 = memory_manager.get_tier(1)
+            if tier1:
+                sections.append(f"## MEMORY\n{tier1}")
+
+            # Hub recent messages (trimmed to 16 chars each)
+            hub_messages = hub.get_history(limit=20)
+            if hub_messages:
+                hub_lines = []
+                for msg in hub_messages:
+                    sender = msg.sender
+                    content = msg.content[:16] + "..." if len(msg.content) > 16 else msg.content
+                    content = content.replace("\n", " ")
+                    hub_lines.append(f"[{sender}]: {content}")
+                sections.append("## RECENT CHAT\n" + "\n".join(hub_lines))
+
+            # User message
+            sections.append(f"## USER MESSAGE\n{trigger}")
 
             StudioAgent._boss_initialized = True
             logger.info("[%s] BOSS initialized", self.name)

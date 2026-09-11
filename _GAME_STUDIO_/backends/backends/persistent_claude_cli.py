@@ -1,12 +1,13 @@
 """
-Claude CLI backend - Fresh context each call.
+Claude CLI backend with persistent sessions.
 
-Memory is managed server-side (hub, memory tiers, task_manager).
-No --resume, no session file loading - each call gets full context:
-  role.md + memory_tier1 + hub_recent + trigger
+Session lifecycle:
+1. Server boot: Delete old session file (fresh start)
+2. First call: --session-id + full context (memTier1 + hub + trigger)
+3. Subsequent calls: --resume + just trigger (session has context)
 
-Prompt caching still works (Anthropic caches first N tokens for 5 min).
-Session files are created by Claude CLI but never resumed.
+Memory is managed server-side but injected on first call.
+Prompt caching works at Anthropic API level (5 min TTL).
 """
 
 import subprocess
@@ -33,8 +34,38 @@ def get_session_uuid(agent_name: str) -> str:
     return str(uuid.UUID(bytes=hash_bytes[:16]))
 
 
+def _get_session_file_path(cwd: Path, session_uuid: str) -> Optional[Path]:
+    """Get path to session file if it exists."""
+    home = Path.home()
+    claude_projects = home / ".claude" / "projects"
+    if not claude_projects.exists():
+        return None
+
+    cwd_str = str(cwd.resolve())
+    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
+    session_file = claude_projects / encoded / f"{session_uuid}.jsonl"
+    return session_file if session_file.exists() else None
+
+
+def _delete_session_file(cwd: Path, session_uuid: str) -> bool:
+    """Delete session file if it exists. Returns True if deleted."""
+    session_file = _get_session_file_path(cwd, session_uuid)
+    if session_file:
+        try:
+            session_file.unlink()
+            logger.info("Deleted session file: %s", session_file.name)
+            return True
+        except Exception as e:
+            logger.warning("Failed to delete session file: %s", e)
+    return False
+
+
 class PersistentClaudeCLI(Backend):
-    """Claude CLI backend with deterministic session IDs (no resume)."""
+    """Claude CLI backend with persistent sessions (cleared on boot)."""
+
+    # Class-level: tracks which agents are initialized THIS boot
+    # Resets when module reloads (server restart)
+    _initialized: dict[str, bool] = {}
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
@@ -43,7 +74,13 @@ class PersistentClaudeCLI(Backend):
         self.cwd = Path(__file__).parent.parent.parent
         self._session_uuid = get_session_uuid(self.agent_name)
         self._reset_metrics()
-        logger.info("[%s] Session %s (fresh each call)", self.agent_name, self._session_uuid[:8])
+
+        # Delete old session file on boot (fresh start)
+        if self.agent_name not in PersistentClaudeCLI._initialized:
+            _delete_session_file(self.cwd, self._session_uuid)
+            PersistentClaudeCLI._initialized[self.agent_name] = False
+
+        logger.info("[%s] Session %s", self.agent_name, self._session_uuid[:8])
 
     def _reset_metrics(self):
         """Reset metrics for new call."""
@@ -73,6 +110,14 @@ class PersistentClaudeCLI(Backend):
         except ImportError:
             pass  # Server not running (e.g., CLI mode)
 
+    def _is_initialized(self) -> bool:
+        """Check if this agent has been initialized this boot."""
+        return PersistentClaudeCLI._initialized.get(self.agent_name, False)
+
+    def _mark_initialized(self):
+        """Mark agent as initialized."""
+        PersistentClaudeCLI._initialized[self.agent_name] = True
+
     def chat(
         self,
         messages: list[dict],
@@ -81,17 +126,30 @@ class PersistentClaudeCLI(Backend):
         tools: list[dict] = None,
         tool_handlers: dict = None,
     ) -> str:
-        """Send message to Claude CLI - fresh context each call."""
+        """Send message to Claude CLI with session persistence."""
         self._reset_token_tracking()
         self._reset_metrics()
 
-        # Always send full context (we manage memory server-side, no --resume)
-        prompt = self._build_full_prompt(messages, system_prompt)
-        logger.info("[%s] Call (%d chars)", self.agent_name, len(prompt))
+        # First call: full context + --session-id
+        # Subsequent: just message + --resume
+        if self._is_initialized():
+            # Incremental: just the user message
+            prompt = messages[-1].get("content", "") if messages else ""
+            is_init = False
+            logger.info("[%s] Incremental (%d chars)", self.agent_name, len(prompt))
+        else:
+            # Init: full context (system + message)
+            prompt = self._build_full_prompt(messages, system_prompt)
+            is_init = True
+            logger.info("[%s] Init (%d chars)", self.agent_name, len(prompt))
 
         # Run CLI
         try:
-            response = self._run_cli(prompt)
+            response = self._run_cli(prompt, is_init=is_init)
+
+            # Mark as initialized after successful first call
+            if is_init:
+                self._mark_initialized()
 
             # Execute tool tags if present
             if tool_handlers and "<tool>" in response:
@@ -100,8 +158,10 @@ class PersistentClaudeCLI(Backend):
             return response
 
         except Exception as e:
+            import traceback
             self.last_is_error = True
             self.last_error_message = str(e)
+            logger.error("[%s] CLI error: %s\n%s", self.agent_name, e, traceback.format_exc())
             return f"Error: {type(e).__name__}: {e}"
 
     def _build_full_prompt(self, messages: list[dict], system_prompt: str) -> str:
@@ -117,7 +177,8 @@ class PersistentClaudeCLI(Backend):
 
         parts.append("\nRespond concisely:")
         return "\n".join(parts)
-    def _run_cli(self, prompt: str) -> str:
+
+    def _run_cli(self, prompt: str, is_init: bool = False) -> str:
         """Run Claude CLI subprocess."""
         import tempfile
 
@@ -127,21 +188,21 @@ class PersistentClaudeCLI(Backend):
             temp_path = f.name
 
         try:
-            return self._run_with_retry(temp_path, prompt)
+            return self._run_with_retry(temp_path, prompt, is_init)
         finally:
             try:
                 os.unlink(temp_path)
             except Exception:
                 pass
 
-    def _run_with_retry(self, temp_path: str, prompt: str) -> str:
+    def _run_with_retry(self, temp_path: str, prompt: str, is_init: bool) -> str:
         """Run with exponential backoff retry."""
         delay = INITIAL_DELAY
         last_error = None
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                return self._run_subprocess(temp_path, prompt)
+                return self._run_subprocess(temp_path, prompt, is_init)
             except RetryableError as e:
                 last_error = e
                 if attempt < MAX_RETRIES:
@@ -151,7 +212,7 @@ class PersistentClaudeCLI(Backend):
 
         raise last_error
 
-    def _run_subprocess(self, temp_path: str, prompt: str) -> str:
+    def _run_subprocess(self, temp_path: str, prompt: str, is_init: bool) -> str:
         """Run single Claude CLI subprocess."""
         if os.name == 'nt':
             claude_cmd = os.path.join(os.environ.get('APPDATA', ''), 'npm', 'claude.cmd')
@@ -162,9 +223,11 @@ class PersistentClaudeCLI(Backend):
 
         cmd = [claude_cmd, "-p", "-", "--output-format", "stream-json", "--verbose"]
 
-        # Fresh session each call - no --resume (we manage memory server-side)
-        # Session ID kept for organization but never resumed
-        cmd.extend(["--session-id", self._session_uuid])
+        # Session handling: init creates new, subsequent resumes
+        if is_init:
+            cmd.extend(["--session-id", self._session_uuid])
+        else:
+            cmd.extend(["--resume", self._session_uuid])
 
         # MCP config
         mcp_config = self.cwd / ".claude" / "settings.json"
