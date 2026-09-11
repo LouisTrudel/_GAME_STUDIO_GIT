@@ -378,8 +378,8 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
         hub.post("user", content)
         self._notify_status("BOSS", "working", "Processing user message...")
         self._notify_thinking("BOSS")
-        # Simple trigger - role.md handles tool enforcement
-        boss_response = self.boss.respond("New user message above. Use MCP tools: create_task, acknowledge, or recall_memory. Imperative = DELEGATE.")
+        # Include user message directly in trigger - don't rely on context extraction
+        boss_response = self.boss.respond(f"[USER]: {content}\n\nRespond with MCP tools. Imperative = DELEGATE.")
 
         # Track Boss token usage
         usage = self.boss.get_last_token_usage()
@@ -707,6 +707,10 @@ TASK {task.id}:
         task_manager.complete_task(task_id, response)
         logger.info("Completed %s", task_id)
 
+        # Compact agent session after task to keep context lean
+        # Role.md stays at top, conversation gets summarized
+        self._compact_agent_session(agent_name)
+
         # Post Raw task responses to chat (they have no agent to post)
         if agent_name == "Raw":
             task = task_manager.get_task(task_id)
@@ -723,11 +727,18 @@ TASK {task.id}:
         token_log = usage.get("token_log", [])
         logger.info("_handle_successful_task %s: usage=%s, in=%d out=%d", task_id, list(usage.keys()), input_tokens, output_tokens)
         task_manager.log_tokens(task_id, input_tokens, output_tokens, token_log)
+
+        # Extract cache metrics from quality_metrics
+        cache_read = quality_metrics.get("cache_read_input_tokens", 0) if quality_metrics else 0
+        cache_creation = quality_metrics.get("cache_creation_input_tokens", 0) if quality_metrics else 0
+
         track_tokens(
             agent=agent_name,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             task_id=task_id,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
         )
 
         # Log quality metrics (retries, tool errors, cost, duration)
@@ -737,6 +748,12 @@ TASK {task.id}:
             tool_errors = quality_metrics.get("tool_errors", [])
             if retries > 0 or tool_errors:
                 logger.debug("%s quality: %d retries, %d tool errors", task_id, retries, len(tool_errors))
+
+            # Log cache efficiency
+            if cache_read > 0 or cache_creation > 0:
+                hit_rate = round(cache_read / (cache_read + cache_creation) * 100, 1) if (cache_read + cache_creation) > 0 else 0
+                logger.info("%s cache: %d hits, %d misses (%.1f%% hit rate)",
+                           agent_name, cache_read, cache_creation, hit_rate)
 
         # Archive old tasks AFTER logging metrics (task must exist for logging)
         task_manager.archive_old_tasks(keep_recent=10)
@@ -748,6 +765,23 @@ TASK {task.id}:
                 logger.info("Memory compression: %d tier(s)", compressed)
         except Exception as mem_err:
             logger.error("Memory compression error (non-fatal): %s", mem_err)
+
+    def _compact_agent_session(self, agent_name: str):
+        """Compact agent's session after task completion.
+
+        Keeps role.md at top (primacy), summarizes conversation.
+        Fresh context for next task without losing learned patterns.
+        """
+        agent = self.agents.get(agent_name)
+        if not agent:
+            return
+
+        backend = getattr(agent.agent, 'backend', None)
+        if backend and hasattr(backend, 'compact_session'):
+            try:
+                backend.compact_session()
+            except Exception as e:
+                logger.warning("Compact failed for %s: %s", agent_name, e)
 
     def _handle_failed_task(self, task_id: str, usage: dict):
         """Handle task failure with retry logic.

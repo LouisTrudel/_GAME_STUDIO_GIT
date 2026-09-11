@@ -65,6 +65,9 @@ def _truncate_for_hub(response: str, max_chars: int = 300) -> str:
 class StudioAgent:
     """An agent that reads/writes to the shared hub and uses task tools."""
 
+    # Class-level tracking for BOSS initialization (persists across calls)
+    _boss_initialized: bool = False
+
     def __init__(self, name: str, backend: str = "claude-cli"):
         self.name_raw = name
         config = load_agent_config(name)
@@ -169,6 +172,7 @@ class StudioAgent:
 
         Uses ## CONTEXT and ## TASK markers for consistency with system prompt.
         T356: Vanilla agents skip context injection - only get the trigger message.
+        T444: BOSS gets full context only on first call, incremental after.
         """
         sections = []
 
@@ -177,24 +181,43 @@ class StudioAgent:
             logger.debug("[%s] VANILLA MODE - skipping context injection", self.name)
             return trigger_message or "Respond appropriately."
 
+        # T444: BOSS incremental mode - skip static context after initialization
+        if self.is_boss and StudioAgent._boss_initialized:
+            logger.debug("[%s] INCREMENTAL MODE - skipping FILES/MEMORY", self.name)
+            # Only inject recent messages + task (memory/files already in session)
+            recent_context = hub.get_incremental_context_for_boss()
+            if recent_context:
+                sections.append("### RECENT\n\n" + recent_context)
+            trigger = trigger_message or "Respond appropriately."
+            sections.append("## TASK\n\n" + trigger)
+            return "\n\n".join(sections)
+
         # Debug: confirm non-vanilla path
         logger.debug("[%s] Building context (is_vanilla=%s, is_boss=%s)", self.name, self.is_vanilla, self.is_boss)
 
-        # ## FILES - Inject file tree for orientation (T402)
-        active_project = project_manager.get_active()
-        project_id = active_project.id if active_project else None
-        file_tree = get_file_tree(project_id)
-        if file_tree:
-            sections.append("## FILES\n\n```\n" + file_tree + "\n```")
+        # BOSS gets file tree + context for orchestration
+        # Employees get just the task - file paths come in task description
+        if self.is_boss:
+            # ## FILES - File tree for orientation (T402)
+            active_project = project_manager.get_active()
+            project_id = active_project.id if active_project else None
+            file_tree = get_file_tree(project_id)
+            if file_tree:
+                sections.append("## FILES\n\n```\n" + file_tree + "\n```")
 
-        # ## CONTEXT - Dynamic context (tasks, hub messages)
-        context_md = self.get_context_md()
-        if context_md:
-            sections.append("## CONTEXT\n\n" + context_md)
+            # ## CONTEXT - Hub messages + active tasks
+            context_md = self.get_context_md()
+            if context_md:
+                sections.append("## CONTEXT\n\n" + context_md)
 
         # ## TASK - The trigger/instruction for this turn
         trigger = trigger_message or "Respond appropriately."
         sections.append("## TASK\n\n" + trigger)
+
+        # T444: Mark BOSS as initialized after first full context build
+        if self.is_boss:
+            StudioAgent._boss_initialized = True
+            logger.info("[%s] BOSS initialized - subsequent calls use incremental mode", self.name)
 
         return "\n\n".join(sections)
 

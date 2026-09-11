@@ -25,7 +25,7 @@ from studio.core.tasks import task_manager
 from studio.core.schedules import schedule_manager
 from studio.core.suggestions import suggestion_manager
 from studio.core.projects import project_manager
-from studio.core.studio_metrics import get_session_tokens, reset_session_tokens
+from studio.core.studio_metrics import get_session_tokens, reset_session_tokens, get_cache_stats
 from studio.core.memory import memory_manager
 from studio.studio import load_agent_role, load_agent_config, get_all_agent_names
 from studio.loader import load_agent_role_md
@@ -320,10 +320,10 @@ Content: {suggestion.content}{research_context}
 Create the appropriate task(s) to implement this suggestion. Use create_task tool to assign work to the right agent(s).
 
 Consider:
-- new_skill/feature → usually Programmer or Designer
-- architecture/tooling → usually Programmer
+- new_skill/feature → usually Code or Design
+- architecture/tooling → usually Code
 - process/workflow → may need multiple agents
-- documentation → Writer
+- documentation → Text
 
 Be specific in task descriptions. Reference suggestion {suggestion.id} for context."""
 
@@ -482,6 +482,59 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
         # Also reset task costs so UI reflects the reset
         tasks_reset = task_manager.reset_token_costs()
         return {"status": "ok", "message": f"Token tracking reset. {tasks_reset} tasks cleared."}
+
+    @app.get("/api/tokens/cache")
+    async def get_cache_efficiency():
+        """Get cache efficiency stats per agent.
+
+        Returns:
+            agents: Per-agent cache hit/miss stats
+            summary: Overall cache efficiency
+
+        Example response:
+            {
+                "agents": {
+                    "Code": {
+                        "cache_hits": 45000,
+                        "cache_misses": 5000,
+                        "total_input": 50000,
+                        "hit_rate_pct": 90.0,
+                        "cost_savings_usd": 0.108,
+                        "calls": 5
+                    }
+                },
+                "summary": {
+                    "total_cache_hits": 120000,
+                    "total_cache_misses": 15000,
+                    "overall_hit_rate_pct": 88.9,
+                    "total_cost_savings_usd": 0.288
+                }
+            }
+        """
+        return get_cache_stats()
+
+    # ============ SESSION MANAGEMENT ============
+
+    @app.post("/api/sessions/clear/{agent_name}")
+    async def clear_agent_session_route(agent_name: str):
+        """Clear a specific agent's persistent session."""
+        from backends.backends.persistent_claude_cli import clear_session
+        if clear_session(agent_name):
+            return {"status": "ok", "message": f"Session cleared for {agent_name}"}
+        return {"status": "ok", "message": f"No session found for {agent_name}"}
+
+    @app.post("/api/sessions/clear-all")
+    async def clear_all_sessions_route():
+        """Clear all agent persistent sessions."""
+        from backends.backends.persistent_claude_cli import clear_all_sessions
+        count = clear_all_sessions()
+        return {"status": "ok", "cleared": count}
+
+    @app.get("/api/sessions")
+    async def list_sessions_route():
+        """List all agent sessions with stats."""
+        from backends.backends.persistent_claude_cli import list_sessions
+        return list_sessions()
 
     # ============ FILE EXPLORER ============
 

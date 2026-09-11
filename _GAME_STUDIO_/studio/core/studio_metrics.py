@@ -37,13 +37,22 @@ _session_tokens = {
     "session_start": datetime.now().isoformat(),
     "total_input_tokens": 0,
     "total_output_tokens": 0,
-    "by_agent": {},  # {agent_name: {input: int, output: int, calls: int}}
+    "total_cache_read_tokens": 0,
+    "total_cache_creation_tokens": 0,
+    "by_agent": {},  # {agent_name: {input, output, cache_read, cache_creation, calls}}
     "by_task": {},   # {task_id: {input: int, output: int}}
     "calls": [],     # Recent calls log (last 100)
 }
 
 
-def track_tokens(agent: str, input_tokens: int, output_tokens: int, task_id: str = None):
+def track_tokens(
+    agent: str,
+    input_tokens: int,
+    output_tokens: int,
+    task_id: str = None,
+    cache_read_tokens: int = 0,
+    cache_creation_tokens: int = 0,
+):
     """
     Track token usage for any LLM call.
 
@@ -52,6 +61,8 @@ def track_tokens(agent: str, input_tokens: int, output_tokens: int, task_id: str
         input_tokens: Number of input tokens
         output_tokens: Number of output tokens
         task_id: Optional task ID if this is task-related
+        cache_read_tokens: Tokens read from cache (5x cheaper)
+        cache_creation_tokens: Tokens written to cache
     """
     global _session_tokens
 
@@ -63,13 +74,20 @@ def track_tokens(agent: str, input_tokens: int, output_tokens: int, task_id: str
         # Update session totals
         _session_tokens["total_input_tokens"] += input_tokens
         _session_tokens["total_output_tokens"] += output_tokens
+        _session_tokens["total_cache_read_tokens"] += cache_read_tokens
+        _session_tokens["total_cache_creation_tokens"] += cache_creation_tokens
 
         # Update per-agent stats
         if agent not in _session_tokens["by_agent"]:
-            _session_tokens["by_agent"][agent] = {"input": 0, "output": 0, "calls": 0}
+            _session_tokens["by_agent"][agent] = {
+                "input": 0, "output": 0, "calls": 0,
+                "cache_read": 0, "cache_creation": 0
+            }
         _session_tokens["by_agent"][agent]["input"] += input_tokens
         _session_tokens["by_agent"][agent]["output"] += output_tokens
         _session_tokens["by_agent"][agent]["calls"] += 1
+        _session_tokens["by_agent"][agent]["cache_read"] += cache_read_tokens
+        _session_tokens["by_agent"][agent]["cache_creation"] += cache_creation_tokens
 
         # Update per-task stats if applicable
         if task_id:
@@ -85,6 +103,8 @@ def track_tokens(agent: str, input_tokens: int, output_tokens: int, task_id: str
             "task_id": task_id,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
+            "cache_read": cache_read_tokens,
+            "cache_creation": cache_creation_tokens,
         })
         if len(_session_tokens["calls"]) > 100:
             _session_tokens["calls"] = _session_tokens["calls"][-100:]
@@ -111,10 +131,69 @@ def get_session_tokens() -> dict:
             "total_input_tokens": _session_tokens["total_input_tokens"],
             "total_output_tokens": _session_tokens["total_output_tokens"],
             "total_tokens": _session_tokens["total_input_tokens"] + _session_tokens["total_output_tokens"],
+            "total_cache_read_tokens": _session_tokens.get("total_cache_read_tokens", 0),
+            "total_cache_creation_tokens": _session_tokens.get("total_cache_creation_tokens", 0),
             "by_agent": dict(_session_tokens["by_agent"]),
             "by_task": dict(_session_tokens["by_task"]),
             "recent_calls": list(_session_tokens["calls"][-20:]),
         }
+
+
+def get_cache_stats() -> dict:
+    """Get cache efficiency stats per agent.
+
+    Returns formatted stats showing:
+    - Cache hits (cache_read_tokens) vs misses
+    - Cache hit rate percentage
+    - Estimated cost savings (cache reads are 5x cheaper)
+    """
+    with _session_lock:
+        stats = {"agents": {}, "summary": {}}
+
+        total_cache_read = 0
+        total_cache_creation = 0
+        total_input = 0
+
+        for agent, data in _session_tokens["by_agent"].items():
+            cache_read = data.get("cache_read", 0)
+            cache_creation = data.get("cache_creation", 0)
+            input_tokens = data.get("input", 0)
+
+            # Cache hit rate: cache_read / total_input
+            # Note: input_tokens includes both cached and non-cached
+            hit_rate = round(cache_read / input_tokens * 100, 1) if input_tokens > 0 else 0
+
+            # Cost savings: cache reads are 5x cheaper
+            # Savings = cache_read * (1 - 1/5) = cache_read * 0.8
+            # At $3/M input tokens, savings = cache_read * 0.8 * 3 / 1_000_000
+            savings_usd = round(cache_read * 0.8 * 3 / 1_000_000, 4)
+
+            stats["agents"][agent] = {
+                "cache_hits": cache_read,
+                "cache_misses": cache_creation,
+                "total_input": input_tokens,
+                "hit_rate_pct": hit_rate,
+                "cost_savings_usd": savings_usd,
+                "calls": data.get("calls", 0),
+            }
+
+            total_cache_read += cache_read
+            total_cache_creation += cache_creation
+            total_input += input_tokens
+
+        # Summary
+        overall_hit_rate = round(total_cache_read / total_input * 100, 1) if total_input > 0 else 0
+        total_savings = round(total_cache_read * 0.8 * 3 / 1_000_000, 4)
+
+        stats["summary"] = {
+            "total_cache_hits": total_cache_read,
+            "total_cache_misses": total_cache_creation,
+            "total_input_tokens": total_input,
+            "overall_hit_rate_pct": overall_hit_rate,
+            "total_cost_savings_usd": total_savings,
+        }
+
+        return stats
 
 
 def reset_session_tokens():
@@ -125,6 +204,8 @@ def reset_session_tokens():
             "session_start": datetime.now().isoformat(),
             "total_input_tokens": 0,
             "total_output_tokens": 0,
+            "total_cache_read_tokens": 0,
+            "total_cache_creation_tokens": 0,
             "by_agent": {},
             "by_task": {},
             "calls": [],

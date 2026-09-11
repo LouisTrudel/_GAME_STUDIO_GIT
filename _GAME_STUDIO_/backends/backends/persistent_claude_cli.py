@@ -1,7 +1,7 @@
 """
 Persistent Claude CLI backend - Session-aware context management.
 
-Instead of re-sending 250KB context every call, this backend:
+Instead of re-sending context every call, this backend:
 1. First call: Full initialization (system prompt + context)
 2. Subsequent calls: Only the trigger message
 
@@ -9,9 +9,15 @@ The session file (.jsonl) stores conversation history. Claude CLI loads it
 via --resume, so we don't need to re-inject context every time.
 
 Token savings:
-- First call: Full context (~62K tokens)
+- First call: Full context (~5K tokens: role.md + memory + file tree)
 - Subsequent calls: Just trigger (~100-500 tokens)
 - 90%+ reduction after initialization
+
+Auto-compaction:
+- Sessions auto-compact at 50K tokens (--autocompact 50k)
+- Keeps role.md (system prompt) intact
+- Summarizes conversation history to preserve key decisions
+- Prevents session bloat that caused 691K token issues
 
 This is NOT about keeping processes alive - it's about not defeating
 the session system by re-sending everything via stdin.
@@ -76,7 +82,11 @@ class PersistentClaudeCLI(Backend):
 
     # Class-level session state - tracks which agents are initialized
     _initialized_sessions: dict[str, bool] = {}
+    _task_counts: dict[str, int] = {}  # Tasks completed per agent
     _lock = threading.Lock()
+
+    # Full reinit after N tasks to keep role.md fresh
+    REINIT_AFTER_TASKS = 10
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
@@ -186,44 +196,29 @@ class PersistentClaudeCLI(Backend):
         return "\n".join(parts)
 
     def _build_incremental_prompt(self, messages: list[dict]) -> str:
-        """Build minimal prompt - extract just the task from full context.
+        """Build minimal prompt for incremental calls.
 
-        The StudioAgent builds full context every call:
-        ## FILES
-        ...
-        ## CONTEXT
-        ...
-        ## TASK
-        <the actual trigger>
-
-        After initialization, we only need the ## TASK section - Claude's
-        session already has the role, files, and prior context.
+        After initialization, Claude's session has the role and context.
+        We just need to send the new task/message.
         """
         if not messages:
             return "Continue with the current task."
 
         last_msg = messages[-1].get("content", "")
 
-        # Extract ## TASK section if present (StudioAgent format)
+        # Extract ## TASK section if present (contains user message directly now)
         if "## TASK" in last_msg:
-            # Find the TASK section
             task_start = last_msg.find("## TASK")
             task_content = last_msg[task_start + len("## TASK"):].strip()
 
-            # Remove any trailing sections (shouldn't be any, TASK is last)
+            # Remove any trailing sections
             if "\n## " in task_content:
                 task_content = task_content[:task_content.find("\n## ")]
 
-            logger.debug("[%s] Extracted TASK (%d chars from %d)",
-                        self.agent_name, len(task_content), len(last_msg))
+            logger.debug("[%s] Extracted TASK (%d chars)", self.agent_name, len(task_content))
+            return task_content
 
-            # Just the task content, minimal framing
-            return f"New task:\n{task_content}\n\nRespond concisely:"
-
-        # No section markers - use as-is (maybe a direct trigger)
-        if len(last_msg) < 100:
-            return f"User says: {last_msg}\n\nRespond concisely:"
-
+        # No section markers - use as-is
         return last_msg
 
     def _run_cli(self, prompt: str) -> str:
@@ -285,14 +280,21 @@ class PersistentClaudeCLI(Backend):
 
         cmd.append("--dangerously-skip-permissions")
 
-        # Tool restrictions to prevent token explosion from full-file reads
+        # CRITICAL: --allowedTools only auto-approves, does NOT block other tools
+        # Must use --disallowedTools to actually remove tools from context
+
+        # Block token-heavy default tools - agents use MCP tools instead
+        # Read/Write/Glob/Grep can read entire files, causing token explosion
+        blocked = "Read,Write,Glob,Grep,NotebookEdit"
+        cmd.extend(["--disallowedTools", blocked])
+
+        # Auto-approve our tools (no permission prompts)
         if self.agent_name == "BOSS":
-            # BOSS: Only MCP tools + delegation (no file access)
-            allowed = "mcp__game-studio__*,AskUserQuestion,Bash(git *),Bash(ls *),Task"
+            # BOSS: MCP tools + limited bash (no file access)
+            allowed = "mcp__game-studio__*,Bash(git *),Bash(ls *),Task"
         else:
             # Employees: MCP tools + Edit (surgical) + Bash (run code)
-            # Blocks: Read, Write, Glob, Grep → use MCP search_code, read_lines instead
-            allowed = "mcp__game-studio__*,Edit,Bash,AskUserQuestion"
+            allowed = "mcp__game-studio__*,Edit,Bash"
         cmd.extend(["--allowedTools", allowed])
 
         # Limit exploration to prevent token explosion
@@ -306,6 +308,11 @@ class PersistentClaudeCLI(Backend):
         # Model selection - use haiku for cheaper exploration
         if hasattr(self, 'model') and self.model and self.model != "claude":
             cmd.extend(["--model", self.model])
+
+        # Auto-compaction: compress session when approaching token threshold
+        # Keeps role.md intact, summarizes conversation history
+        # 50k threshold = ~4-5 task conversations before compaction
+        cmd.extend(["--autocompact", "50k"])
 
         logger.debug("[%s] CMD: %s", self.agent_name, " ".join(cmd[:5]))
 
@@ -513,11 +520,70 @@ class PersistentClaudeCLI(Backend):
             self._initialized_sessions[self.agent_name] = False
         logger.info("[%s] Session marked for reinitialization", self.agent_name)
 
+    def compact_session(self) -> bool:
+        """Compact or reinit session after task completion.
+
+        Called after each task completes:
+        - Normal: Compact (summarize conversation, keep role.md)
+        - Every N tasks: Full reinit (clear session, fresh role.md injection)
+
+        Returns True if operation succeeded.
+        """
+        if not self._is_initialized():
+            logger.debug("[%s] Not initialized, skipping compact", self.agent_name)
+            return False
+
+        # Increment task counter
+        with self._lock:
+            count = self._task_counts.get(self.agent_name, 0) + 1
+            self._task_counts[self.agent_name] = count
+
+        # Check if time for full reinit
+        if count >= self.REINIT_AFTER_TASKS:
+            logger.info("[%s] %d tasks reached - full reinit for fresh role.md", self.agent_name, count)
+            return self._full_reinit()
+
+        # Normal compaction
+        try:
+            logger.info("[%s] Compacting session (task %d/%d)...",
+                       self.agent_name, count, self.REINIT_AFTER_TASKS)
+            self._run_cli("/compact")
+            logger.info("[%s] Session compacted", self.agent_name)
+            return True
+        except Exception as e:
+            logger.warning("[%s] Compact failed: %s", self.agent_name, e)
+            return False
+
+    def _full_reinit(self) -> bool:
+        """Clear session entirely for fresh role.md injection.
+
+        Deletes session file and resets state. Next call will:
+        1. Create new session
+        2. Inject fresh role.md (primacy position)
+        3. Start with clean conversation history
+        """
+        try:
+            # Clear the session file
+            if clear_session(self.agent_name):
+                logger.info("[%s] Session cleared", self.agent_name)
+
+            # Reset task counter
+            with self._lock:
+                self._task_counts[self.agent_name] = 0
+                self._initialized_sessions[self.agent_name] = False
+
+            logger.info("[%s] Full reinit complete - next call injects fresh role.md", self.agent_name)
+            return True
+        except Exception as e:
+            logger.warning("[%s] Full reinit failed: %s", self.agent_name, e)
+            return False
+
     @classmethod
     def reset_all_sessions(cls):
         """Reset all session states - all agents will reinitialize."""
         with cls._lock:
             cls._initialized_sessions.clear()
+            cls._task_counts.clear()
         logger.info("All sessions marked for reinitialization")
 
 

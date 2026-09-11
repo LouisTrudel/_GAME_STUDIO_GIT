@@ -267,15 +267,21 @@ class ClaudeCLIBackend(Backend):
         # All agents need --dangerously-skip-permissions to use MCP tools
         cmd.append("--dangerously-skip-permissions")
 
-        # Tool restrictions to prevent token explosion from full-file reads
-        # All agents use MCP smart file tools instead of Claude Code's Read/Write
+        # CRITICAL: --allowedTools only auto-approves, does NOT block other tools
+        # Must use --disallowedTools to actually remove tools from context
+
+        # Block token-heavy default tools - agents use MCP tools instead
+        # Read/Write/Glob/Grep can read entire files, causing token explosion
+        blocked = "Read,Write,Glob,Grep,NotebookEdit"
+        cmd.extend(["--disallowedTools", blocked])
+
+        # Auto-approve our tools (no permission prompts)
         if self.agent_name == "BOSS":
-            # BOSS: Only MCP tools + delegation (no file access)
-            allowed = "mcp__game-studio__*,AskUserQuestion,Bash(git *),Bash(ls *),Task"
+            # BOSS: MCP tools + limited bash (no file access)
+            allowed = "mcp__game-studio__*,Bash(git *),Bash(ls *),Task"
         else:
-            # Employees: MCP tools + Edit (for surgical changes) + Bash (for running code)
-            # Blocks: Read, Write, Glob, Grep (use MCP search_code, read_lines, file_outline instead)
-            allowed = "mcp__game-studio__*,Edit,Bash,AskUserQuestion"
+            # Employees: MCP tools + Edit (surgical) + Bash (run code)
+            allowed = "mcp__game-studio__*,Edit,Bash"
         cmd.extend(["--allowedTools", allowed])
 
         # Limit turns to prevent token explosion from excessive tool use
@@ -291,6 +297,10 @@ class ClaudeCLIBackend(Backend):
         # Supported: sonnet, opus, haiku (default: sonnet)
         if self.model and self.model != "claude":
             cmd.extend(["--model", self.model])
+
+        # Auto-compaction: compress session when approaching token threshold
+        # Keeps role.md intact, summarizes conversation history
+        cmd.extend(["--autocompact", "50k"])
 
         # Debug: print full command
         logger.debug("Command: %s", ' '.join(cmd))
