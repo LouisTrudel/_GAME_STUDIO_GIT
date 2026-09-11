@@ -136,16 +136,14 @@ function renderAgentCards() {
                 expandedAgents.delete(name);
             } else {
                 expandedAgents.add(name);
+                // Init terminal when card expands (xterm needs visible container)
+                if (!terminalCollapsed.has(name)) {
+                    setTimeout(() => initTerminal(name), 50);
+                }
             }
         });
 
         panel.appendChild(card);
-
-        // Init terminal if expanded (default)
-        if (!terminalCollapsed.has(name)) {
-            // Delay slightly to ensure DOM is ready
-            setTimeout(() => initTerminal(name), 50);
-        }
     }
 }
 
