@@ -157,9 +157,10 @@ def register_routes(app: FastAPI):
     @app.post("/api/tasks/{task_id}/cancel")
     async def cancel_task(task_id: str):
         """Cancel a specific task."""
-        if task_manager.cancel_task(task_id):
-            return {"success": True, "message": f"Task {task_id} cancelled"}
-        return {"success": False, "error": "Task not found or cannot be cancelled"}
+        result = task_manager.cancel_task(task_id)
+        if result["success"]:
+            return {"success": True, "message": result["message"]}
+        return {"success": False, "error": result["message"]}
 
     @app.post("/api/tasks/{task_id}/retry")
     async def retry_task(task_id: str):

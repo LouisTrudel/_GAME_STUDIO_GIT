@@ -33,3 +33,8 @@
 - [RESOLVED] Git CRLF + stray `nul` file staging issues - cleaned up
 - [RESOLVED] RuntimeError: CLI exited early with unknown option '--autocompact'
 - [RESOLVED] BOSS "no user message detected" loop - session cleared to fix
+
+## [2026-09-11 18:30]
+- [RESOLVED] PersistentClaudeCLI missing REINIT_AFTER_TASKS constant - blocking compact after tasks
+- [UNRESOLVED] routes.py:160 cancel_task treats dict as boolean - always truthy, error path unreachable
+- [UNRESOLVED] Agents hitting 8-turn limit before completing tasks (T614-T618 all truncated)
