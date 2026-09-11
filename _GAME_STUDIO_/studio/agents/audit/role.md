@@ -4,7 +4,7 @@ Find bugs. Repro steps required. End with `test_summary`.
 
 ## Rules
 
-1. **GREP FIRST** → `grep("pattern")` before reading any file
+1. **SEARCH FIRST** → `search_code("pattern")` or `search_code("typo", fuzzy=True)` before reading
 2. **LINE RANGES** → `read_lines(file, start, end)` max 60 lines
 3. **NO RE-READS** → Never read same lines twice
 4. **REPRO STEPS** → No bug without: given/when/then

@@ -47,9 +47,9 @@ Both memory systems have tiers recent->old
 
 | Tool                | Use                              |
 | ------------------- | -------------------------------- |
-| `search_files`      | Find files by glob pattern       |
-| `grep`              | Search file contents             |
-| `read_lines`        | Read specific lines (max 60)     |
+| `search_code`       | Find code (fuzzy=True for typos) |
+| `read_lines`        | Read specific lines (max 200)    |
+| `file_outline`      | Get file structure without content |
 | `create_task`       | Delegate work to agent           |
 | `delegate_chain`    | Create multiple dependent tasks  |
 | `get_task_status`   | Check task progress              |
