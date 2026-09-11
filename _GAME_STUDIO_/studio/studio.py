@@ -548,10 +548,12 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
     def _prepare_agent_context(self, agent: StudioAgent, task) -> tuple[str, str, dict]:
         """Build structured prompt and log context metrics.
 
+        INIT: Full context (FILES + ROLE + TASK) - session remembers this
+        INCREMENTAL: Just TASK - session has context from init
+
         Returns (full_prompt, trigger, context_metrics).
         """
-        # Build clean prompt - agent just needs to do the work
-        # Output format first, then task (WHAT at end = highest recall)
+        # Build task trigger (always needed)
         trigger = f"""Output format:
 DONE: [one sentence summary]
 - [key point 1]
@@ -563,45 +565,54 @@ DONE: [one sentence summary]
 TASK {task.id}:
 {task.description}"""
 
-        # T226: Build structured prompt with explicit section markers
-        # Order optimized for primacy/recency effects (T224):
-        # files → skills (primacy) → role (middle) → context → task (recency)
-        prompt_sections = []
+        # Check if agent is initialized (session has context)
+        backend = getattr(agent.agent, 'backend', None)
+        is_initialized = backend.is_initialized() if backend and hasattr(backend, 'is_initialized') else False
 
-        # ## FILES - Project file tree for orientation (T402/T432)
-        active_project = project_manager.get_active()
-        project_id = active_project.id if active_project else None
-        file_tree = get_file_tree(project_id)
-        if file_tree:
-            prompt_sections.append("## FILES\n\n```\n" + file_tree + "\n```")
+        if is_initialized:
+            # INCREMENTAL: Session has FILES + ROLE, just send TASK
+            full_prompt = "## TASK\n\n" + trigger
+            logger.debug("[%s] Incremental context for %s", agent.name, task.id)
+        else:
+            # INIT: Full context injection
+            prompt_sections = []
 
-        # ## SKILLS - How to do work (primacy position)
-        skills = agent.get_skills_content()
-        if skills:
-            prompt_sections.append("## SKILLS\n\n" + skills)
+            # ## FILES - Project file tree for orientation
+            active_project = project_manager.get_active()
+            project_id = active_project.id if active_project else None
+            file_tree = get_file_tree(project_id)
+            if file_tree:
+                prompt_sections.append("## FILES\n\n```\n" + file_tree + "\n```")
 
-        # ## ROLE - Agent identity/constraints (middle = lowest recall, but needed)
-        role = agent.get_role_md()
-        if role:
-            prompt_sections.append("## ROLE\n\n" + role)
+            # ## SKILLS - How to do work (primacy position)
+            skills = agent.get_skills_content()
+            if skills:
+                prompt_sections.append("## SKILLS\n\n" + skills)
 
-        # ## CONTEXT - Project context + tasks (Boss compacts into task, employees get assigned tasks only)
-        context = agent.get_context_md()
-        if context:
-            prompt_sections.append("## CONTEXT\n\n" + context)
+            # ## ROLE - Agent identity/constraints
+            role = agent.get_role_md()
+            if role:
+                prompt_sections.append("## ROLE\n\n" + role)
 
-        # ## TASK - Action to take (recency position = highest recall)
-        prompt_sections.append("## TASK\n\n" + trigger)
+            # ## CONTEXT - Project context + tasks
+            context = agent.get_context_md()
+            if context:
+                prompt_sections.append("## CONTEXT\n\n" + context)
 
-        full_prompt = "\n\n".join(prompt_sections)
+            # ## TASK - Action to take (recency = highest recall)
+            prompt_sections.append("## TASK\n\n" + trigger)
 
-        # Capture injected context metrics (T108 - kept for backwards compat)
+            full_prompt = "\n\n".join(prompt_sections)
+            logger.info("[%s] Init context for %s (%d chars)", agent.name, task.id, len(full_prompt))
+
+        # Capture injected context metrics
         context_metrics = {
             "full_prompt_length": len(full_prompt),
             "system_prompt_length": len(agent.agent.system_prompt) if hasattr(agent.agent, 'system_prompt') else 0,
             "tool_count": len(agent.agent.tools) if hasattr(agent.agent, 'tools') else 0,
             "message_count": len(agent.agent.messages) if hasattr(agent.agent, 'messages') else 0,
             "estimated_context_tokens": len(full_prompt) // 4,
+            "is_incremental": is_initialized,
         }
 
         return full_prompt, trigger, context_metrics

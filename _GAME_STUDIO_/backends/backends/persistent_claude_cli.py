@@ -110,8 +110,8 @@ class PersistentClaudeCLI(Backend):
         except ImportError:
             pass  # Server not running (e.g., CLI mode)
 
-    def _is_initialized(self) -> bool:
-        """Check if this agent has been initialized this boot."""
+    def is_initialized(self) -> bool:
+        """Check if this agent has been initialized this boot (public API)."""
         return PersistentClaudeCLI._initialized.get(self.agent_name, False)
 
     def _mark_initialized(self):
@@ -132,7 +132,7 @@ class PersistentClaudeCLI(Backend):
 
         # First call: full context + --session-id
         # Subsequent: just message + --resume
-        if self._is_initialized():
+        if self.is_initialized():
             # Incremental: just the user message
             prompt = messages[-1].get("content", "") if messages else ""
             is_init = False
