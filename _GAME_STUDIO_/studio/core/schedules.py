@@ -318,6 +318,12 @@ class ScheduleManager:
                     created_ids.append(task.id)
                     prev_task_id = task.id
                 schedule.created_task_ids = created_ids
+                # Immediate broadcast so UI shows new tasks right away
+                try:
+                    from server_modules.broadcast import broadcast_tasks_sync
+                    broadcast_tasks_sync()
+                except ImportError:
+                    pass  # Server not running
             except Exception as e:
                 run_error = str(e)
                 logger.error("Schedule %s: Task creation failed: %s", schedule.id, e)

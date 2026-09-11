@@ -808,6 +808,7 @@ class TaskManager:
             task.status = TaskStatus.ERROR
             task.error = error_msg
             task.completed_at = datetime.now()
+            self._block_dependents(task_id)  # Cascade failure to dependent tasks
             self._save_tasks()
             logger.error("%s ERROR: %s", task_id, error_msg)
             # Track metrics (errors count as failures)
@@ -1026,6 +1027,27 @@ class TaskManager:
             logger.warning("Archive check failed for %s: %s", task_id, e)
             return False
 
+    def get_archived_task(self, task_id: str) -> Optional[dict]:
+        """Get archived task data by ID.
+        
+        Returns dict with archived task info, or None if not found.
+        """
+        archive_file = self._get_archive_file()
+        if not archive_file.exists():
+            return None
+        try:
+            with open(archive_file, "r") as f:
+                archive_data = json.load(f)
+            if isinstance(archive_data, dict):
+                archive_data = archive_data.get("tasks", [])
+            for t in archive_data:
+                if t.get("id") == task_id:
+                    return t
+            return None
+        except (json.JSONDecodeError, IOError) as e:
+            logger.warning("Archive lookup failed for %s: %s", task_id, e)
+            return None
+
     def _update_dependents(self, completed_task_id: str):
         """Check if any pending tasks can now be started."""
         for task in self.tasks.values():
@@ -1040,13 +1062,24 @@ class TaskManager:
 
         Includes IN_PROGRESS tasks - they should be stopped if dependency failed.
         """
+        blocked_count = 0
         for task in self.tasks.values():
             if failed_task_id in task.dependencies:
                 if task.status in (TaskStatus.PENDING, TaskStatus.READY, TaskStatus.IN_PROGRESS):
                     was_in_progress = task.status == TaskStatus.IN_PROGRESS
                     task.status = TaskStatus.BLOCKED
+                    blocked_count += 1
                     if was_in_progress:
                         logger.info("BLOCKED in-progress task %s - dependency %s failed", task.id, failed_task_id)
+
+        # Broadcast immediately so UI shows blocked tasks
+        if blocked_count > 0:
+            logger.info("Blocked %d dependent tasks after %s failed", blocked_count, failed_task_id)
+            try:
+                from server_modules.broadcast import broadcast_tasks_sync
+                broadcast_tasks_sync()
+            except ImportError:
+                pass  # Server not running
 
     def get_all_tasks(self) -> list[Task]:
         """Get all tasks."""
@@ -1236,16 +1269,17 @@ class TaskManager:
 
         return "\n".join(lines)
 
-    def archive_old_tasks(self, keep_recent: int = 10) -> int:
+    def archive_old_tasks(self, keep_recent: int = 0) -> int:
         """
         Archive completed tasks to reduce context size.
         Keeps the most recent `keep_recent` approved/failed tasks, archives the rest.
+        Default: archive ALL done tasks (keep_recent=0).
         Returns number of tasks archived.
 
         T332: Uses project-aware path via _get_archive_file().
         """
-        # Statuses to archive
-        archive_statuses = {TaskStatus.APPROVED, TaskStatus.FAILED, TaskStatus.ERROR}
+        # Statuses to archive (all "done" states)
+        archive_statuses = {TaskStatus.APPROVED, TaskStatus.FAILED, TaskStatus.ERROR, TaskStatus.PARTIAL}
 
         # Separate active from archivable
         archivable = [t for t in self.tasks.values() if t.status in archive_statuses]

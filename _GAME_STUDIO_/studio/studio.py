@@ -29,7 +29,10 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import gemini
-from backends.backends.claude_cli import ClaudeCLIBackend, clear_all_sessions
+from backends.backends.claude_cli import ClaudeCLIBackend
+# DEPRECATED: Session clearing on empty queue removed
+# Persistent sessions should persist, not be deleted
+# from backends.backends.persistent_claude_cli import clear_all_sessions
 from backends.backends.ollama import OllamaBackend
 
 
@@ -958,23 +961,11 @@ TASK {task.id}:
     # Tick logging: only log status every 60 seconds to reduce spam
     _last_tick_log = 0
     _tick_count = 0
-    _sessions_cleared = False  # Track if sessions were cleared when queue emptied
-
-    def _maybe_clear_sessions(self):
-        """Clear Claude CLI sessions when task queue is empty.
-
-        Only clears once per empty period - resets when new tasks arrive.
-        This saves context/tokens on the next batch of tasks.
-        """
-        if not Studio._sessions_cleared:
-            Studio._sessions_cleared = True
-            cwd = Path(__file__).parent.parent
-            clear_all_sessions(cwd)
-            logger.info("Task queue empty - cleared all agent sessions")
-
-    def _reset_session_cleared_flag(self):
-        """Reset the flag when new work arrives."""
-        Studio._sessions_cleared = False
+    # DEPRECATED: Session clearing on empty queue removed
+    # Persistent sessions should persist - use compact_session() instead
+    # _sessions_cleared = False
+    # def _maybe_clear_sessions(self): ...
+    # def _reset_session_cleared_flag(self): ...
 
     def tick(self) -> bool:
         """
@@ -1009,13 +1000,8 @@ TASK {task.id}:
         if self._dispatch_new_tasks():
             did_work = True
 
-        # 4. Session management: clear when idle, reset flag when working
-        if did_work:
-            self._reset_session_cleared_flag()
-        elif not self._active_tasks:
-            ready_tasks = task_manager.get_ready_tasks()
-            if not ready_tasks:
-                self._maybe_clear_sessions()
+        # DEPRECATED: Session clearing on empty queue removed
+        # Persistent sessions persist - compaction handled per-agent after tasks
 
         # Only log completion if work was done or periodic log
         if did_work or should_log:

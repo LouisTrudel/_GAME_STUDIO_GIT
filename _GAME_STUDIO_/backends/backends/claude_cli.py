@@ -67,9 +67,10 @@ def get_permanent_session_uuid(agent_name: str) -> str:
     return str(uuid.UUID(bytes=hash_bytes[:16]))
 
 
-def clear_all_sessions(cwd: Path = None):
-    """No-op stub for permanent sessions. Sessions persist indefinitely."""
-    pass
+# DEPRECATED: Ephemeral session clearing not supported
+# All agents use persistent sessions via persistent_claude_cli.py
+# def clear_all_sessions(cwd: Path = None):
+#     pass
 
 
 def _session_file_exists(cwd: Path, session_uuid: str) -> bool:
@@ -661,9 +662,9 @@ class ClaudeCLIBackend(Backend):
             "num_tool_uses": getattr(self, '_tool_use_count', 0),
         }
 
-    def clear_session(self) -> bool:
-        """No-op for permanent sessions. Sessions persist indefinitely."""
-        return False
+    # DEPRECATED: Ephemeral session clearing not supported
+    # def clear_session(self) -> bool:
+    #     return False
 
     def get_session_info(self) -> dict:
         """Get current session info for debugging."""

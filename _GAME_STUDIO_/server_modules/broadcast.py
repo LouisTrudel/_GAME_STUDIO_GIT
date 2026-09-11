@@ -79,6 +79,27 @@ def broadcast_live_tokens_sync(agent: str, input_tokens: int, output_tokens: int
         )
 
 
+def broadcast_tasks_sync():
+    """Trigger immediate task broadcast (called from sync code).
+
+    Use this after creating/modifying tasks to ensure UI updates immediately
+    rather than waiting for the 0.5s polling loop.
+    """
+    if main_loop is not None:
+        asyncio.run_coroutine_threadsafe(_do_broadcast_tasks(), main_loop)
+
+
+async def _do_broadcast_tasks():
+    """Broadcast current task list to all clients."""
+    from studio.core.tasks import task_manager
+    tasks = task_manager.get_all_tasks()
+    data = json.dumps({
+        "type": "tasks_update",
+        "data": [t.to_dict() for t in tasks]
+    })
+    await broadcast_to_clients(data)
+
+
 async def _do_broadcast_live_tokens(agent: str, input_tokens: int, output_tokens: int):
     """Broadcast live token count to clients."""
     data = json.dumps({

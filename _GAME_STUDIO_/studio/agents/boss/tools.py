@@ -278,6 +278,17 @@ def get_task_status(task_id: str = None, include_completed: bool = False) -> str
     if task_id:
         task = task_manager.get_task(task_id)
         if not task:
+            # Check archive for completed tasks
+            archived = task_manager.get_archived_task(task_id)
+            if archived:
+                desc = archived.get("description", "")[:100]
+                result = archived.get("result", "")[:200]
+                return (
+                    f"{task_id} [ARCHIVED - {archived.get('status', 'completed')}]\n"
+                    f"  Assignee: {archived.get('assignee', 'None')}\n"
+                    f"  Description: {desc}...\n"
+                    f"  Result: {result or 'N/A'}"
+                )
             return f"Task {task_id} not found"
         result_preview = task.output_response[:200] + "..." if task.output_response and len(task.output_response) > 200 else task.output_response
         return (
