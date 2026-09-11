@@ -1330,3 +1330,46 @@ Content: Brief internet shutdowns may be causing Boss or agent CLIs to crash. In
 
 [SUCCESS] [T609] [F] studio/core/tasks.py, backends/backends/persistent_claude_cli.py, studio/agents/boss/tools.py
 [X] Graceful shutdown only - don't force kill; Preserve partial results if any; Mark task as CANCELLED (agent: Code) tags: implement, code
+
+---
+
+[SUCCESS] [T610] [>] List all Python files in studio/agents/ and count total lines of code (agent: Code) tags: code
+
+---
+
+[SUCCESS] [T611] [F] studio/agents/boss/tools.py, studio/core/tasks.py:1166
+[>] Add `cancel_task(task_id)` function to studio/agents/boss/tools.py for MCP cancellation (agent: Code) tags: add, code
+
+---
+
+[SUCCESS] [T612] [>] Trace the cancel button flow in studio-tasks.js - find handler, follow to backend, show what cancel_task() does (agent: Code) tags: code
+
+---
+
+[SUCCESS] [T613] [F] data/deliverables/T612.md
+[>] Complete T612 report - finish tracing cancel button flow from studio-tasks.js handler through backend cancel_task() logic with full details (agent: Code) tags: code
+
+---
+
+[SUCCESS] [T614] [F] studio-tasks.js:82, studio/core/studio_metrics.py
+[>] Enhance task token display - break down 990.2k into input/output tokens, add cache stats, show cost per type (agent: Code) tags: add, code
+
+---
+
+[SUCCESS] [T615] [F] data/logs/studio_2026-09-11.log, data/tasks.json
+[>] Audit Code agent max_turns=8 constraint - identify where turns are wasted and optimize studio MCP tool efficiency (agent: Audit) tags: audit
+
+---
+
+[SUCCESS] [T616] [F] studio-tasks.js:82, studio/core/studio_metrics.py, data/deliverables/T614.md
+[>] Complete T614 - implement input/output token breakdown and cache stats in task token display (agent: Code) tags: implement, code
+
+---
+
+[SUCCESS] [T617] [F] data/logs/studio_2026-09-11.log, data/tasks.json
+[>] Profile turn consumption across all agents with max_turns=8 - identify wasteful patterns and recommend optimizations (agent: Research) tags: research
+
+---
+
+[SUCCESS] [T618] [F] backends/backends/persistent_claude_cli.py, studio/core/memory.py
+[>] Fix missing REINIT_AFTER_TASKS attribute in PersistentClaudeCLI - blocking memory compression (agent: Code) tags: fix, code

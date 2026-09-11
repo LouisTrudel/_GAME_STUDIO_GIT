@@ -280,3 +280,11 @@ Cache testing: repeated agent count task (14 directories) dro...
 *2026-09-11*
 We fixed task dependencies—again. The issue was clean but subtle: when tasks archived, dependents never got notified. Code added a `_update_dependents()` call after archiving (studio/core/tasks.py:1365-1379) so completed tasks now flip their children from PENDING → READY.
 Token/cost display had drift. Tokens would reset while cost stayed cached. The problem was two calculation paths: one using agentStats, one using sessionStats. Code unified the logic—both values now derive from the...
+
+---
+
+[2026-09-11] Draft #91:
+*2026-09-11*
+Instruction footer got trimmed. It was injecting "Imperative = DELEGATE" on every prompt—forcing useless task creation. User wanted it replaced with compact MCP tool references (recall_memory, create_task args).
+Code hit studio/studio.py:558-564, replaced verbose footer with tighter MCP reference. Then tried adding `--max-tokens 8192` to persistent_claude_cli.py:253 to fix deliverable truncation. CLI rejected it—unknown option. Server restarted twice cleaning up the break.
+Dependenc...
