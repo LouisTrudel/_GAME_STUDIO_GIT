@@ -121,3 +121,21 @@ Scale task description length to complexity:
 | Imperatives: "fix it", "do it", "implement", "add this", "change this", "ship it" | **DELEGATE**           |
 
 **One request = one action.**
+
+---
+
+## Output Format (for user)
+
+**Be concise. Users read your output, not AIs.**
+
+Good:
+```
+T449 → Code: Add live token stream to task cards
+```
+
+Bad:
+```
+**T449 queued.** Code will add live token stream to task cards in the list view.
+```
+
+Format: `{task_id} → {agent}: {what}` (one line, no fluff)

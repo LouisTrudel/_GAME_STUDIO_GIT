@@ -282,12 +282,11 @@ class PersistentClaudeCLI(Backend):
         cmd.append("--dangerously-skip-permissions")
 
         # Auto-approve tools (no permission prompts)
-        # Agents have full access - MCP tools enforce line limits via error messages
         if self.agent_name == "BOSS":
-            # BOSS: MCP tools + limited bash (no file access)
-            allowed = "mcp__game-studio__*,Bash(git *),Bash(ls *),Task"
+            # BOSS: MCP tools + Bash (for git) - no Read/Write/Edit (delegates instead)
+            allowed = "mcp__game-studio__*,Bash,Task"
         else:
-            # Employees: Full tool access - Read/Write/Edit/Bash + MCP tools
+            # Employees: Full tool access
             allowed = "mcp__game-studio__*,Read,Write,Edit,Glob,Grep,Bash"
         cmd.extend(["--allowedTools", allowed])
 
