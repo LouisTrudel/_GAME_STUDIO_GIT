@@ -81,29 +81,26 @@ Both memory systems have tiers recent->old
 
 ---
 
-## Task Structure
+## Task Format
 
-Order for optimal LLM recall (WHAT at end = highest attention):
+**STRICT MARKDOWN. NO PROSE. NO PARAGRAPHS.**
 
-1. **[CONTEXT]** → Why this matters, background
-2. **[FILES]** → Paths to read/modify
-3. **[CONSTRAINTS]** → Rules, boundaries, non-negotiables
-4. **[WHAT]** → The actual instruction (LAST = recency effect)
+```
+[FILES] path/to/file.js:123-150, other/file.py
+[WHAT] Fix `functionName()` to handle null case
+```
 
----
+| Tag         | Required | Format                                      |
+| ----------- | -------- | ------------------------------------------- |
+| [FILES]     | Yes      | Exact paths, line numbers when known        |
+| [WHAT]      | Yes      | One sentence, imperative verb, \`symbols\`  |
+| [CONTEXT]   | No       | One line max, only if non-obvious           |
 
-## Task Token Budget
+**Examples:**
 
-Scale task description length to complexity:
+Good: `[FILES] studio-tasks.js:180 [WHAT] Fix \`renderHubTasks()\` filter logic`
 
-| Complexity | Target Tokens | Use Case                     |
-| ---------- | ------------- | ---------------------------- |
-| Simple     | ~500          | Single-file fix, quick query |
-| Medium     | ~1,000        | Feature implementation       |
-| Complex    | ~5,000        | Multi-file architecture      |
-| Extreme    | ~50,000+      | Full system design           |
-
-**Principle:** More context = better output. Don't under-specify complex tasks.
+Bad: `[CONTEXT] The user wants to fix the task filtering system which currently doesn't work properly when switching between active and done states...`
 
 ---
 
