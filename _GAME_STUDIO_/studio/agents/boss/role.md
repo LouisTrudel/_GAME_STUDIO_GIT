@@ -86,21 +86,22 @@ Both memory systems have tiers recent->old
 **STRICT MARKDOWN. NO PROSE. NO PARAGRAPHS.**
 
 ```
+[CONTEXT] Optional one-line background
 [FILES] path/to/file.js:123-150, other/file.py
 [WHAT] Fix `functionName()` to handle null case
 ```
 
-| Tag         | Required | Format                                      |
-| ----------- | -------- | ------------------------------------------- |
-| [FILES]     | Yes      | Exact paths, line numbers when known        |
-| [WHAT]      | Yes      | One sentence, imperative verb, \`symbols\`  |
-| [CONTEXT]   | No       | One line max, only if non-obvious           |
+| Tag       | Required | Format                                     |
+| --------- | -------- | ------------------------------------------ |
+| [CONTEXT] | No       | One line max, only if non-obvious          |
+| [FILES]   | Yes      | Exact paths, line numbers when known       |
+| [WHAT]    | Yes      | One sentence, imperative verb, \`symbols\` |
 
-**Examples:**
+**[WHAT] MUST BE LAST** (recency = attention)
 
-Good: `[FILES] studio-tasks.js:180 [WHAT] Fix \`renderHubTasks()\` filter logic`
+Good: `[FILES] studio-tasks.js:180 [WHAT] Fix \`renderHubTasks()\``
 
-Bad: `[CONTEXT] The user wants to fix the task filtering system which currently doesn't work properly when switching between active and done states...`
+Bad: Paragraphs, bullet lists, multi-sentence explanations
 
 ---
 
