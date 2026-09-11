@@ -42,6 +42,10 @@ async function reloadHubForProject() {
 // Track expanded agent cards
 const expandedAgents = new Set();
 
+// Terminal state
+const agentTerminals = {};  // {name: Terminal instance}
+const terminalExpanded = new Set();  // Track which terminals are open
+
 // Render agent cards
 function renderAgentCards() {
     const panel = document.getElementById('panel-agents');
@@ -103,6 +107,13 @@ function renderAgentCards() {
                         <span class="agent-token-label">Cache Write</span>
                         <span class="agent-token-value cache-write">${formatTokens(cacheCreation)}</span>
                     </div>
+                </div>
+                <div class="agent-terminal-section ${terminalExpanded.has(name) ? 'expanded' : ''}">
+                    <div class="terminal-header" onclick="event.stopPropagation(); toggleTerminal('${name}')">
+                        <span>Terminal</span>
+                        <span class="terminal-toggle">${terminalExpanded.has(name) ? '▲' : '▼'}</span>
+                    </div>
+                    <div id="terminal-${name}" class="agent-terminal" style="display: ${terminalExpanded.has(name) ? 'block' : 'none'};"></div>
                 </div>
                 <div class="agent-actions">
                     <button class="agent-action-btn" onclick="showConfigModal('${name}')">Configure</button>
@@ -231,4 +242,78 @@ function handlePromptAction(name, action) {
 
     ws.send(JSON.stringify({ type: 'chat', content: message }));
     log('agentLogs', `Prompted ${name}: ${action}`, 'info');
+}
+
+// Toggle terminal visibility
+function toggleTerminal(name) {
+    if (terminalExpanded.has(name)) {
+        terminalExpanded.delete(name);
+        const termEl = document.getElementById(`terminal-${name}`);
+        if (termEl) termEl.style.display = 'none';
+    } else {
+        terminalExpanded.add(name);
+        const termEl = document.getElementById(`terminal-${name}`);
+        if (termEl) termEl.style.display = 'block';
+        initTerminal(name);
+    }
+    // Update toggle icon
+    const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
+    if (card) {
+        const section = card.querySelector('.agent-terminal-section');
+        const toggle = card.querySelector('.terminal-toggle');
+        if (section) section.classList.toggle('expanded', terminalExpanded.has(name));
+        if (toggle) toggle.textContent = terminalExpanded.has(name) ? '▲' : '▼';
+    }
+}
+
+// Initialize xterm.js terminal for an agent
+async function initTerminal(name) {
+    if (agentTerminals[name]) return;  // Already initialized
+
+    const container = document.getElementById(`terminal-${name}`);
+    if (!container) return;
+
+    // Create terminal
+    const term = new Terminal({
+        rows: 12,
+        cols: 80,
+        fontSize: 11,
+        fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+        theme: {
+            background: '#0d1117',
+            foreground: '#c9d1d9',
+            cursor: '#58a6ff'
+        },
+        scrollback: 500,
+        convertEol: true
+    });
+
+    // Fit addon for responsive sizing
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(container);
+    fitAddon.fit();
+
+    agentTerminals[name] = { term, fitAddon };
+
+    // Load history
+    try {
+        const res = await fetch(`${API_URL}/agents/${name}/terminal`);
+        const data = await res.json();
+        if (data.lines && data.lines.length > 0) {
+            data.lines.forEach(line => term.write(line));
+        } else {
+            term.writeln(`\x1b[90m[Terminal ready for ${name}]\x1b[0m`);
+        }
+    } catch (e) {
+        term.writeln(`\x1b[31m[Error loading history]\x1b[0m`);
+    }
+}
+
+// Handle terminal output from WebSocket
+function handleTerminalOutput(agent, line) {
+    const termData = agentTerminals[agent];
+    if (termData && termData.term) {
+        termData.term.write(line);
+    }
 }

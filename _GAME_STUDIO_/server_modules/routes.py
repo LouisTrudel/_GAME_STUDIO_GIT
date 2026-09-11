@@ -101,6 +101,19 @@ def register_routes(app: FastAPI):
         except Exception as e:
             return {"error": str(e)}
 
+    @app.get("/api/agents/{agent_name}/terminal")
+    async def get_agent_terminal(agent_name: str):
+        """Get terminal output history for an agent."""
+        from .broadcast import get_terminal_buffer
+        return {"lines": get_terminal_buffer(agent_name)}
+
+    @app.post("/api/agents/{agent_name}/terminal/clear")
+    async def clear_agent_terminal(agent_name: str):
+        """Clear terminal output for an agent."""
+        from .broadcast import clear_terminal_buffer
+        clear_terminal_buffer(agent_name)
+        return {"status": "cleared"}
+
     @app.post("/api/agents/{agent_name}/config")
     async def update_agent_config(agent_name: str, config: dict):
         """Update an agent's configuration."""

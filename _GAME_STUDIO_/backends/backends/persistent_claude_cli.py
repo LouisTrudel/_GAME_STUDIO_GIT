@@ -429,7 +429,12 @@ class PersistentClaudeCLI(Backend):
         elif event_type == "content_block_delta":
             delta = event.get("delta", {})
             if delta.get("type") == "text_delta":
-                text_content.append(delta.get("text", ""))
+                text = delta.get("text", "")
+                text_content.append(text)
+                # Stream to terminal UI
+                if text:
+                    from server_modules.broadcast import broadcast_terminal_line_sync
+                    broadcast_terminal_line_sync(self.agent_name, text)
 
         elif event_type == "content_block_start":
             if event.get("content_block", {}).get("type") == "tool_use":

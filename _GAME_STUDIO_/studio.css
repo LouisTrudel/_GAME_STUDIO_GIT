@@ -1659,6 +1659,48 @@ button.secondary:hover {
     color: #F5F5F7;
 }
 
+/* Agent terminal section */
+.agent-terminal-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    margin-top: 12px;
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    cursor: pointer;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8b949e;
+}
+
+.terminal-header:hover {
+    color: #c9d1d9;
+}
+
+.terminal-toggle {
+    font-size: 10px;
+}
+
+.agent-terminal {
+    height: 200px;
+    background: #0d1117;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.agent-terminal .xterm {
+    padding: 8px;
+}
+
+.agent-terminal .xterm-viewport {
+    overflow-y: auto !important;
+}
+
 /* Legacy support */
 .agent-token-details {
     margin-bottom: 12px;

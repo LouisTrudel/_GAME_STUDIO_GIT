@@ -36,6 +36,11 @@ agent_errors: dict[str, list] = {}
 _agent_errors_lock = threading.Lock()
 MAX_ERRORS_PER_AGENT = 10  # Keep last N errors
 
+# Terminal output buffers: {"AgentName": ["line1", "line2", ...]}
+terminal_buffers: dict[str, list] = {}
+_terminal_lock = threading.Lock()
+MAX_TERMINAL_LINES = 500
+
 # Event loop reference (set at startup for thread-safe access)
 main_loop: asyncio.AbstractEventLoop | None = None
 
@@ -121,6 +126,47 @@ def get_agent_errors(agent: str = None) -> dict:
         if agent:
             return {agent: agent_errors.get(agent, [])}
         return dict(agent_errors)
+
+
+# ============ TERMINAL OUTPUT ============
+
+def broadcast_terminal_line_sync(agent: str, line: str):
+    """Stream terminal output line to frontend (called from sync code)."""
+    with _terminal_lock:
+        if agent not in terminal_buffers:
+            terminal_buffers[agent] = []
+        terminal_buffers[agent].append(line)
+        # Keep last N lines
+        if len(terminal_buffers[agent]) > MAX_TERMINAL_LINES:
+            terminal_buffers[agent] = terminal_buffers[agent][-MAX_TERMINAL_LINES:]
+
+    if main_loop is not None:
+        asyncio.run_coroutine_threadsafe(
+            _do_broadcast_terminal(agent, line), main_loop
+        )
+
+
+async def _do_broadcast_terminal(agent: str, line: str):
+    """Send terminal line to all clients."""
+    data = json.dumps({
+        "type": "terminal_output",
+        "agent": agent,
+        "line": line
+    })
+    await broadcast_to_clients(data)
+
+
+def get_terminal_buffer(agent: str) -> list:
+    """Get terminal output history for an agent."""
+    with _terminal_lock:
+        return list(terminal_buffers.get(agent, []))
+
+
+def clear_terminal_buffer(agent: str):
+    """Clear terminal buffer for an agent."""
+    with _terminal_lock:
+        if agent in terminal_buffers:
+            terminal_buffers[agent] = []
 
 
 def broadcast_tasks_sync():

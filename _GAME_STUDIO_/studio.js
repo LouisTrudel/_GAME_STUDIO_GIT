@@ -2130,6 +2130,9 @@ function connect() {
                 output: data.output_tokens
             };
             updateLiveTokenDisplay(data.agent);
+        } else if (data.type === 'terminal_output') {
+            // Terminal output from agent CLI
+            handleTerminalOutput(data.agent, data.line);
         } else if (data.type === 'agent_error') {
             // Agent error notification - show prominently
             console.error('[WS] AGENT ERROR:', data.agent, data.error);
