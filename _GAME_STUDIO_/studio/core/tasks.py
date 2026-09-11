@@ -557,12 +557,13 @@ class TaskManager:
                 logger.error("Failed to load from %s: %s", tasks_file, e)
 
     def reload_from_disk(self) -> bool:
-        """Sync NEW tasks from disk file (thread-safe).
+        """Sync tasks from disk file (thread-safe).
 
-        Used to pick up tasks created by MCP server (separate process).
-        Only adds new tasks, never overwrites existing task states.
+        Used to pick up tasks created/modified by MCP server (separate process).
+        - Adds new tasks
+        - Updates status of existing tasks (if changed on disk)
 
-        Returns True if new tasks were added, False otherwise.
+        Returns True if any changes were synced, False otherwise.
         """
         tasks_file = self._get_tasks_file()
         if not tasks_file.exists():
@@ -575,23 +576,36 @@ class TaskManager:
             disk_counter = data.get("counter", 0)
 
             with self._lock:
-                # Quick check - if counter hasn't increased, no new tasks
-                if disk_counter <= self._counter:
-                    return False
+                changed = False
 
-                # Load tasks from disk and add only NEW ones
-                added = False
                 for task_data in data.get("tasks", []):
                     task_id = task_data.get("id")
-                    if task_id and task_id not in self.tasks:
+                    if not task_id:
+                        continue
+
+                    if task_id not in self.tasks:
+                        # New task from MCP
                         task = Task.from_dict(task_data)
                         self.tasks[task_id] = task
                         logger.info("Synced new task from disk: %s", task_id)
-                        added = True
+                        changed = True
+                    else:
+                        # Existing task - check if status changed
+                        disk_status = task_data.get("status")
+                        mem_status = self.tasks[task_id].status.value
+                        if disk_status and disk_status != mem_status:
+                            # Status changed on disk - update in memory
+                            self.tasks[task_id].status = TaskStatus(disk_status)
+                            self.tasks[task_id].error = task_data.get("error")
+                            logger.info("Synced status change: %s %s -> %s", task_id, mem_status, disk_status)
+                            changed = True
 
                 # Update counter to match disk
-                self._counter = disk_counter
-                return added
+                if disk_counter > self._counter:
+                    self._counter = disk_counter
+                    changed = True
+
+                return changed
 
         except Exception as e:
             logger.error("Failed to sync tasks from disk: %s", e)
