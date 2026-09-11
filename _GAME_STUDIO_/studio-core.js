@@ -41,6 +41,11 @@ let agentStatuses = {};
 let activityBarTimeout = null;
 let agentShowTimes = {};
 let taskFilter = localStorage.getItem('taskFilter') || 'active';
+// Migrate old filter values
+if (taskFilter === 'approved' || taskFilter === 'completed') {
+    taskFilter = 'done';
+    localStorage.setItem('taskFilter', 'done');
+}
 let fileTree = [];
 let selectedFilePath = null;
 let routineChainCount = 0;

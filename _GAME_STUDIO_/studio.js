@@ -481,6 +481,11 @@ async function deleteTask(taskId) {
 
 // ===== HUB TASKS SIDEBAR =====
 let taskFilter = localStorage.getItem('taskFilter') || 'active';
+// Migrate old filter values
+if (taskFilter === 'approved' || taskFilter === 'completed') {
+    taskFilter = 'done';
+    localStorage.setItem('taskFilter', 'done');
+}
 let sessionTokens = null;  // Cached session token data from /api/tokens/session
 
 // Fetch session tokens (includes BOSS interactions)

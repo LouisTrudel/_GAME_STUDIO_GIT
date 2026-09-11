@@ -185,15 +185,14 @@ function renderHubTasks() {
                 return (priority[a.status] ?? 99) - (priority[b.status] ?? 99);
             });
         emptyMessage = 'No active tasks';
-    } else if (taskFilter === 'approved') {
-        filteredTasks = tasks.filter(t => t.status === 'approved');
-        emptyMessage = 'No approved tasks';
-    } else if (taskFilter === 'completed') {
+    } else if (taskFilter === 'done') {
+        // Terminal statuses: approved, failed, error, partial
+        const doneStatuses = ['approved', 'failed', 'error', 'partial'];
         filteredTasks = tasks
-            .filter(t => t.status === 'completed')
+            .filter(t => doneStatuses.includes(t.status))
             .sort((a, b) => {
-                const aTime = a.completed_at || a.updated_at || '';
-                const bTime = b.completed_at || b.updated_at || '';
+                const aTime = a.completed_at || a.created_at || '';
+                const bTime = b.completed_at || b.created_at || '';
                 return bTime.localeCompare(aTime);
             });
         emptyMessage = 'No completed tasks';
