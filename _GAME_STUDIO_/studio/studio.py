@@ -560,9 +560,12 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
 {task.description}
 
 ---
-MCP: create_task(what,files,assignee) | recall_memory(query) | search_code(path,pattern) | read_lines(path,start,end) | edit_file(path,old,new)
-Out: {task.id} VERB: summary | file:line | +/-lines | FIXED|ADDED|UPDATED|FOUND|TRACED|BLOCKED
-Friction: If stuck/confused, end with "## Friction: <what was unclear or blocked you>\""""
+MCP: search_code(path,pattern) | read_lines(path,start,end) | edit_file(path,old,new)
+Out: {task.id} VERB: one-line summary
+## Summary
+What was done, files changed, key decisions
+## Friction
+Confusion, failures, blocks encountered (or "None")\""""
 
         # Check if agent is initialized (session has context)
         backend = getattr(agent.agent, 'backend', None)
@@ -720,12 +723,13 @@ Friction: If stuck/confused, end with "## Friction: <what was unclear or blocked
         # Extract friction events for deliverable
         friction_events = quality_metrics.get("friction_events", []) if quality_metrics else []
 
-        # Parse agent's friction reflection from response (## Friction: ...)
+        # Parse agent's friction reflection from response (## Friction ...)
         import re
-        friction_match = re.search(r'##\s*Friction:\s*(.+?)(?:\n##|\Z)', response, re.DOTALL | re.IGNORECASE)
+        friction_match = re.search(r'##\s*Friction:?\s*\n(.+?)(?:\n##|\Z)', response, re.DOTALL | re.IGNORECASE)
         if friction_match:
             agent_friction = friction_match.group(1).strip()
-            if agent_friction:
+            # Skip "None" or empty friction
+            if agent_friction and agent_friction.lower() not in ("none", "n/a", "-"):
                 friction_events.append({
                     "turn": "end",
                     "category": "agent_note",
