@@ -180,78 +180,105 @@ def _get_active_project_context() -> str:
 
 CREATE_TASK_SCHEMA = {
     "name": "create_task",
-    "description": """Create a new task and assign it to an agent.
+    "description": """Create a task with structured fields (optimal for agent execution).
 
-Structure your task description for optimal output:
-[WHAT] Clear deliverable in imperative form
-[CONTEXT] Why this is needed (optional)
-[CONSTRAINTS] Must-haves, limits, rules (optional)""",
+Order: FILES → CONSTRAINTS → WHAT (matches 10-80-10 attention rule)""",
     "input_schema": {
         "type": "object",
         "properties": {
-            "description": {
+            "what": {
                 "type": "string",
-                "description": "Clear description of what needs to be done, including skill hints"
+                "description": "Deliverable in imperative form. Single sentence. e.g., 'Check overflow before showing expand hint'"
             },
-            "title": {
-                "type": "string",
-                "description": "Short title for the task (optional, use description instead)"
+            "files": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "File paths with optional line hints. e.g., ['studio-ui.js:17-50', 'studio.css:474']"
+            },
+            "constraints": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "What NOT to do. Guards/limits. e.g., ['No CSS changes', 'Keep existing API']"
             },
             "assignee": {
                 "type": "string",
-                "description": "Agent to assign: Design, Code, ArtSpec, Text, Structure, Prompt, Audit, or Raw (for direct LLM queries without agent overhead)"
-            },
-            "agent": {
-                "type": "string",
-                "description": "(Deprecated alias for assignee - use assignee instead)"
+                "description": "Agent: Design, Code, ArtSpec, Text, Structure, Prompt, Audit, Research, or Raw"
             },
             "dependencies": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "List of task IDs that must complete before this task can start"
+                "description": "Task IDs that must complete first"
+            },
+            "description": {
+                "type": "string",
+                "description": "(Legacy) Falls back if 'what' not provided"
             },
             "backend": {
                 "type": "string",
-                "description": "LLM backend for Raw tasks: 'gemini' (default, free tier), 'claude_cli' or 'claude' (Pro subscription, no rate limits), 'ollama' (local). Only used when assignee is Raw."
+                "description": "For Raw tasks: 'gemini', 'claude', 'ollama'"
             }
         },
-        "required": ["description"]
+        "required": ["what"]
     }
 }
 
 
-def create_task(description: str = None, assignee: str = None, dependencies: list = None, title: str = None, agent: str = None, backend: str = None) -> str:
-    # Support 'title' as alias for 'description' (BOSS sometimes uses it)
-    desc = description or title
-    if not desc:
-        return "Error: description is required"
+def create_task(
+    what: str = None,
+    files: list = None,
+    constraints: list = None,
+    assignee: str = None,
+    dependencies: list = None,
+    description: str = None,
+    backend: str = None,
+    # Legacy params
+    title: str = None,
+    agent: str = None,
+) -> str:
+    """Create task with structured format: [F] files [X] constraints [>] what"""
 
-    # Support 'agent' as alias for 'assignee' (BOSS sometimes uses it)
+    # Build structured description from fields
+    # Order: FILES → CONSTRAINTS → WHAT (10-80-10 rule)
+    parts = []
+
+    # [F] Files - orient agent immediately
+    if files:
+        parts.append("[F] " + ", ".join(files))
+
+    # [X] Constraints - guardrails
+    if constraints:
+        parts.append("[X] " + "; ".join(constraints))
+
+    # [>] What - deliverable (required)
+    deliverable = what or description or title
+    if not deliverable:
+        return "Error: 'what' is required"
+    parts.append("[>] " + deliverable)
+
+    desc = "\n".join(parts)
+
+    # Normalize assignee
     assignee = assignee or agent
-
-    # Normalize assignee name to match registered agent names (e.g., "code" -> "Code")
     if assignee:
-        # Special cases: BOSS and Raw are specific casing
         if assignee.lower() == "boss":
             assignee = "BOSS"
         elif assignee.lower() == "raw":
-            assignee = "Raw"  # Pseudo-agent for direct LLM queries
+            assignee = "Raw"
         else:
             assignee = assignee.capitalize()
 
-    # Inject active project path into description if not already present
-    # This ensures agents know where project files should be saved/read
+    # Inject active project path
     project_ctx = _get_active_project_context()
-    if project_ctx and "[PROJECT_PATH]" not in desc:
-        desc = f"{desc} {project_ctx}"
+    if project_ctx:
+        desc = f"{desc}\n{project_ctx}"
 
     task = task_manager.create_task(desc, assignee, dependencies, backend=backend)
 
-    # Post to hub with @mention
+    # Post to hub (compact format)
     if assignee:
-        hub.post("BOSS", f"@{assignee} → {task.id}: {desc}")
+        hub.post("BOSS", f"@{assignee} → {task.id}: {deliverable[:60]}")
 
-    return f"Created {task.id}: '{desc}' → {assignee or 'Unassigned'} [{task.status.value}]"
+    return f"Created {task.id}: '{deliverable[:50]}' → {assignee or 'Unassigned'} [{task.status.value}]"
 
 
 GET_TASK_STATUS_SCHEMA = {

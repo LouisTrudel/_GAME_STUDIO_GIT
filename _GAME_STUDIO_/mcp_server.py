@@ -61,20 +61,20 @@ mcp = MCPServer("game-studio")
 
 @mcp.tool()
 async def create_task(
-    description: Annotated[str, Field(description="Clear description of what needs to be done")],
+    what: Annotated[str, Field(description="Deliverable in imperative form. Single sentence.")],
+    files: Annotated[Optional[list[str]], Field(description="File paths with line hints. e.g., ['studio-ui.js:17-50']")] = None,
+    constraints: Annotated[Optional[list[str]], Field(description="What NOT to do. e.g., ['No CSS changes']")] = None,
     assignee: Annotated[Optional[str], Field(description="Agent: Design, Code, ArtSpec, Text, Audit, Prompt, Research, Raw")] = None,
     dependencies: Annotated[Optional[list[str]], Field(description="Task IDs that must complete first")] = None,
-    backend: Annotated[Optional[str], Field(description="LLM backend for Raw tasks: 'gemini', 'claude_cli', 'ollama'")] = None,
+    backend: Annotated[Optional[str], Field(description="For Raw tasks: 'gemini', 'claude', 'ollama'")] = None,
 ) -> str:
-    """Create a new task and assign it to an agent.
+    """Create task with structured format: [F] files [X] constraints [>] what
 
-    Structure your task description for optimal output:
-    [WHAT] Clear deliverable in imperative form
-    [CONTEXT] Why this is needed (optional)
-    [CONSTRAINTS] Must-haves, limits, rules (optional)
+    Order optimized for agent attention (10-80-10 rule):
+    FILES first (orient), CONSTRAINTS middle (guard), WHAT last (execute)
     """
     from studio.agents.boss.tools import create_task as handler
-    return handler(description=description, assignee=assignee, dependencies=dependencies, backend=backend)
+    return handler(what=what, files=files, constraints=constraints, assignee=assignee, dependencies=dependencies, backend=backend)
 
 
 @mcp.tool()
