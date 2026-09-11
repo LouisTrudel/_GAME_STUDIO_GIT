@@ -1,256 +1,29 @@
 {
-  "counter": 361,
+  "counter": 447,
   "tasks": [
     {
-      "id": "T352",
-      "description": "[BUG - MINOR] Missing router skill files for multimedia agents\n\nThe loader.py maps image/sound/video to router types but no corresponding files exist in studio/skills/_routers/. Missing: image.md, sound.md, video.md. Agents will work but won't receive router context that other agents get.",
+      "id": "T435",
+      "description": "[CONTEXT]\nDesigner completed T434 with a refined 6-phase Project Creation Pipeline spec. User wants to implement it.\n\nKey features from the spec:\n- Type/Subtype as suggestion chips (not dropdowns)\n- Warmup web search before first whitepaper draft\n- Project Chat panel (40/60 split with whitepaper view)\n- Star rating system with <4 star warning\n- Pipeline state tracking (setup\u2192draft\u2192clarify\u2192dispatch\u2192delivered)\n- Dependency checkpoint, cancel/rollback support\n- Cost preview before dispatch\n\n[FILES]\n- reports/T434-project-creation-pipeline-spec_20260909_213034.md (full implementation spec)\n- studio/core/projects.py (project state, pipeline)\n- server_modules/routes.py (new endpoints)\n- studio.js + studio-projects.js (Project Chat UI)\n- studio.css (40/60 split layout, chips)\n\n[CONSTRAINTS]\n- Read the full spec from reports/ first\n- UX first priority (chips, chat panel)\n- Integrate with existing external project tooling (T427)\n- Pipeline state must persist across sessions\n- Server restart may be required for backend changes\n\n[WHAT]\nImplement the Project Creation Pipeline per T434 spec. Start with backend (project state, pipeline phases), then frontend (Project Chat UI, suggestion chips, star rating).",
       "assignee": "Programmer",
       "status": "approved",
       "dependencies": [],
       "error": null,
       "retry_count": 0,
       "backend": null,
-      "created_at": "2026-09-07T23:31:49.509787",
-      "completed_at": "2026-09-07T23:32:50.421243",
+      "created_at": "2026-09-09T21:33:08.435468",
+      "started_at": "2026-09-09T21:33:09.014411",
+      "completed_at": "2026-09-09T21:39:07.827720",
+      "claimed_by": "Programmer",
+      "claimed_at": "2026-09-09T21:33:09.014411",
+      "claimed_process_id": null,
       "execution": {
         "errors": [],
         "context_injected": {
-          "role_md": 4360,
-          "skills": 26198,
-          "context_md": 2139,
-          "task_prompt": 397
+          "role_md": 1588,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 1329
         }
-      },
-      "cost": {
-        "input_tokens": 161993,
-        "output_tokens": 2531,
-        "cache_creation_tokens": 23929,
-        "cache_read_tokens": 161986,
-        "usd": 0.29385924999999996
-      },
-      "friction": null
-    },
-    {
-      "id": "T353",
-      "description": "[WHAT] Design CLAUDE agent - vanilla passthrough [CONTEXT] Empty context agent for testing raw Claude CLI vs studio-augmented responses. Used to measure context injection value. [CONSTRAINTS] Minimal config - no custom role, no skills, no tools. Execute with all permissions. Agent name: claude.",
-      "assignee": "Taxonomy",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T15:15:29.948494",
-      "completed_at": "2026-09-08T15:16:54.993898",
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 2646,
-          "skills": 6078,
-          "context_md": 1317,
-          "task_prompt": 403
-        }
-      },
-      "cost": {
-        "input_tokens": 223359,
-        "output_tokens": 2086,
-        "cache_creation_tokens": 31279,
-        "cache_read_tokens": 223348,
-        "usd": 0.35987975
-      },
-      "friction": null
-    },
-    {
-      "id": "T354",
-      "description": "[WHAT] Implement CLAUDE agent [CONTEXT] Create bare-bones agent folder per Taxonomy design. [CONSTRAINTS] studio/agents/claude/ - minimal files, no restrictions, passthrough mode.",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [
-        "T353"
-      ],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T15:15:29.970500",
-      "completed_at": "2026-09-08T15:17:39.133582",
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 4360,
-          "skills": 26198,
-          "context_md": 1606,
-          "task_prompt": 287
-        }
-      },
-      "cost": {
-        "input_tokens": 150478,
-        "output_tokens": 1386,
-        "cache_creation_tokens": 18478,
-        "cache_read_tokens": 150471,
-        "usd": 0.225408
-      },
-      "friction": null
-    },
-    {
-      "id": "T355",
-      "description": "[WHAT] QA review CLAUDE agent [CONTEXT] Verify implementation matches 'empty context' intent. [CONSTRAINTS] Should have no custom context injection. Confirm passthrough behavior.",
-      "assignee": "QA",
-      "status": "approved",
-      "dependencies": [
-        "T354"
-      ],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T15:15:29.995350",
-      "completed_at": "2026-09-08T15:19:01.648431",
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 2305,
-          "skills": 7919,
-          "context_md": 487,
-          "task_prompt": 286
-        }
-      },
-      "cost": {
-        "input_tokens": 330972,
-        "output_tokens": 2586,
-        "cache_creation_tokens": 33732,
-        "cache_read_tokens": 330960,
-        "usd": 0.441015
-      },
-      "friction": null
-    },
-    {
-      "id": "T356",
-      "description": "[BUG - MAJOR] CLAUDE agent receives shared skills despite vanilla flag\n\nSteps:\n1. Send task to CLAUDE agent\n2. Observe agent.py _build_system_prompt()\n3. Shared skills from studio/agents/shared/*.md are still loaded\n\nExpected: vanilla=true agents should skip all skill injection\nActual: Only router is skipped; shared skills, core tool skills, and context injection still occur\n\nLocation: studio/agent.py lines 62-81, 126-147\n\nSuggested fix: Check config.get('vanilla', False) in StudioAgent.__init__ and skip skill loading if true",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T15:19:00.899390",
-      "completed_at": "2026-09-08T15:20:27.921038",
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 4360,
-          "skills": 26198,
-          "context_md": 2176,
-          "task_prompt": 639
-        }
-      },
-      "cost": {
-        "input_tokens": 305416,
-        "output_tokens": 3798,
-        "cache_creation_tokens": 23715,
-        "cache_read_tokens": 305405,
-        "usd": 0.39592625
-      },
-      "friction": null
-    },
-    {
-      "id": "T357",
-      "description": "[BUG - MINOR] CLAUDE agent gets core tool skills injected\n\nSteps:\n1. Check CLAUDE agent initialization\n2. _get_core_tool_skills() returns files.md, context.md, skills.md for non-boss agents\n\nExpected: Vanilla agent should have no tool skills loaded\nActual: Core tool skills are injected via _build_system_prompt\n\nLocation: studio/agent.py:126-147\n\nNote: Part of same root cause as shared skills bug - vanilla flag not checked",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T15:19:00.908394",
-      "completed_at": "2026-09-08T15:20:57.086091",
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 4360,
-          "skills": 26198,
-          "context_md": 1963,
-          "task_prompt": 533
-        }
-      },
-      "cost": {
-        "input_tokens": 82775,
-        "output_tokens": 910,
-        "cache_creation_tokens": 16890,
-        "cache_read_tokens": 82770,
-        "usd": 0.1697225
-      },
-      "friction": null
-    },
-    {
-      "id": "T358",
-      "description": "[WHAT] Document the new simplified prompt structure in CONTEXT.md [CONTEXT] Skill system was disabled in T365, prompts now only contain ROLE section [CONSTRAINTS] Update any references to skills/router in documentation",
-      "assignee": "Context",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T16:20:12.283347",
-      "completed_at": "2026-09-08T16:21:09.490280",
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 3465,
-          "skills": 5592,
-          "context_md": 262,
-          "task_prompt": 326
-        }
-      },
-      "cost": {
-        "input_tokens": 246877,
-        "output_tokens": 1839,
-        "cache_creation_tokens": 16045,
-        "cache_read_tokens": 246866,
-        "usd": 0.26974424999999996
-      },
-      "friction": null
-    },
-    {
-      "id": "T359",
-      "description": "[WHAT] Remove skill system from codebase [CONTEXT] Skill system disabled, need to clean up code [CONSTRAINTS] Files to modify: (1) studio/agent.py - remove SKILLS_DIR/load_agent_skills/load_shared_skills/load_router_skill imports, remove skill loading in __init__, remove _build_skills_string and _get_core_tool_skills methods, simplify _build_system_prompt to PROJPATH+ROLE+PROMPT only, change get_skills_content() to return empty string (2) studio/core/employee_tools.py - remove LOAD_SKILL_SCHEMA and LIST_SKILLS_SCHEMA from TOOLS, remove load_skill/list_skills functions, remove track_skill_load import, remove skill handlers (3) studio/agents/context/tools.py - remove LIST_SKILLS_SCHEMA from TOOLS, remove list_skills function/handler (4) studio/agents/boss/tools.py - remove [SKILLS] reference from CREATE_TASK_SCHEMA description (5) server_modules/routes.py - remove shared_skills loading lines 67-71, remove skills from agent info response. DO NOT delete studio/skills/ directory",
-      "assignee": "Programmer",
-      "status": "approved",
-      "dependencies": [],
-      "error": null,
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T16:25:28.930619",
-      "completed_at": "2026-09-08T16:28:17.418261",
-      "execution": {
-        "errors": [],
-        "context_injected": {
-          "role_md": 4360,
-          "skills": 26198,
-          "context_md": 2755,
-          "task_prompt": 1096
-        }
-      },
-      "cost": {
-        "input_tokens": 1220589,
-        "output_tokens": 9416,
-        "cache_creation_tokens": 51957,
-        "cache_read_tokens": 1220567,
-        "usd": 1.17052475
-      },
-      "friction": "high_cost"
-    },
-    {
-      "id": "T360",
-      "description": "...",
-      "assignee": "Research",
-      "status": "error",
-      "dependencies": [],
-      "error": "Task description too short: '...'",
-      "retry_count": 0,
-      "backend": null,
-      "created_at": "2026-09-08T16:31:39.141981",
-      "completed_at": "2026-09-08T16:31:41.757348",
-      "execution": {
-        "errors": [],
-        "context_injected": {}
       },
       "cost": {
         "input_tokens": 0,
@@ -259,34 +32,302 @@
         "cache_read_tokens": 0,
         "usd": 0.0
       },
-      "friction": "error"
+      "friction": null
     },
     {
-      "id": "T361",
-      "description": "[WHAT] Deliver research report on optimal token I/O ratios for LLM task execution [CONTEXT] User wants to understand cost-efficient context/output sizing [CONSTRAINTS] Cover: (1) Breakdown by task type - coding, debugging, writing, analysis, summarization (2) Recommended context sizes per task type (3) Expected output lengths (4) Cost efficiency strategies (5) Extended thinking vs standard mode guidance (6) Practical recommendations for studio fleet",
+      "id": "T436",
+      "description": "[WHAT] Research suggestion S008\n\n[CONTEXT]\nTitle: Handle brief internet outages gracefully\nCategory: architecture\nContent: Brief internet shutdowns may be causing Boss or agent CLIs to crash. Investigate connection resilience, retry logic, and graceful degradation when network drops momentarily.\n\n[DELIVERABLE]\nInvestigate this suggestion:\n1. Search for relevant best practices or prior art\n2. Find evidence for or against this approach\n3. Identify any technical considerations\n\nProvide a brief research summary (3-5 key findings). Include sources if available.\n\nIMPORTANT: After completing research, call add_discussion tool with suggestion_id=\"S008\" to record your findings.",
       "assignee": "Research",
       "status": "approved",
       "dependencies": [],
       "error": null,
       "retry_count": 0,
       "backend": null,
-      "created_at": "2026-09-08T16:32:37.316437",
-      "completed_at": "2026-09-08T16:34:01.131812",
+      "created_at": "2026-09-09T21:38:17.042984",
+      "started_at": "2026-09-09T21:38:17.707548",
+      "completed_at": "2026-09-09T21:39:28.873493",
+      "claimed_by": "Research",
+      "claimed_at": "2026-09-09T21:38:17.707548",
+      "claimed_process_id": null,
       "execution": {
         "errors": [],
         "context_injected": {
-          "role_md": 1367,
+          "role_md": 1292,
           "skills": 0,
-          "context_md": 518,
-          "task_prompt": 561
+          "context_md": 0,
+          "task_prompt": 794
         }
       },
       "cost": {
-        "input_tokens": 87267,
-        "output_tokens": 1939,
-        "cache_creation_tokens": 8067,
-        "cache_read_tokens": 87261,
-        "usd": 0.29664999999999997
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T437",
+      "description": "[CONTEXT]\nResearch (T436) found retry logic is only partial - Gemini retries rate limits but not network errors. Need LLM-agnostic retry solution that works across all backends.\n\nResearch findings:\n- Gemini has partial retry (HTTP 429 only)\n- Claude CLI has no network retry\n- Task-level retry restarts entire task (expensive)\n- Best practice: exponential backoff (2s\u21924s\u21928s) at HTTP layer\n\n[FILES]\n- backends/backends/base.py (base class - ideal location for shared retry logic)\n- backends/backends/gemini.py (needs retry wrapper)\n- backends/backends/ollama.py (needs retry wrapper)\n- backends/backends/anthropic.py (needs retry wrapper)\n- backends/backends/claude_cli.py (harder - subprocess stderr detection)\n\n[CONSTRAINTS]\n- MUST be LLM-agnostic - implement in base.py or as decorator/wrapper\n- Retry for: URLError, ConnectionResetError, socket.timeout, ConnectionRefusedError\n- Do NOT retry: auth errors (401/403), bad request (400), model not found\n- Exponential backoff: 2s \u2192 4s \u2192 8s (3 attempts max)\n- Claude CLI is subprocess - may need different approach (stderr pattern detection)\n\n[WHAT]\nImplement LLM-agnostic exponential backoff retry wrapper. Add to base.py as reusable decorator/method. Apply to all HTTP-based backends (gemini, ollama, anthropic). Handle Claude CLI separately if needed.",
+      "assignee": "Programmer",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-09T21:42:21.617307",
+      "started_at": "2026-09-09T21:42:23.465055",
+      "completed_at": "2026-09-09T21:45:52.946574",
+      "claimed_by": "Programmer",
+      "claimed_at": "2026-09-09T21:42:23.465055",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 1588,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 1420
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T438",
+      "description": "[CONTEXT]\nUser wants to improve the Agents tab in the Studio UI with better organization and visibility.\n\n[FILES]\n- studio.js (Agents tab rendering)\n- studio.css (card styling, expandable sections)\n- server_modules/routes.py (API endpoints for agent data)\n- studio/agents/*/role.md (role content to display)\n\n[CONSTRAINTS]\n- Auto-sort agents by tokens used (highest first)\n- Make agent cards expandable/collapsible\n- When expanded, show: full role.md content + complete token data\n- Keep collapsed state compact (name + token summary)\n\n[WHAT]\nUpdate Agents tab: auto-sort by token usage descending, make cards expandable, display role.md content and full token metrics when expanded.",
+      "assignee": "Programmer",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-09T21:50:55.261398",
+      "started_at": "2026-09-09T21:50:56.462907",
+      "completed_at": "2026-09-09T21:52:46.741984",
+      "claimed_by": "Programmer",
+      "claimed_at": "2026-09-09T21:50:56.462907",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 1588,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 800
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T439",
+      "description": "[CONTEXT]\nProject Creation Pipeline UI is implemented (T435), but the Project Chat agent that generates whitepapers is not connected. User sees placeholder message: \"Project Chat agent not yet implemented\".\n\nThe pipeline spec (T434) defines:\n- User submits project description\n- AI returns whitepaper draft with libraries, dependencies, requirements\n- Clarify loop with star rating (1-5) until user approves\n- Then BOSS dispatches worktree phases\n\n[FILES]\n- studio.js (Project Chat panel - already has UI framework)\n- studio/studio.py (need to handle project chat messages)\n- server_modules/routes.py (need project chat API endpoint)\n- reports/T434-project-creation-pipeline-spec_20260909_213034.md (full spec)\n\n[CONSTRAINTS]\n- Use existing Designer or dedicated agent for whitepaper generation\n- Project Chat should be separate from Hub chat\n- Messages tied to specific project (project_id)\n- Star rating injected prompt per spec\n\n[WHAT]\nImplement Project Chat agent integration. Connect the Project Chat panel to a whitepaper drafting agent that can generate/refine whitepapers based on user input. Add API endpoint for project-specific chat.",
+      "assignee": "Programmer",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-09T22:04:46.846684",
+      "started_at": "2026-09-09T22:04:47.420627",
+      "completed_at": "2026-09-09T22:07:34.705184",
+      "claimed_by": "Programmer",
+      "claimed_at": "2026-09-09T22:04:47.420627",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 1588,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 1261
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T440",
+      "description": "[CONTEXT]\nUser is testing Project Chat and encountered error: \"Error: 'Project Name'\" when submitting project description. The Project Chat panel seems to have a validation issue - requiring project name field or similar.\n\nUser's project description: \"Calculator Crush - click highlighted calculator buttons fast, lifebar drains faster over time, good button = +life, wrong = -life + reset equation, valid equations only, enter adds result to score, crush calculator when exceeding int32, babylon.js, difficulty modes\"\n\n[FILES]\n- studio-projects.js (Project Chat send function, validation)\n- server_modules/routes.py (project chat endpoint)\n- studio/project_chat.py (whitepaper agent)\n\n[CONSTRAINTS]\n- Error mentions 'Project Name' - likely form validation issue\n- User already has project description ready\n- Should work without requiring separate project name field (derive from description)\n\n[WHAT]\nFix the \"Error: 'Project Name'\" error in Project Chat. Debug the validation and ensure users can submit project descriptions without hitting this error.",
+      "assignee": "Programmer",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-09T22:15:06.809480",
+      "started_at": "2026-09-09T22:15:10.163830",
+      "completed_at": "2026-09-09T22:16:09.291571",
+      "claimed_by": "Programmer",
+      "claimed_at": "2026-09-09T22:15:10.163830",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 1588,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 1171
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T444",
+      "description": "[CONTEXT] BOSS receives full context stack (### RECENT, ## CONTEXT, ## TASK, memory pointers, role constraints) on every incremental prompt. This causes redundant context reloading and wasted tokens.\n\n[CONSTRAINTS] \n- BOSS should receive full context only ONCE on initialization\n- Incremental prompts should contain ONLY ### RECENT (new user message + last response)\n- Must preserve ability to access memory/file tree when needed via MCP tools\n\n[WHAT] Refactor BOSS prompt injection to separate initial context load from incremental updates. Investigate how prompts are currently assembled and optimize to reduce context duplication.",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-10T19:00:26.354175",
+      "started_at": "2026-09-10T19:00:26.930205",
+      "completed_at": "2026-09-10T19:02:59.042614",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-10T19:00:26.930205",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 737,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 750
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T445",
+      "description": "[CONTEXT] User expects agent names to display with a \"Mr\" prefix in hub chat (e.g., \"Mr Text\" instead of just \"Text\"). Backend agent names should NOT change.\n\n[CONSTRAINTS] \n- Only modify DISPLAY names, never backend agent names\n- Search for where agent names are rendered in chat/hub UI\n- Find if this feature exists, partially exists, or is missing\n\n[WHAT] Find where and how agent names are displayed in the hub chat interface. Determine if prefix feature (Mr, Ms, etc.) exists and if it's working.",
+      "assignee": "Research",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-10T19:18:04.300025",
+      "started_at": "2026-09-10T19:18:05.514021",
+      "completed_at": "2026-09-10T19:18:43.563294",
+      "claimed_by": "Research",
+      "claimed_at": "2026-09-10T19:18:05.514021",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 809,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 618
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T446",
+      "description": "[CONTEXT] \"Mr\" prefix feature exists at studio.js:211 and works in some places, but user sees nothing in hub chat interface. Backend names must stay unchanged.\n\n[FILES] studio.js:211 (prefix logic location)\n\n[CONSTRAINTS]\n- Only modify DISPLAY in chat UI, never backend agent names\n- Prefix should show: \"Mr Text\", \"Mr Code\", etc. (except BOSS and user)\n- Agent panel/cards use raw names (keep correct)\n\n[WHAT] Debug why \"Mr\" prefix isn't appearing in hub chat messages. Fix the display logic so prefix shows correctly.",
+      "assignee": "Code",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-10T19:21:25.934875",
+      "started_at": "2026-09-10T19:21:27.673955",
+      "completed_at": "2026-09-10T19:22:26.739357",
+      "claimed_by": "Code",
+      "claimed_at": "2026-09-10T19:21:27.673955",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 737,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 636
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
+      },
+      "friction": null
+    },
+    {
+      "id": "T447",
+      "description": "[CONTEXT] User expects per-agent token livestream/broadcast on tasks (showing token usage in real-time as agents work). Currently not visible in UI.\n\n[CONSTRAINTS]\n- Feature should show live token count per agent during task execution\n- Should appear on task display/status\n- Should not affect backend task processing\n\n[WHAT] Find where token livestream feature should be implemented. Determine if it exists, is partially implemented, or is completely missing. Locate relevant code for token broadcast/streaming logic.",
+      "assignee": "Research",
+      "status": "approved",
+      "dependencies": [],
+      "error": null,
+      "retry_count": 0,
+      "backend": null,
+      "created_at": "2026-09-10T19:22:48.046167",
+      "started_at": "2026-09-10T19:22:49.840539",
+      "completed_at": "2026-09-10T19:23:36.899743",
+      "claimed_by": "Research",
+      "claimed_at": "2026-09-10T19:22:49.840539",
+      "claimed_process_id": null,
+      "execution": {
+        "errors": [],
+        "context_injected": {
+          "role_md": 809,
+          "skills": 0,
+          "context_md": 0,
+          "task_prompt": 635
+        }
+      },
+      "cost": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+        "usd": 0.0
       },
       "friction": null
     }

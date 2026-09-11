@@ -4426,5 +4426,1032 @@
       "usd": 0.8526262500000001
     },
     "friction": null
+  },
+  {
+    "id": "T352",
+    "desc": "[BUG - MINOR] Missing router skill files for multimedia agents\n\nThe loader.py maps image/sound/video",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-07T23:32:50.421243",
+    "tokens": {
+      "in": 161993,
+      "out": 2531,
+      "usd": 0.29385924999999996
+    },
+    "friction": null
+  },
+  {
+    "id": "T353",
+    "desc": "[WHAT] Design CLAUDE agent - vanilla passthrough [CONTEXT] Empty context agent for testing raw Claud",
+    "agent": "Taxonomy",
+    "outcome": "ok",
+    "at": "2026-09-08T15:16:54.993898",
+    "tokens": {
+      "in": 223359,
+      "out": 2086,
+      "usd": 0.35987975
+    },
+    "friction": null
+  },
+  {
+    "id": "T354",
+    "desc": "[WHAT] Implement CLAUDE agent [CONTEXT] Create bare-bones agent folder per Taxonomy design. [CONSTRA",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-08T15:17:39.133582",
+    "tokens": {
+      "in": 150478,
+      "out": 1386,
+      "usd": 0.225408
+    },
+    "friction": null
+  },
+  {
+    "id": "T355",
+    "desc": "[WHAT] QA review CLAUDE agent [CONTEXT] Verify implementation matches 'empty context' intent. [CONST",
+    "agent": "QA",
+    "outcome": "ok",
+    "at": "2026-09-08T15:19:01.648431",
+    "tokens": {
+      "in": 330972,
+      "out": 2586,
+      "usd": 0.441015
+    },
+    "friction": null
+  },
+  {
+    "id": "T356",
+    "desc": "[BUG - MAJOR] CLAUDE agent receives shared skills despite vanilla flag\n\nSteps:\n1. Send task to CLAUD",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-08T15:20:27.921038",
+    "tokens": {
+      "in": 305416,
+      "out": 3798,
+      "usd": 0.39592625
+    },
+    "friction": null
+  },
+  {
+    "id": "T357",
+    "desc": "[BUG - MINOR] CLAUDE agent gets core tool skills injected\n\nSteps:\n1. Check CLAUDE agent initializati",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-08T15:20:57.086091",
+    "tokens": {
+      "in": 82775,
+      "out": 910,
+      "usd": 0.1697225
+    },
+    "friction": null
+  },
+  {
+    "id": "T358",
+    "desc": "[WHAT] Document the new simplified prompt structure in CONTEXT.md [CONTEXT] Skill system was disable",
+    "agent": "Context",
+    "outcome": "ok",
+    "at": "2026-09-08T16:21:09.490280",
+    "tokens": {
+      "in": 246877,
+      "out": 1839,
+      "usd": 0.26974424999999996
+    },
+    "friction": null
+  },
+  {
+    "id": "T359",
+    "desc": "[WHAT] Remove skill system from codebase [CONTEXT] Skill system disabled, need to clean up code [CON",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-08T16:28:17.418261",
+    "tokens": {
+      "in": 1220589,
+      "out": 9416,
+      "usd": 1.17052475
+    },
+    "friction": "low"
+  },
+  {
+    "id": "T360",
+    "desc": "...",
+    "agent": "Research",
+    "outcome": "error",
+    "at": "2026-09-08T16:31:41.757348",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": "high"
+  },
+  {
+    "id": "T361",
+    "desc": "[WHAT] Deliver research report on optimal token I/O ratios for LLM task execution [CONTEXT] User wan",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-08T16:34:01.131812",
+    "tokens": {
+      "in": 87267,
+      "out": 1939,
+      "usd": 0.29664999999999997
+    },
+    "friction": null
+  },
+  {
+    "id": "T362",
+    "desc": "[WHAT] Research agent fleet coordination patterns and architectures [CONTEXT] Need to understand bes",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T07:10:38.750662",
+    "tokens": {
+      "in": 60336,
+      "out": 1739,
+      "usd": 0.26819275
+    },
+    "friction": null
+  },
+  {
+    "id": "T365",
+    "desc": "[WHAT] QA audit - identify testing gaps, bug patterns, reliability issues [CONTEXT] Part of comprehe",
+    "agent": "QA",
+    "outcome": "ok",
+    "at": "2026-09-09T08:19:41.568620",
+    "tokens": {
+      "in": 246726,
+      "out": 2283,
+      "usd": 0.4132035
+    },
+    "friction": null
+  },
+  {
+    "id": "T363",
+    "desc": "[WHAT] Comprehensive audit of Studio application - architecture, code quality, data flows, and poten",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T08:21:10.729454",
+    "tokens": {
+      "in": 38185,
+      "out": 1240,
+      "usd": 0.31060965000000007
+    },
+    "friction": null
+  },
+  {
+    "id": "T364",
+    "desc": "[WHAT] Audit Studio design patterns and system architecture [CONTEXT] Part of comprehensive app audi",
+    "agent": "Designer",
+    "outcome": "ok",
+    "at": "2026-09-09T08:21:30.801872",
+    "tokens": {
+      "in": 37968,
+      "out": 1480,
+      "usd": 0.3159039
+    },
+    "friction": null
+  },
+  {
+    "id": "T366",
+    "desc": "Test permission skip",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T08:49:49.086835",
+    "tokens": {
+      "in": 17940,
+      "out": 49,
+      "usd": 0.0254085
+    },
+    "friction": null
+  },
+  {
+    "id": "T367",
+    "desc": "[CONTEXT] studio.py:692 calls check_and_compress_all() but memory.py doesnt define it. Runtime Attri",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T08:58:55.458434",
+    "tokens": {
+      "in": 63945,
+      "out": 715,
+      "usd": 0.10032625
+    },
+    "friction": null
+  },
+  {
+    "id": "T368",
+    "desc": "[CONTEXT] studio.py:692 calls check_and_compress_all() but memory.py doesnt define it. Runtime Attri",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T08:59:12.521733",
+    "tokens": {
+      "in": 38428,
+      "out": 472,
+      "usd": 0.08015075
+    },
+    "friction": null
+  },
+  {
+    "id": "T369",
+    "desc": "[CONTEXT] tasks.py:48-77 calls memory_manager.add_hot() but method doesnt exist. Silent failure. [FI",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T08:59:38.634760",
+    "tokens": {
+      "in": 64187,
+      "out": 852,
+      "usd": 0.10609725
+    },
+    "friction": null
+  },
+  {
+    "id": "T370",
+    "desc": "[CONTEXT] studio_metrics.py:39-86 has thread-unsafe dict access. Lost token counts in parallel execu",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T09:00:55.878017",
+    "tokens": {
+      "in": 284509,
+      "out": 3319,
+      "usd": 0.31664424999999996
+    },
+    "friction": null
+  },
+  {
+    "id": "T371",
+    "desc": "[CONTEXT] broadcast.py:26,49-50 has thread-unsafe global state. WebSocket corruption possible. [FILE",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T09:01:43.062249",
+    "tokens": {
+      "in": 169032,
+      "out": 2473,
+      "usd": 0.2076315
+    },
+    "friction": null
+  },
+  {
+    "id": "T372",
+    "desc": "[Daily Codebase Review] [WHAT] Analyze codebase and create summary suggestion [CONTEXT] Scan all fil",
+    "agent": "Taxonomy",
+    "outcome": "ok",
+    "at": "2026-09-09T09:05:54.509263",
+    "tokens": {
+      "in": 38553,
+      "out": 691,
+      "usd": 0.32289199999999996
+    },
+    "friction": null
+  },
+  {
+    "id": "T375",
+    "desc": "[Daily Codebase Review] [CONTEXT] Find real bugs and structural issues that would fail professional ",
+    "agent": "Taxonomy",
+    "outcome": "ok",
+    "at": "2026-09-09T09:54:11.092860",
+    "tokens": {
+      "in": 38754,
+      "out": 796,
+      "usd": 0.20034575
+    },
+    "friction": null
+  },
+  {
+    "id": "T373",
+    "desc": "[CONTEXT] Codebase has 80+ print() calls making logs inconsistent and hard to filter. Need proper lo",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T09:57:31.559136",
+    "tokens": {
+      "in": 237,
+      "out": 862,
+      "usd": 0
+    },
+    "friction": null
+  },
+  {
+    "id": "T376",
+    "desc": "[CONTEXT] T373 created logging_config.py but ran out of tokens before converting all print() calls. ",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T11:31:33.768756",
+    "tokens": {
+      "in": 1469310,
+      "out": 9503,
+      "usd": 1.2941919999999996
+    },
+    "friction": "low"
+  },
+  {
+    "id": "T377",
+    "desc": "[CONTEXT] Frontend task tab stopped displaying token metrics. Root cause: frontend JS references fla",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T11:41:57.267353",
+    "tokens": {
+      "in": 905697,
+      "out": 7298,
+      "usd": 0.8428985
+    },
+    "friction": null
+  },
+  {
+    "id": "T378",
+    "desc": "Test task with no dependencies",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T11:42:05.353469",
+    "tokens": {
+      "in": 17940,
+      "out": 52,
+      "usd": 0.02995225
+    },
+    "friction": null
+  },
+  {
+    "id": "T382",
+    "desc": "[CONTEXT]\nTesting MCP tool integration - first successful task delegation after config fix.\n\n[CONSTR",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:38:40.666818",
+    "tokens": {
+      "in": 40869,
+      "out": 125,
+      "usd": 0.08925875
+    },
+    "friction": null
+  },
+  {
+    "id": "T383",
+    "desc": "[CONTEXT] Testing MCP dependency system with isolated parallel tasks.\n\n[WHAT] Return the number 42. ",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:40:02.903534",
+    "tokens": {
+      "in": 40847,
+      "out": 105,
+      "usd": 0.0885915
+    },
+    "friction": null
+  },
+  {
+    "id": "T384",
+    "desc": "[CONTEXT] Testing MCP dependency system with isolated parallel tasks.\n\n[WHAT] Return the string \"ALP",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:40:13.968018",
+    "tokens": {
+      "in": 40861,
+      "out": 100,
+      "usd": 0.08852349999999999
+    },
+    "friction": null
+  },
+  {
+    "id": "T385",
+    "desc": "[CONTEXT] Testing MCP dependency system with isolated parallel tasks.\n\n[WHAT] Return the string \"BET",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:40:22.038995",
+    "tokens": {
+      "in": 15249,
+      "out": 25,
+      "usd": 0.07312550000000001
+    },
+    "friction": null
+  },
+  {
+    "id": "T386",
+    "desc": "[CONTEXT] Testing single dependency - must wait for T383.\n\n[WHAT] Read T383's deliverable and multip",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:40:36.143700",
+    "tokens": {
+      "in": 40895,
+      "out": 185,
+      "usd": 0.09224675
+    },
+    "friction": null
+  },
+  {
+    "id": "T387",
+    "desc": "[CONTEXT] Testing multi-dependency - must wait for BOTH T384 and T385.\n\n[WHAT] Read T384 and T385 de",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:40:50.265213",
+    "tokens": {
+      "in": 40927,
+      "out": 208,
+      "usd": 0.09503774999999999
+    },
+    "friction": null
+  },
+  {
+    "id": "T388",
+    "desc": "[CONTEXT] Testing deep dependency chain - must wait for T386 AND T387 (which themselves have depende",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:41:07.374076",
+    "tokens": {
+      "in": 66830,
+      "out": 326,
+      "usd": 0.112875
+    },
+    "friction": null
+  },
+  {
+    "id": "T389",
+    "desc": "[CONTEXT]\nBOSS receives context injection via `studio/studio.py` - the `_build_boss_context()` metho",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T12:47:59.510171",
+    "tokens": {
+      "in": 320109,
+      "out": 2353,
+      "usd": 0.34276925
+    },
+    "friction": null
+  },
+  {
+    "id": "T390",
+    "desc": "[CONTEXT]\nS038 friction point: BOSS says \"fix it\" \u2192 does work instead of delegating.\nNeed prompt har",
+    "agent": "Context",
+    "outcome": "ok",
+    "at": "2026-09-09T12:56:19.939811",
+    "tokens": {
+      "in": 69570,
+      "out": 783,
+      "usd": 0.13897
+    },
+    "friction": null
+  },
+  {
+    "id": "T391",
+    "desc": "[Test Routine] [CONTEXT] Testing routine execution pipeline.\n[WHAT] Return the current timestamp and",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:57:23.813151",
+    "tokens": {
+      "in": 15249,
+      "out": 117,
+      "usd": 0.07595675
+    },
+    "friction": null
+  },
+  {
+    "id": "T392",
+    "desc": "[Test Routine] [CONTEXT] Second step in test routine.\n[WHAT] Return 'Routine step 2 complete' to con",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:57:34.913063",
+    "tokens": {
+      "in": 40980,
+      "out": 112,
+      "usd": 0.08962675
+    },
+    "friction": null
+  },
+  {
+    "id": "T393",
+    "desc": "[Test Routine] [CONTEXT] Testing routine execution pipeline.\n[WHAT] Return the current timestamp and",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:59:10.099363",
+    "tokens": {
+      "in": 15249,
+      "out": 132,
+      "usd": 0.07649425
+    },
+    "friction": null
+  },
+  {
+    "id": "T394",
+    "desc": "[Test Routine] [CONTEXT] Second step in test routine.\n[WHAT] Return 'Routine step 2 complete' to con",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T12:59:24.182547",
+    "tokens": {
+      "in": 66906,
+      "out": 189,
+      "usd": 0.10541925
+    },
+    "friction": null
+  },
+  {
+    "id": "T395",
+    "desc": "[CONTEXT]\nUser reports: \"Run Now\" button in routines tab is incorrectly setting the routine to Activ",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T13:01:34.633099",
+    "tokens": {
+      "in": 239387,
+      "out": 2130,
+      "usd": 0.399767
+    },
+    "friction": null
+  },
+  {
+    "id": "T396",
+    "desc": "[CONTEXT]\nUser wants routine UI layout change. Currently clock/status indicators are positioned else",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T13:03:42.032592",
+    "tokens": {
+      "in": 224333,
+      "out": 1693,
+      "usd": 0.2701865
+    },
+    "friction": null
+  },
+  {
+    "id": "T397",
+    "desc": "[CONTEXT]\nBOSS role.md needs stronger identity framing. Current text says \"your agents\" but doesn't ",
+    "agent": "Context",
+    "outcome": "ok",
+    "at": "2026-09-09T13:07:04.453479",
+    "tokens": {
+      "in": 125400,
+      "out": 772,
+      "usd": 0.17091275
+    },
+    "friction": null
+  },
+  {
+    "id": "T398",
+    "desc": "[CONTEXT]\nRoutine tab UX improvements requested. Two features needed:\n1. Error indicator: Visual fee",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T13:14:09.397518",
+    "tokens": {
+      "in": 2479347,
+      "out": 15855,
+      "usd": 1.9812107500000005
+    },
+    "friction": "low"
+  },
+  {
+    "id": "T399",
+    "desc": "[CONTEXT]\nCurrent metrics track session-wide token totals. User wants per-task granularity - each ta",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T13:15:35.568000",
+    "tokens": {
+      "in": 1097006,
+      "out": 3560,
+      "usd": 1.1233499999999998
+    },
+    "friction": "low"
+  },
+  {
+    "id": "T400",
+    "desc": "[CONTEXT]\nBOSS needs research on optimal file discovery patterns for AI agents. Current pain point: ",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T13:27:49.900811",
+    "tokens": {
+      "in": 193472,
+      "out": 2852,
+      "usd": 0.52024925
+    },
+    "friction": null
+  },
+  {
+    "id": "T401",
+    "desc": "[CONTEXT]\nResearch found file discovery patterns that could save 50-80% tokens. We need practical im",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T13:28:25.030957",
+    "tokens": {
+      "in": 41639,
+      "out": 1341,
+      "usd": 0.16994375
+    },
+    "friction": null
+  },
+  {
+    "id": "T402",
+    "desc": "[CONTEXT]\nUser approved Dynamic File Tree Injection (option #2). Research report confirmed 80% of to",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T13:33:32.454129",
+    "tokens": {
+      "in": 296632,
+      "out": 2731,
+      "usd": 0.35656550000000004
+    },
+    "friction": null
+  },
+  {
+    "id": "T403",
+    "desc": "[CONTEXT] The routine tab cards show clock displays with \"runs every X time\" values. Currently these",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:14:31.538657",
+    "tokens": {
+      "in": 162265,
+      "out": 664,
+      "usd": 0.382072
+    },
+    "friction": null
+  },
+  {
+    "id": "T416",
+    "desc": "[CONTEXT]\nUser wants to archive current tasks to reset the token display. The UI sums `cost.input_to",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:02:08.750295",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T415",
+    "desc": "[CONTEXT]\nUser reset token_usage.json and studio_metrics.json but the UI still displays \"5.9M tokens",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:02:06.729048",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T414",
+    "desc": "[CONTEXT]\nUser wants to reset token tracking to zero so they can measure usage with the new workflow",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:57:20.610810",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T413",
+    "desc": "[CONTEXT]\nUser wants updated token usage statistics and cost calculation for the studio.\n\n[FILES]\n- ",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T16:54:04.203353",
+    "tokens": {
+      "in": 41564,
+      "out": 576,
+      "usd": 0.11443125
+    },
+    "friction": null
+  },
+  {
+    "id": "T412",
+    "desc": "[CONTEXT]\nT411 audit identified 3 gaps in session-based Claude CLI implementation:\n1. Expired sessio",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:53:24.023010",
+    "tokens": {
+      "in": 297472,
+      "out": 2448,
+      "usd": 0.3525729999999999
+    },
+    "friction": null
+  },
+  {
+    "id": "T411",
+    "desc": "[CONTEXT]\nUser implemented session-based context management for Claude CLI agents outside the Studio",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:51:13.775574",
+    "tokens": {
+      "in": 162997,
+      "out": 1110,
+      "usd": 0.27503625
+    },
+    "friction": null
+  },
+  {
+    "id": "T410",
+    "desc": "[CONTEXT]\nUser identified \"context accumulation\" as critical issue - each edit rebuilds full convers",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T16:24:22.262516",
+    "tokens": {
+      "in": 154928,
+      "out": 3266,
+      "usd": 0.4670285
+    },
+    "friction": null
+  },
+  {
+    "id": "T409",
+    "desc": "[CONTEXT]\nT404 (drag-and-drop reorder fix) consumed 2.47M tokens at $1.89 cost. User wants to unders",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T16:23:02.045048",
+    "tokens": {
+      "in": 263985,
+      "out": 3043,
+      "usd": 0.48852675000000007
+    },
+    "friction": null
+  },
+  {
+    "id": "T408",
+    "desc": "[CONTEXT] The main studio interface has a tab selection bar. User wants the Agents tab moved to the ",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:22:20.871090",
+    "tokens": {
+      "in": 72083,
+      "out": 559,
+      "usd": 0.14764525
+    },
+    "friction": null
+  },
+  {
+    "id": "T407",
+    "desc": "[CONTEXT] Clicking on an agent card opens a config modal. User wants this removed.\n\n[FILES] `studio.",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:21:57.716224",
+    "tokens": {
+      "in": 786942,
+      "out": 3241,
+      "usd": 0.9112545000000002
+    },
+    "friction": null
+  },
+  {
+    "id": "T405",
+    "desc": "[CONTEXT] The agents tab shows token usage but values are not accurate. Per-task token tracking was ",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:20:38.568694",
+    "tokens": {
+      "in": 1251065,
+      "out": 3388,
+      "usd": 1.1541100000000002
+    },
+    "friction": "low"
+  },
+  {
+    "id": "T404",
+    "desc": "[CONTEXT] Drag-and-drop reorder was implemented in T398 but cards don't move at all when dragged. Th",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T16:18:39.312654",
+    "tokens": {
+      "in": 2468280,
+      "out": 9197,
+      "usd": 1.88941275
+    },
+    "friction": "low"
+  },
+  {
+    "id": "T406",
+    "desc": "[CONTEXT] Need clarity on what the \"Routine\" agent does vs server-side routine execution. User suspe",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T16:15:03.688428",
+    "tokens": {
+      "in": 339404,
+      "out": 2181,
+      "usd": 0.4807969999999999
+    },
+    "friction": null
+  },
+  {
+    "id": "T427",
+    "desc": "[CONTEXT]\nDesigner completed spec for external project creation tooling (T425). Need to implement th",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:36:42.143291",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T428",
+    "desc": "[CONTEXT]\nUser asks about role.md injection efficiency. BOSS uses Claude CLI with persistent session",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T17:35:14.937318",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T426",
+    "desc": "[CONTEXT]\nUser reports approved tasks still don't show token data in UI. Previous fix (T420) reorder",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:33:25.649336",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T425",
+    "desc": "[CONTEXT]\nResearch validated that project folder isolation is industry best practice. User wants to ",
+    "agent": "Designer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:30:23.213832",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T424",
+    "desc": "[CONTEXT]\nUser reports UI error \"failed to fetch\" when interacting with discussions/suggestions, eve",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:28:17.800840",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T423",
+    "desc": "[WHAT] Research suggestion S036\n\n[CONTEXT]\nTitle: Project files in dedicated folders outside studio\n",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T17:26:15.576484",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T422",
+    "desc": "[CONTEXT]\nWe track token usage for agent tasks but BOSS interactions (Claude CLI via MCP) are not tr",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:23:23.256702",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T421",
+    "desc": "Fix UI to display tokens and cost again. Metrics bar shows \"No active tasks\" but token/cost counters",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:17:53.616904",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T420",
+    "desc": "[CONTEXT]\nAfter removing duplicate token logging, the UI no longer displays tokens and cost in the T",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:16:42.503374",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T419",
+    "desc": "[BUG - MINOR] Token calls logged twice per API request\n\n**Repro Steps:**\n1. Make any API call throug",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:15:28.285917",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T418",
+    "desc": "Test token tracking after reset. Write a minimal deliverable confirming the system works.",
+    "agent": "QA",
+    "outcome": "ok",
+    "at": "2026-09-09T17:14:55.144536",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T417",
+    "desc": "[CONTEXT]\nTesting token tracking after reset. Need to verify UI displays accurate cost data.\n\n[CONST",
+    "agent": "QA",
+    "outcome": "ok",
+    "at": "2026-09-09T17:14:29.134516",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T429",
+    "desc": "Test task to verify token tracking is working after server restart. Write a brief confirmation to de",
+    "agent": "QA",
+    "outcome": "ok",
+    "at": "2026-09-09T17:41:04.293380",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T431",
+    "desc": "[CONTEXT]\nBOSS via Claude Code accumulates 500K+ tokens per simple task due to agentic tool calls (R",
+    "agent": "Research",
+    "outcome": "ok",
+    "at": "2026-09-09T17:45:08.586326",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T430",
+    "desc": "[CONTEXT]\nToken tracking is working server-side (logs show 541K input tokens) but UI is not displayi",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:47:08.694473",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T432",
+    "desc": "[CONTEXT]\nUser noticed when examining task prompts, no project path or project structure is visible ",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:48:19.915294",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T433",
+    "desc": "[CONTEXT]\nResearch (T431) found that `--allowedTools` can whitelist specific tools and remove others",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-09T17:48:54.957447",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
+  },
+  {
+    "id": "T434",
+    "desc": "[CONTEXT]\nUser wants to design and implement a Project Creation Pipeline. This is high-priority UX-f",
+    "agent": "Designer",
+    "outcome": "ok",
+    "at": "2026-09-09T21:30:47.525238",
+    "tokens": {
+      "in": 0,
+      "out": 0,
+      "usd": 0.0
+    },
+    "friction": null
   }
 ]

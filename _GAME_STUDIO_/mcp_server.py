@@ -334,7 +334,7 @@ async def suggest_conventions(
 async def report_issue(
     title: Annotated[str, Field(description="Short issue title (e.g., 'Inconsistent API naming in tasks.py')")],
     description: Annotated[str, Field(description="Detailed description: what's wrong, where, and recommended fix")],
-    assignee: Annotated[str, Field(description="Agent to fix the issue: Programmer, Designer, Artist, Writer")],
+    assignee: Annotated[str, Field(description="Agent to fix the issue: Code, Design, ArtSpec, Text")],
     priority: Annotated[Literal["high", "medium", "low"], Field(description="Priority level based on impact")] = "medium",
 ) -> str:
     """Report a taxonomy/naming issue for another agent to fix.
@@ -632,7 +632,7 @@ async def session_stats() -> str:
 
 @mcp.tool()
 async def clear_agent_session(
-    agent_name: Annotated[str, Field(description="Agent name to clear (e.g., 'Programmer', 'BOSS')")],
+    agent_name: Annotated[str, Field(description="Agent name to clear (e.g., 'Code', 'BOSS')")],
 ) -> str:
     """Clear a specific agent's session.
 

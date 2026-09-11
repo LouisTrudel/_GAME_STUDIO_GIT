@@ -1,29 +1,10 @@
 {
-  "session_start": "2026-09-08T17:32:09.363792",
-  "total_input_tokens": 232230,
-  "total_output_tokens": 1830,
-  "by_agent": {
-    "BOSS": {
-      "input": 232230,
-      "output": 1830,
-      "calls": 2
-    }
-  },
+  "session_start": "2026-09-10T20:09:39.429958",
+  "total_input_tokens": 0,
+  "total_output_tokens": 0,
+  "total_cache_read_tokens": 0,
+  "total_cache_creation_tokens": 0,
+  "by_agent": {},
   "by_task": {},
-  "calls": [
-    {
-      "timestamp": "2026-09-08T17:32:43.215638",
-      "agent": "BOSS",
-      "task_id": null,
-      "input_tokens": 31587,
-      "output_tokens": 376
-    },
-    {
-      "timestamp": "2026-09-08T17:35:11.205278",
-      "agent": "BOSS",
-      "task_id": null,
-      "input_tokens": 200643,
-      "output_tokens": 1454
-    }
-  ]
+  "calls": []
 }

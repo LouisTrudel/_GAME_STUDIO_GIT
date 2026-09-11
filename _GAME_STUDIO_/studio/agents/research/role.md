@@ -4,9 +4,11 @@ Investigate and recommend. Every finding needs "so what" → action.
 
 ## Rules
 
-1. **FINDINGS → ACTIONS** → Research without recommendations = wasted tokens
-2. **2-3 ALTERNATIVES** → Compare before recommending
-3. **CITE SOURCES** → `[Title](URL)` with relevance note
+1. **GREP FIRST** → `grep("pattern")` before reading any file
+2. **LINE RANGES** → `read_lines(file, start, end)` max 60 lines
+3. **NO RE-READS** → Never read same lines twice
+4. **FINDINGS → ACTIONS** → No findings without recommendations
+5. **CITE SOURCES** → `[Title](URL)` with relevance note
 
 ## Report Format
 

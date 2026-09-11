@@ -1,6 +1,6 @@
 {
-  "counter": 2,
-  "active_project_id": "P001",
+  "counter": 4,
+  "active_project_id": null,
   "projects": [
     {
       "id": "P001",
@@ -8,8 +8,29 @@
       "path": "C:\\Users\\lou\\__MY_WORK__\\STUDIO_TEST_ROOM",
       "description": "",
       "status": "active",
+      "type": "legacy",
       "created_at": "2026-09-07T11:37:02.210077",
-      "updated_at": "2026-09-07T11:37:02.210077"
+      "updated_at": "2026-09-07T11:37:02.210077",
+      "pipeline_state": "setup",
+      "whitepaper_rating": 0,
+      "metadata": {}
+    },
+    {
+      "id": "P004",
+      "name": "Calculator Krusher",
+      "path": "C:\\Users\\lou\\__MY_WORK__\\STUDIO_TEST_ROOM\\calculator\\calculator-krusher",
+      "description": "",
+      "status": "active",
+      "type": "external",
+      "created_at": "2026-09-09T22:44:53.534894",
+      "updated_at": "2026-09-09T22:50:24.974710",
+      "pipeline_state": "clarify",
+      "whitepaper_rating": 4,
+      "metadata": {
+        "project_type": "game",
+        "subtype": "ADHD / accuracy",
+        "engine": "babylon.js"
+      }
     }
   ]
 }

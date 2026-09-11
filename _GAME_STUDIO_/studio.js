@@ -14,6 +14,7 @@ let isThinking = false;
 let agentStatuses = {};  // Track agent activity states
 let activityBarTimeout = null;  // Grace period timer
 let agentShowTimes = {};  // Track when each agent started showing (for min display time)
+let liveTokens = {};  // Track live token counts per agent {agent: {input, output}}
 
 // DOM elements
 const statusEl = document.getElementById('status');
@@ -206,10 +207,13 @@ function addMessage(msg) {
     const shouldCollapse = msg.content.length > 150 || msg.content.split('\n').length > 3;
     const contentClass = shouldCollapse ? 'message-content collapsible' : 'message-content';
 
+    // Add "Mr" prefix for agents (except BOSS and user)
+    const displayName = isUser ? 'You' : (msg.sender === 'BOSS' ? 'BOSS' : `Mr ${msg.sender}`);
+
     div.innerHTML = `
         <div class="message-header">
             <span class="message-sender" style="color: ${color}">
-                ${isUser ? 'You' : msg.sender}
+                ${displayName}
             </span>
             <span class="message-time">${time}</span>
         </div>
@@ -868,7 +872,7 @@ function renderRoutines() {
         const runCount = routine.run_count || 0;
         const lastRunFailed = routine.last_run_status === 'failed';
 
-        // Build agent chain summary (e.g., "Taxonomy → Programmer")
+        // Build agent chain summary (e.g., "Structure → Code")
         const agentChain = routine.tasks.map(t => t.assignee).join(' → ');
 
         // Build chain progress indicators
@@ -1010,7 +1014,7 @@ function addRoutineChainTask() {
     const taskNum = builder.children.length + 1;
 
     // Build agent options, default to appropriate agent based on task number
-    const defaultAgent = taskNum === 1 ? 'BOSS' : 'Programmer';
+    const defaultAgent = taskNum === 1 ? 'BOSS' : 'Code';
     const agentOptions = Object.keys(roles).map(name =>
         `<option value="${name}" ${name === defaultAgent ? 'selected' : ''}>${name}</option>`
     ).join('');
@@ -1609,6 +1613,34 @@ function openSelectedInExplorer() {
 // Load file tree on init
 fetchFileTree();
 
+// Live token display updater - called when streaming tokens arrive
+function updateLiveTokenDisplay(agent) {
+    const tokens = liveTokens[agent];
+    if (!tokens) return;
+
+    // Find any in_progress task card for this agent and update its token display
+    const taskItems = document.querySelectorAll('.hub-task-item.in_progress');
+    taskItems.forEach(item => {
+        const agentEl = item.querySelector('.hub-task-agent');
+        if (agentEl && agentEl.textContent === agent) {
+            let tokenEl = item.querySelector('.live-token-count');
+            if (!tokenEl) {
+                tokenEl = document.createElement('span');
+                tokenEl.className = 'live-token-count';
+                tokenEl.style.cssText = 'margin-left: auto; font-size: 0.75rem; color: #5dade2; font-family: monospace;';
+                item.querySelector('div').appendChild(tokenEl);
+            }
+            const total = tokens.input + tokens.output;
+            tokenEl.textContent = formatTokens(total);
+        }
+    });
+}
+
+// Clear live tokens when task completes
+function clearLiveTokens(agent) {
+    delete liveTokens[agent];
+}
+
 // WebSocket
 let wsConnectAttempt = 0;
 
@@ -1662,6 +1694,13 @@ function connect() {
             if (prevTaskCount > 0) {
                 console.log('[WS]   OLD task list:', prevStatuses);
             }
+            // Clear live tokens for agents whose tasks are no longer in_progress
+            const inProgressAgents = new Set(data.data.filter(t => t.status === 'in_progress').map(t => t.assignee));
+            Object.keys(liveTokens).forEach(agent => {
+                if (!inProgressAgents.has(agent)) {
+                    delete liveTokens[agent];
+                }
+            });
             tasks = data.data;
             renderHubTasks();
             console.log('[WS]   renderHubTasks() complete, DOM updated');
@@ -1692,6 +1731,13 @@ function connect() {
             console.log('[WS] suggestions_update - received', data.data.length, 'suggestions');
             suggestions = data.data;
             renderSuggestions();
+        } else if (data.type === 'live_tokens') {
+            // Live token updates during agent streaming
+            liveTokens[data.agent] = {
+                input: data.input_tokens,
+                output: data.output_tokens
+            };
+            updateLiveTokenDisplay(data.agent);
         } else {
             console.log('[WS] Unknown message type:', data.type, data);
         }

@@ -362,5 +362,31 @@
       "usd": 0.299142
     },
     "friction": null
+  },
+  {
+    "id": "T028",
+    "desc": "[WHAT] QA Review Phase 6 - Verify visualization system: attacks, defended, threats, controls [CONTEX",
+    "agent": "QA",
+    "outcome": "ok",
+    "at": "2026-09-07T22:22:39.007341",
+    "tokens": {
+      "in": 178631,
+      "out": 2362,
+      "usd": 0.5793140000000001
+    },
+    "friction": null
+  },
+  {
+    "id": "T034",
+    "desc": "[BUG - MINOR] Threat preview depth slider thumb invisible on Firefox\n\nThe depth slider uses -webkit-",
+    "agent": "Programmer",
+    "outcome": "ok",
+    "at": "2026-09-07T22:23:14.097561",
+    "tokens": {
+      "in": 116466,
+      "out": 1595,
+      "usd": 0.22105375000000002
+    },
+    "friction": null
   }
 ]

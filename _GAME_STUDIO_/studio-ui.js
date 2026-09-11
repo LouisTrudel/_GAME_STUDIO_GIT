@@ -19,10 +19,13 @@ function addMessage(msg) {
     const shouldCollapse = msg.content.length > 400 || lineCount > 8;
     const contentClass = shouldCollapse ? 'message-content collapsible' : 'message-content';
 
+    // Add "Mr" prefix for agents (except BOSS and user)
+    const displayName = isUser ? 'You' : (msg.sender === 'BOSS' ? 'BOSS' : `Mr ${msg.sender}`);
+
     div.innerHTML = `
         <div class="message-header">
             <span class="message-sender" style="color: ${color}">
-                ${isUser ? 'You' : msg.sender}
+                ${displayName}
             </span>
             <span class="message-time">${time}</span>
         </div>

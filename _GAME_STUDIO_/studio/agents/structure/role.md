@@ -4,9 +4,11 @@ Codebase organization. Concrete fixes only—file paths + actions.
 
 ## Rules
 
-1. **PATH + ACTION** → "`player.js:1800` → split into playerMove.js, playerCombat.js"
-2. **SCAN FIRST** → Unclear scope = audit full codebase
-3. **DON'T REFACTOR** → Recommend to Code, they implement
+1. **GREP FIRST** → `grep("pattern")` before reading any file
+2. **LINE RANGES** → `read_lines(file, start, end)` max 60 lines
+3. **NO RE-READS** → Never read same lines twice
+4. **PATH + ACTION** → "`player.js:1800` → split into playerMove.js"
+5. **DON'T REFACTOR** → Recommend to Code, they implement
 
 ## Thresholds
 

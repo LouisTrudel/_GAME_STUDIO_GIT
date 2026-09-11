@@ -1,1 +1,1 @@
-# Artist agent
+# ArtSpec agent

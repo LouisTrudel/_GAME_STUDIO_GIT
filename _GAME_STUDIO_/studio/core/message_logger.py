@@ -64,7 +64,7 @@ class MessageLogger:
         Log a message to today's log file.
 
         Args:
-            speaker: Who sent the message (user, BOSS, Programmer, etc.)
+            speaker: Who sent the message (user, BOSS, Code, etc.)
             message: The message content
             task_id: Optional task ID if message is task-related
             task_description: Optional task description for context

@@ -3,6 +3,8 @@ BOSS-specific tools for task management.
 """
 
 import json
+import subprocess
+import fnmatch
 from pathlib import Path
 from studio.core.tasks import task_manager, TaskStatus
 from studio.core.hub import hub
@@ -14,6 +16,158 @@ from studio.routines.git_commit_routine import run_routine as git_commit_routine
 
 # Logs directory (for raw log search fallback)
 LOGS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "logs"
+# Studio root for file operations
+STUDIO_ROOT = Path(__file__).parent.parent.parent.parent
+
+
+# ============ SEARCH TOOLS ============
+
+SEARCH_FILES_SCHEMA = {
+    "name": "search_files",
+    "description": "Search for files by name pattern (glob). Use before reading files to find exact paths.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "pattern": {
+                "type": "string",
+                "description": "Glob pattern (e.g., '*.py', '**/config.json', 'studio/**/tools.py')"
+            },
+            "max_results": {
+                "type": "integer",
+                "description": "Max files to return (default: 20)"
+            }
+        },
+        "required": ["pattern"]
+    }
+}
+
+
+def search_files(pattern: str, max_results: int = 20) -> str:
+    """Search for files matching a glob pattern."""
+    try:
+        matches = list(STUDIO_ROOT.glob(pattern))
+        # Filter out __pycache__ and .git
+        matches = [m for m in matches if '__pycache__' not in str(m) and '.git' not in str(m)]
+        matches = matches[:max_results]
+
+        if not matches:
+            return f"No files matching '{pattern}'"
+
+        lines = [f"Found {len(matches)} file(s):"]
+        for m in matches:
+            rel = m.relative_to(STUDIO_ROOT)
+            size = m.stat().st_size if m.is_file() else 0
+            lines.append(f"  {rel} ({size} bytes)" if size else f"  {rel}/")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Search error: {e}"
+
+
+GREP_SCHEMA = {
+    "name": "grep",
+    "description": "Search file contents for a pattern. Returns matching lines with file:line format.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "pattern": {
+                "type": "string",
+                "description": "Text or regex pattern to search for"
+            },
+            "file_pattern": {
+                "type": "string",
+                "description": "File glob to search in (e.g., '*.py', 'studio/**/*.py'). Default: '**/*.py'"
+            },
+            "max_results": {
+                "type": "integer",
+                "description": "Max matches to return (default: 30)"
+            }
+        },
+        "required": ["pattern"]
+    }
+}
+
+
+def grep(pattern: str, file_pattern: str = "**/*.py", max_results: int = 30) -> str:
+    """Search for pattern in files."""
+    try:
+        matches = []
+        files = list(STUDIO_ROOT.glob(file_pattern))
+        files = [f for f in files if f.is_file() and '__pycache__' not in str(f) and '.git' not in str(f)]
+
+        for filepath in files[:100]:  # Limit files to search
+            try:
+                content = filepath.read_text(encoding='utf-8', errors='ignore')
+                for i, line in enumerate(content.split('\n'), 1):
+                    if pattern.lower() in line.lower():
+                        rel = filepath.relative_to(STUDIO_ROOT)
+                        matches.append(f"{rel}:{i}: {line.strip()[:100]}")
+                        if len(matches) >= max_results:
+                            break
+            except Exception:
+                continue
+            if len(matches) >= max_results:
+                break
+
+        if not matches:
+            return f"No matches for '{pattern}' in {file_pattern}"
+
+        return f"Found {len(matches)} match(es):\n" + "\n".join(matches)
+    except Exception as e:
+        return f"Grep error: {e}"
+
+
+READ_LINES_SCHEMA = {
+    "name": "read_lines",
+    "description": "Read specific lines from a file. REQUIRED: Always specify start/end lines (max 60 lines per call).",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "filepath": {
+                "type": "string",
+                "description": "Path relative to studio root (e.g., 'studio/agent.py')"
+            },
+            "start_line": {
+                "type": "integer",
+                "description": "First line to read (1-indexed)"
+            },
+            "end_line": {
+                "type": "integer",
+                "description": "Last line to read (max 60 lines from start)"
+            }
+        },
+        "required": ["filepath", "start_line", "end_line"]
+    }
+}
+
+
+def read_lines(filepath: str, start_line: int, end_line: int) -> str:
+    """Read specific lines from a file."""
+    try:
+        full_path = STUDIO_ROOT / filepath
+        if not full_path.exists():
+            return f"File not found: {filepath}"
+
+        # Enforce 60 line limit
+        if end_line - start_line > 60:
+            end_line = start_line + 60
+
+        content = full_path.read_text(encoding='utf-8', errors='ignore')
+        lines = content.split('\n')
+        total_lines = len(lines)
+
+        # Bounds check
+        start_line = max(1, start_line)
+        end_line = min(total_lines, end_line)
+
+        selected = lines[start_line - 1:end_line]
+        result = [f"[{filepath} lines {start_line}-{end_line} of {total_lines}]"]
+        for i, line in enumerate(selected, start_line):
+            result.append(f"{i:4d}| {line}")
+
+        return "\n".join(result)
+    except Exception as e:
+        return f"Read error: {e}"
 
 
 def _get_active_project_context() -> str:
@@ -45,7 +199,7 @@ Structure your task description for optimal output:
             },
             "assignee": {
                 "type": "string",
-                "description": "Agent to assign: Designer, Programmer, Artist, Writer, Taxonomy, Context, QA, or Raw (for direct LLM queries without agent overhead)"
+                "description": "Agent to assign: Design, Code, ArtSpec, Text, Structure, Prompt, Audit, or Raw (for direct LLM queries without agent overhead)"
             },
             "agent": {
                 "type": "string",
@@ -161,6 +315,204 @@ ACKNOWLEDGE_SCHEMA = {
 def acknowledge(message: str = "Acknowledged") -> str:
     """Simple acknowledgment - ensures BOSS always uses a tool."""
     return f"✓ {message}"
+
+
+# ============ CLARIFY TOOL ============
+
+CLARIFY_SCHEMA = {
+    "name": "clarify",
+    "description": "Ask the user for clarification when a request is ambiguous or missing details. Use before creating tasks if requirements are unclear.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "question": {
+                "type": "string",
+                "description": "The clarifying question to ask the user"
+            },
+            "options": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Optional list of choices to present (e.g., ['Option A', 'Option B'])"
+            },
+            "context": {
+                "type": "string",
+                "description": "Brief context about why you need this info"
+            }
+        },
+        "required": ["question"]
+    }
+}
+
+
+def clarify(question: str, options: list = None, context: str = None) -> str:
+    """Ask user for clarification before proceeding."""
+    parts = []
+    if context:
+        parts.append(f"Context: {context}")
+    parts.append(f"❓ {question}")
+    if options:
+        parts.append("Options: " + " | ".join(options))
+
+    # Post to hub so user sees it
+    hub.post("BOSS", "\n".join(parts))
+    return "Awaiting user clarification"
+
+
+# ============ CANCEL TASK TOOL ============
+
+CANCEL_TASK_SCHEMA = {
+    "name": "cancel_task",
+    "description": "Cancel a pending or in-progress task. Use when a task is no longer needed.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "task_id": {
+                "type": "string",
+                "description": "The task ID to cancel (e.g., 'T001')"
+            },
+            "reason": {
+                "type": "string",
+                "description": "Why the task is being cancelled"
+            }
+        },
+        "required": ["task_id"]
+    }
+}
+
+
+def cancel_task(task_id: str, reason: str = None) -> str:
+    """Cancel an existing task."""
+    task = task_manager.get_task(task_id)
+    if not task:
+        return f"Task {task_id} not found"
+
+    if task.status.value in ("approved", "completed"):
+        return f"Cannot cancel {task_id} - already {task.status.value}"
+
+    task_manager.update_task(task_id, status="cancelled")
+    msg = f"Cancelled {task_id}"
+    if reason:
+        msg += f": {reason}"
+    hub.post("BOSS", msg)
+    return msg
+
+
+# ============ REASSIGN TASK TOOL ============
+
+REASSIGN_TASK_SCHEMA = {
+    "name": "reassign_task",
+    "description": "Reassign a task to a different agent.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "task_id": {
+                "type": "string",
+                "description": "The task ID to reassign"
+            },
+            "new_assignee": {
+                "type": "string",
+                "description": "New agent: Design, Code, ArtSpec, Text, Structure, Prompt, Audit, Research"
+            },
+            "reason": {
+                "type": "string",
+                "description": "Why reassigning (optional)"
+            }
+        },
+        "required": ["task_id", "new_assignee"]
+    }
+}
+
+
+def reassign_task(task_id: str, new_assignee: str, reason: str = None) -> str:
+    """Reassign a task to a different agent."""
+    task = task_manager.get_task(task_id)
+    if not task:
+        return f"Task {task_id} not found"
+
+    if task.status.value in ("approved", "completed", "cancelled"):
+        return f"Cannot reassign {task_id} - status is {task.status.value}"
+
+    old_assignee = task.assignee
+
+    # Normalize assignee name
+    if new_assignee.lower() == "boss":
+        new_assignee = "BOSS"
+    else:
+        new_assignee = new_assignee.capitalize()
+
+    task_manager.update_task(task_id, assignee=new_assignee, status="pending")
+
+    msg = f"Reassigned {task_id}: {old_assignee} → {new_assignee}"
+    if reason:
+        msg += f" ({reason})"
+    hub.post("BOSS", f"@{new_assignee} ← {msg}")
+    return msg
+
+
+# ============ DELEGATE CHAIN TOOL ============
+
+DELEGATE_CHAIN_SCHEMA = {
+    "name": "delegate_chain",
+    "description": "Create multiple dependent tasks in sequence. Each task waits for the previous one to complete.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "tasks": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "description": {"type": "string"},
+                        "assignee": {"type": "string"}
+                    },
+                    "required": ["description", "assignee"]
+                },
+                "description": "List of tasks in order. Each depends on the previous."
+            },
+            "name": {
+                "type": "string",
+                "description": "Optional name for this task chain"
+            }
+        },
+        "required": ["tasks"]
+    }
+}
+
+
+def delegate_chain(tasks: list, name: str = None) -> str:
+    """Create a chain of dependent tasks."""
+    if not tasks or len(tasks) < 2:
+        return "Error: delegate_chain requires at least 2 tasks"
+
+    created = []
+    prev_id = None
+
+    for i, t in enumerate(tasks):
+        desc = t.get("description", "")
+        assignee = t.get("assignee", "")
+
+        # Normalize assignee
+        if assignee.lower() == "boss":
+            assignee = "BOSS"
+        else:
+            assignee = assignee.capitalize()
+
+        # Add project context
+        project_ctx = _get_active_project_context()
+        if project_ctx and "[PROJECT_PATH]" not in desc:
+            desc = f"{desc} {project_ctx}"
+
+        # Create with dependency on previous
+        deps = [prev_id] if prev_id else None
+        task = task_manager.create_task(desc, assignee, deps)
+        created.append(task.id)
+        prev_id = task.id
+
+    chain_name = name or f"Chain of {len(created)} tasks"
+    chain_str = " → ".join(created)
+    hub.post("BOSS", f"Created chain '{chain_name}': {chain_str}")
+
+    return f"Created {len(created)} tasks: {chain_str}"
 
 
 # ============ SUGGESTION TOOL ============
@@ -448,19 +800,38 @@ def _search_logs(query: str, max_results: int) -> str:
 
 # Tool bundle
 TOOLS = [
+    # Search tools (use before reading)
+    SEARCH_FILES_SCHEMA,
+    GREP_SCHEMA,
+    READ_LINES_SCHEMA,
+    # Task management
     CREATE_TASK_SCHEMA,
     GET_TASK_STATUS_SCHEMA,
+    CANCEL_TASK_SCHEMA,
+    REASSIGN_TASK_SCHEMA,
+    DELEGATE_CHAIN_SCHEMA,
+    # Communication
     ACKNOWLEDGE_SCHEMA,
+    CLARIFY_SCHEMA,
+    # Memory & suggestions
+    RECALL_MEMORY_SCHEMA,
     CREATE_SUGGESTION_SCHEMA,
     ADD_DISCUSSION_SCHEMA,
-    RECALL_MEMORY_SCHEMA,
+    # Git
     GIT_COMMIT_SCHEMA,
 ]
 
 HANDLERS = {
+    "search_files": search_files,
+    "grep": grep,
+    "read_lines": read_lines,
     "create_task": create_task,
     "get_task_status": get_task_status,
     "acknowledge": acknowledge,
+    "clarify": clarify,
+    "cancel_task": cancel_task,
+    "reassign_task": reassign_task,
+    "delegate_chain": delegate_chain,
     "create_suggestion": create_suggestion,
     "add_discussion": add_discussion,
     "recall_memory": recall_memory,

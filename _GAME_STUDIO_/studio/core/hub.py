@@ -391,5 +391,35 @@ class Hub:
 An abstract self-improving agent fleet that delegates tasks, accumulates data, and refines its skill library to ship fully working complex projects. Optimizes AI output quality per token through dynamic context injection.
 """
 
+    def get_incremental_context_for_boss(self) -> str:
+        """Get minimal context for BOSS after initialization (T444).
+
+        Only returns recent messages + active tasks - no memory tiers, no purpose block.
+        These static elements are already in the Claude session from initialization.
+
+        Returns:
+            Formatted string with last 5 messages + active tasks summary.
+        """
+        lines = []
+        skip_senders = {"System", "TEST", "test_sender"}
+
+        # Last 5 messages only
+        recent = self.messages[-5:]
+        for msg in recent:
+            if msg.sender in skip_senders:
+                continue
+            prefix = "YOU" if msg.sender == "BOSS" else msg.sender
+            # Keep messages short for incremental updates
+            content = self._truncate_message(msg.content, max_chars=300)
+            lines.append(f"[{prefix}]: {content}")
+
+        # Add active tasks summary
+        active_tasks = task_manager.to_active_context_string()
+        if active_tasks:
+            lines.append("\n" + active_tasks)
+
+        return "\n".join(lines)
+
+
 # Global hub instance
 hub = Hub()

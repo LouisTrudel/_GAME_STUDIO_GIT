@@ -149,7 +149,7 @@ function addRoutineChainTask() {
     const builder = document.getElementById('routineChainBuilder');
     const taskNum = builder.children.length + 1;
 
-    const defaultAgent = taskNum === 1 ? 'BOSS' : 'Programmer';
+    const defaultAgent = taskNum === 1 ? 'BOSS' : 'Code';
     const agentOptions = Object.keys(roles).map(name =>
         `<option value="${name}" ${name === defaultAgent ? 'selected' : ''}>${name}</option>`
     ).join('');

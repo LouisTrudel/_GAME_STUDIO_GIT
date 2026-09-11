@@ -1,0 +1,1475 @@
+2026-09-10 15:20:41 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:20:41 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:20:41 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:20:57 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:20:57 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:20:57 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:21:04 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:21:04 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:21:04 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:21:11 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:21:11 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:21:11 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:45:18 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:45:18 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:45:18 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:45:18 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:45:25 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:45:25 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:45:25 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:45:25 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:45:56 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:45:56 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:45:56 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:45:56 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:46:16 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:46:16 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:46:16 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:46:16 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:46:41 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:46:41 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:46:41 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:46:41 [Agent] INFO: [Artist] Loaded role.md: 1157 chars, is_vanilla=False
+2026-09-10 15:46:41 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Artist] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [BOSS] Loaded role.md: 2621 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [BOSS] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Claude] Loaded role.md: 56 chars, is_vanilla=True
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Claude] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Context] Loaded role.md: 1837 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Context] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Designer] Loaded role.md: 1392 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Designer] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Image] Loaded role.md: 979 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Image] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Programmer] Loaded role.md: 1588 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Programmer] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [QA] Loaded role.md: 1249 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [QA] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Research] Loaded role.md: 1292 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Research] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Routine] Loaded role.md: 1757 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Routine] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Sound] Loaded role.md: 1089 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Sound] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Taxonomy] Loaded role.md: 1609 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Taxonomy] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Video] Loaded role.md: 1103 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Video] Using backend: claude-cli
+2026-09-10 15:46:41 [Agent] INFO: [Writer] Loaded role.md: 1480 chars, is_vanilla=False
+2026-09-10 15:46:41 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:46:41 [Agent] INFO: [Writer] Using backend: claude-cli
+2026-09-10 15:46:56 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:46:56 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:46:56 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:46:56 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:46:56 [Memory] INFO: Appended to tier0, size: 4426
+2026-09-10 15:46:56 [History] INFO: Appended to draft, size: 8154
+2026-09-10 15:47:28 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:47:28 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:47:28 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:47:28 [Agent] INFO: [Artist] Loaded role.md: 1157 chars, is_vanilla=False
+2026-09-10 15:47:28 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Artist] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [BOSS] Loaded role.md: 2621 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [BOSS] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Claude] Loaded role.md: 56 chars, is_vanilla=True
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Claude] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Context] Loaded role.md: 1837 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Context] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Designer] Loaded role.md: 1392 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Designer] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Image] Loaded role.md: 979 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Image] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Programmer] Loaded role.md: 1588 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Programmer] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [QA] Loaded role.md: 1249 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [QA] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Research] Loaded role.md: 1292 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Research] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Routine] Loaded role.md: 1757 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Routine] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Sound] Loaded role.md: 1089 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Sound] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Taxonomy] Loaded role.md: 1609 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Taxonomy] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Video] Loaded role.md: 1103 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Video] Using backend: claude-cli
+2026-09-10 15:47:28 [Agent] INFO: [Writer] Loaded role.md: 1480 chars, is_vanilla=False
+2026-09-10 15:47:28 [Claude CLI] INFO: Backend initialized (stale timeout: 1200s)
+2026-09-10 15:47:28 [Agent] INFO: [Writer] Using backend: claude-cli
+2026-09-10 15:47:28 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 15:47:28 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 15:47:28 [Studio] INFO: Started T441 for Programmer
+2026-09-10 15:47:28 [Studio] DEBUG: submitted T441 to executor for Programmer
+2026-09-10 15:47:28 [Studio] INFO: _run_agent_task() start | task=T441 | agent=Programmer
+2026-09-10 15:47:28 [Studio] DEBUG: tick done | elapsed=0.006s | did_work=True | active=1
+2026-09-10 15:47:28 [Studio] DEBUG: _run_agent_task() building context for T441
+2026-09-10 15:47:28 [Studio] DEBUG: _run_agent_task() calling agent.respond() for T441 | prompt_len=3133 | est_tokens=783
+2026-09-10 15:47:28 [Agent] INFO: [Programmer] Thinking...
+2026-09-10 15:47:28 [Claude CLI] DEBUG: Prompt length: 4771 chars
+2026-09-10 15:47:28 [Claude CLI] DEBUG: System prompt length: 1597 chars
+2026-09-10 15:47:28 [Claude CLI] DEBUG: System prompt preview: ## ROLE
+
+# Programmer
+
+You ship working code. Reuse before creating. Never output broken code.
+
+## Rules
+
+1. **REUSE > CREATE** → Search for existing ...
+2026-09-10 15:47:28 [Claude CLI] DEBUG: Resuming permanent session for Programmer: df680d86
+2026-09-10 15:47:28 [Claude CLI] DEBUG: MCP config: C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\.claude\settings.json
+2026-09-10 15:47:28 [Claude CLI] DEBUG: Command: C:\Users\lou\AppData\Roaming\npm\claude.cmd -p - --output-format stream-json --verbose --resume df680d86-dceb-5f74-ad37-81b163a2741f --mcp-config C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\.claude\settings.json --dangerously-skip-permissions --allowedTools mcp__game-studio__*,Edit,Bash,AskUserQuestion --max-turns 30
+2026-09-10 15:47:30 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:47:30 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:47:30 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:47:30 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:47:40 [Claude CLI] DEBUG: Raw result event keys: ['type', 'subtype', 'is_error', 'duration_ms', 'duration_api_ms', 'num_turns', 'result', 'session_id', 'total_cost_usd', 'usage', 'modelUsage', 'permission_denials', 'uuid']
+2026-09-10 15:47:40 [Claude CLI] DEBUG: usage keys: ['input_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens', 'output_tokens', 'server_tool_use', 'service_tier', 'cache_creation']
+2026-09-10 15:47:40 [Claude CLI] DEBUG: Full result: {
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 8179,
+  "duration_api_ms": 7060,
+  "num_turns": 2,
+  "result": "DONE: Found respond function at line 201 in studio/agent.py\n- Signature: `def respond(self, trigger_message: str = None, full_prompt: str = None) -> str:`\n- Located in StudioAgent class",
+  "session_id": "df680d86-dceb-5f74-ad37-81b163a2741f",
+  "total_cost_usd": 0.8789859999999998,
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 127426,
+    "cache_read_input_tokens": 158107,
+    "output_tokens": 140,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 127426,
+      "ephemeral_5m_input_tokens": 0
+    }
+  },
+  "modelUsage": {
+    "claude-opus-4-5-20251101": {
+      "inputTokens": 4,
+      "outputTokens": 140,
+      "cacheReadInputTokens": 158107,
+      "cacheCreationInputTokens": 127426,
+      "webSearchRequests": 0,
+      "costUSD": 0.8789859999999998,
+      "contextWindow": 200000,
+      "maxOutputTokens": 64000
+    }
+  },
+  "permission_denials": [],
+  "uuid": "a3e600dc-970f-4caf-8a65-72c8ecf3e46f"
+}
+2026-09-10 15:47:40 [Agent] INFO: [Programmer] Done. (12.3s, 158111+140 tokens)
+2026-09-10 15:47:40 [Memory] INFO: Appended to tier0, size: 4512
+2026-09-10 15:47:40 [History] INFO: Appended to draft, size: 8366
+2026-09-10 15:47:40 [Studio] DEBUG: _run_agent_task() usage for T441: in=158111 out=140 keys=['total_input_tokens', 'total_output_tokens', 'token_log']
+2026-09-10 15:47:40 [Studio] INFO: _run_agent_task() done | task=T441 | elapsed=12.4s | retries=0 | tool_errors=0
+2026-09-10 15:53:24 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:53:24 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:53:24 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:53:24 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:53:24 [Memory] INFO: Appended to tier0, size: 4624
+2026-09-10 15:53:24 [History] INFO: Appended to draft, size: 8478
+2026-09-10 15:53:24 [Agent] INFO: [Artist] Loaded role.md: 1157 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Artist] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [BOSS] Loaded role.md: 2621 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Claude] Loaded role.md: 56 chars, is_vanilla=True
+2026-09-10 15:53:24 [Agent] INFO: [Claude] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Context] Loaded role.md: 1837 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Context] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Designer] Loaded role.md: 1392 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Designer] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Image] Loaded role.md: 979 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Programmer] Loaded role.md: 1588 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Programmer] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [QA] Loaded role.md: 1249 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [QA] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Research] Loaded role.md: 1292 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Routine] Loaded role.md: 1757 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Sound] Loaded role.md: 1089 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Sound] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Taxonomy] Loaded role.md: 1609 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Taxonomy] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Video] Loaded role.md: 1103 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 15:53:24 [Agent] INFO: [Writer] Loaded role.md: 1480 chars, is_vanilla=False
+2026-09-10 15:53:24 [Agent] INFO: [Writer] Using backend: persistent-claude
+2026-09-10 15:53:24 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 15:53:24 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 15:53:24 [Studio] INFO: Started T442 for Programmer
+2026-09-10 15:53:24 [Studio] DEBUG: submitted T442 to executor for Programmer
+2026-09-10 15:53:24 [Studio] INFO: _run_agent_task() start | task=T442 | agent=Programmer
+2026-09-10 15:53:24 [Studio] DEBUG: tick done | elapsed=0.007s | did_work=True | active=1
+2026-09-10 15:53:24 [Studio] DEBUG: _run_agent_task() building context for T442
+2026-09-10 15:53:24 [Studio] DEBUG: _run_agent_task() calling agent.respond() for T442 | prompt_len=3092 | est_tokens=773
+2026-09-10 15:53:24 [Agent] INFO: [Programmer] Thinking...
+2026-09-10 15:53:27 [Tasks] INFO: Loaded 12 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:53:27 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:53:27 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:53:27 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:53:35 [Agent] INFO: [Programmer] Done. (11.3s, 43718+179 tokens)
+2026-09-10 15:53:35 [Memory] INFO: Appended to tier0, size: 4696
+2026-09-10 15:53:35 [History] INFO: Appended to draft, size: 8815
+2026-09-10 15:53:35 [Studio] DEBUG: _run_agent_task() usage for T442: in=43718 out=179 keys=['total_input_tokens', 'total_output_tokens', 'token_log']
+2026-09-10 15:53:35 [Studio] INFO: _run_agent_task() done | task=T442 | elapsed=11.4s | retries=0 | tool_errors=0
+2026-09-10 15:53:46 [Tasks] INFO: Loaded 12 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:53:46 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:53:46 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:53:46 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:53:46 [Memory] INFO: Appended to tier0, size: 4808
+2026-09-10 15:53:46 [History] INFO: Appended to draft, size: 8927
+2026-09-10 15:53:46 [Agent] INFO: [Artist] Loaded role.md: 1157 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Artist] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [BOSS] Loaded role.md: 2621 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Claude] Loaded role.md: 56 chars, is_vanilla=True
+2026-09-10 15:53:46 [Agent] INFO: [Claude] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Context] Loaded role.md: 1837 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Context] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Designer] Loaded role.md: 1392 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Designer] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Image] Loaded role.md: 979 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Programmer] Loaded role.md: 1588 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Programmer] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [QA] Loaded role.md: 1249 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [QA] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Research] Loaded role.md: 1292 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Routine] Loaded role.md: 1757 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Sound] Loaded role.md: 1089 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Sound] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Taxonomy] Loaded role.md: 1609 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Taxonomy] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Video] Loaded role.md: 1103 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 15:53:46 [Agent] INFO: [Writer] Loaded role.md: 1480 chars, is_vanilla=False
+2026-09-10 15:53:46 [Agent] INFO: [Writer] Using backend: persistent-claude
+2026-09-10 15:53:46 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 15:53:46 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 15:53:46 [Studio] INFO: Started T443 for Programmer
+2026-09-10 15:53:46 [Studio] DEBUG: submitted T443 to executor for Programmer
+2026-09-10 15:53:46 [Studio] INFO: _run_agent_task() start | task=T443 | agent=Programmer
+2026-09-10 15:53:46 [Studio] DEBUG: tick done | elapsed=0.007s | did_work=True | active=1
+2026-09-10 15:53:46 [Studio] DEBUG: _run_agent_task() building context for T443
+2026-09-10 15:53:46 [Studio] DEBUG: _run_agent_task() calling agent.respond() for T443 | prompt_len=3092 | est_tokens=773
+2026-09-10 15:53:46 [Agent] INFO: [Programmer] Thinking...
+2026-09-10 15:53:48 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:53:48 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:53:48 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 15:53:48 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 15:54:07 [Agent] INFO: [Programmer] Done. (21.0s, 73371+262 tokens)
+2026-09-10 15:54:07 [Memory] INFO: Appended to tier0, size: 4915
+2026-09-10 15:54:07 [History] INFO: Appended to draft, size: 9132
+2026-09-10 15:54:07 [Studio] DEBUG: _run_agent_task() usage for T443: in=73371 out=262 keys=['total_input_tokens', 'total_output_tokens', 'token_log']
+2026-09-10 15:54:07 [Studio] INFO: _run_agent_task() done | task=T443 | elapsed=21.1s | retries=0 | tool_errors=0
+2026-09-10 15:58:05 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 15:58:05 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 15:58:05 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 16:35:55 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 16:35:55 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 16:35:55 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 17:39:33 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 17:39:33 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 17:39:33 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 17:39:39 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 17:39:39 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 17:39:39 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:15:15 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:15:15 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:15:15 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:15:15 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:15:21 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:15:21 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:15:21 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:15:21 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:15:30 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:15:30 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:15:30 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:15:30 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:15:37 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:15:37 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:15:37 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:15:37 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:36:36 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:36:36 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:36:36 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:36:36 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:36:36 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Audit] Loaded role.md: 793 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [BOSS] Loaded role.md: 4610 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Code] Loaded role.md: 737 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Research] Loaded role.md: 809 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Structure] Loaded role.md: 948 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 18:36:36 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 18:36:36 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 18:36:37 [Lockfile] INFO: Cleaning up stale lock file (PID 21580 not running)
+2026-09-10 18:36:37 [Tasks] INFO: Reset IN_PROGRESS task T441 -> READY (pid=33184)
+2026-09-10 18:36:37 [Tasks] INFO: Reset IN_PROGRESS task T442 -> READY (pid=33184)
+2026-09-10 18:36:37 [Tasks] INFO: Reset IN_PROGRESS task T443 -> READY (pid=33184)
+2026-09-10 18:36:37 [Tasks] INFO: Reset 3 tasks on startup: ['T441', 'T442', 'T443']
+2026-09-10 18:36:37 [Memory] INFO: Appended to tier0, size: 4964
+2026-09-10 18:36:37 [History] INFO: Appended to draft, size: 9181
+2026-09-10 18:36:37 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 18:36:37 [Studio] DEBUG: found 3 ready tasks
+2026-09-10 18:36:37 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 18:36:38 [WS] INFO: Client connected. Total: 1
+2026-09-10 18:36:38 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:36:40 [Studio] DEBUG: found 3 ready tasks
+2026-09-10 18:36:43 [Studio] DEBUG: found 3 ready tasks
+2026-09-10 18:36:44 [WS] INFO: User: ok im back
+2026-09-10 18:36:44 [Memory] INFO: Appended to tier0, size: 4995
+2026-09-10 18:36:44 [History] INFO: Appended to draft, size: 9212
+2026-09-10 18:36:44 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:36:44 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:36:46 [Studio] DEBUG: found 3 ready tasks
+2026-09-10 18:36:47 [Tasks] INFO: Loaded 13 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:36:47 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:36:47 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:36:47 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:36:49 [Studio] DEBUG: found 3 ready tasks
+2026-09-10 18:36:52 [Studio] DEBUG: found 3 ready tasks
+2026-09-10 18:36:53 [Agent] INFO: [BOSS] Done. (9.3s, 31129+78 tokens)
+2026-09-10 18:36:53 [Memory] INFO: Appended to tier0, size: 5061
+2026-09-10 18:36:53 [History] INFO: Appended to draft, size: 9278
+2026-09-10 18:36:55 [Studio] DEBUG: found 3 ready tasks
+2026-09-10 18:36:58 [Studio] DEBUG: found 2 ready tasks
+2026-09-10 18:37:01 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 18:37:04 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 18:37:09 [WS] INFO: User: well i have worked a lot!
+2026-09-10 18:37:09 [Memory] INFO: Appended to tier0, size: 5107
+2026-09-10 18:37:09 [History] INFO: Appended to draft, size: 9324
+2026-09-10 18:37:09 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:37:09 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:37:12 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:37:12 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:37:12 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:37:12 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:37:16 [Agent] INFO: [BOSS] Done. (7.0s, 15249+32 tokens)
+2026-09-10 18:37:16 [Memory] INFO: Appended to tier0, size: 5255
+2026-09-10 18:37:16 [History] INFO: Appended to draft, size: 9472
+2026-09-10 18:37:32 [WS] INFO: User: can you access the git?>
+2026-09-10 18:37:32 [Memory] INFO: Appended to tier0, size: 5300
+2026-09-10 18:37:32 [History] INFO: Appended to draft, size: 9517
+2026-09-10 18:37:32 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:37:32 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:37:35 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:37:35 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:37:35 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:37:35 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:37:37 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 18:37:37 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:37:38 [Agent] INFO: [BOSS] Done. (6.0s, 31139+30 tokens)
+2026-09-10 18:37:38 [Memory] INFO: Appended to tier0, size: 5430
+2026-09-10 18:37:38 [History] INFO: Appended to draft, size: 9647
+2026-09-10 18:38:02 [WS] INFO: User: the github of the studio can you acess it?
+2026-09-10 18:38:02 [Memory] INFO: Appended to tier0, size: 5493
+2026-09-10 18:38:02 [History] INFO: Appended to draft, size: 9710
+2026-09-10 18:38:02 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:38:02 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:38:04 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:38:04 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:38:04 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:38:04 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:38:09 [Agent] INFO: [BOSS] Done. (7.0s, 31215+19 tokens)
+2026-09-10 18:38:09 [Memory] INFO: Appended to tier0, size: 5592
+2026-09-10 18:38:09 [History] INFO: Appended to draft, size: 9809
+2026-09-10 18:38:37 [Studio] DEBUG: tick #41 | active_agents=[]
+2026-09-10 18:38:37 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:39:37 [Studio] DEBUG: tick #61 | active_agents=[]
+2026-09-10 18:39:37 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:40:37 [Studio] DEBUG: tick #81 | active_agents=[]
+2026-09-10 18:40:37 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:41:38 [Studio] DEBUG: tick #101 | active_agents=[]
+2026-09-10 18:41:38 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:47:48 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:47:48 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:47:48 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:47:48 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:47:48 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Audit] Loaded role.md: 793 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Code] Loaded role.md: 737 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Research] Loaded role.md: 809 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Structure] Loaded role.md: 948 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 18:47:48 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 18:47:48 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 18:47:48 [Lockfile] INFO: Cleaning up stale lock file (PID 33184 not running)
+2026-09-10 18:47:48 [Memory] INFO: Appended to tier0, size: 5641
+2026-09-10 18:47:48 [History] INFO: Appended to draft, size: 9858
+2026-09-10 18:47:48 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 18:47:48 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 18:47:48 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 18:47:48 [WS] INFO: Client connected. Total: 1
+2026-09-10 18:47:48 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:47:50 [WS] INFO: Client connected. Total: 2
+2026-09-10 18:47:50 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:47:58 [WS] INFO: User: ok lets see if you can see my message now
+2026-09-10 18:47:58 [Memory] INFO: Appended to tier0, size: 5703
+2026-09-10 18:47:58 [History] INFO: Appended to draft, size: 9920
+2026-09-10 18:47:58 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:47:58 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:48:01 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:48:01 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:48:01 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:48:01 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:48:04 [Agent] INFO: [BOSS] Done. (6.0s, 3+24 tokens)
+2026-09-10 18:48:04 [Memory] INFO: Appended to tier0, size: 5816
+2026-09-10 18:48:04 [History] INFO: Appended to draft, size: 10033
+2026-09-10 18:48:04 [History] INFO: Draft exceeded threshold (10033/10000), compressing...
+2026-09-10 18:48:04 [History] INFO: Starting compression #1 this hour
+2026-09-10 18:48:04 [Agent] DEBUG: [Text] Building context (is_vanilla=False, is_boss=False)
+2026-09-10 18:48:04 [Agent] INFO: [Text] Thinking...
+2026-09-10 18:48:07 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:48:07 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:48:07 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:48:07 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:48:19 [Agent] INFO: [Text] Done. (14.4s, 15249+355 tokens)
+2026-09-10 18:48:19 [History] INFO: draft compressed: 1419 chars (entry #76)
+2026-09-10 18:48:42 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:48:42 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:48:42 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:48:42 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:48:42 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Audit] Loaded role.md: 793 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Code] Loaded role.md: 737 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Research] Loaded role.md: 809 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Structure] Loaded role.md: 948 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 18:48:42 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 18:48:42 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 18:48:43 [Lockfile] INFO: Cleaning up stale lock file (PID 16400 not running)
+2026-09-10 18:48:43 [Memory] INFO: Appended to tier0, size: 5865
+2026-09-10 18:48:43 [History] INFO: Appended to draft, size: 1468
+2026-09-10 18:48:43 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 18:48:43 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 18:48:43 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 18:48:44 [WS] INFO: Client connected. Total: 1
+2026-09-10 18:48:44 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:48:48 [WS] INFO: User: test?
+2026-09-10 18:48:48 [Memory] INFO: Appended to tier0, size: 5891
+2026-09-10 18:48:48 [History] INFO: Appended to draft, size: 1494
+2026-09-10 18:48:48 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:48:48 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:48:51 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:48:51 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:48:51 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:48:51 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:48:53 [Agent] INFO: [BOSS] Done. (5.0s, 31403+12 tokens)
+2026-09-10 18:48:53 [Memory] INFO: Appended to tier0, size: 5949
+2026-09-10 18:48:53 [History] INFO: Appended to draft, size: 1552
+2026-09-10 18:49:43 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 18:49:43 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:50:12 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:50:12 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:50:12 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:50:12 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:50:12 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Audit] Loaded role.md: 793 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Code] Loaded role.md: 737 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Research] Loaded role.md: 809 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Structure] Loaded role.md: 948 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 18:50:12 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 18:50:12 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 18:50:13 [Lockfile] INFO: Cleaning up stale lock file (PID 34076 not running)
+2026-09-10 18:50:13 [Memory] INFO: Appended to tier0, size: 5998
+2026-09-10 18:50:13 [History] INFO: Appended to draft, size: 1601
+2026-09-10 18:50:13 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 18:50:13 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 18:50:13 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 18:50:14 [WS] INFO: Client connected. Total: 1
+2026-09-10 18:50:14 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:50:14 [WS] INFO: Client connected. Total: 2
+2026-09-10 18:50:14 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:50:20 [WS] INFO: User: retesting
+2026-09-10 18:50:20 [Memory] INFO: Appended to tier0, size: 6028
+2026-09-10 18:50:20 [History] INFO: Appended to draft, size: 1631
+2026-09-10 18:50:20 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:50:20 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:50:22 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:50:22 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:50:22 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:50:22 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:50:26 [Agent] INFO: [BOSS] Done. (6.0s, 31471+15 tokens)
+2026-09-10 18:50:26 [Memory] INFO: Appended to tier0, size: 6105
+2026-09-10 18:50:26 [History] INFO: Appended to draft, size: 1708
+2026-09-10 18:50:55 [WS] INFO: User: ok now that i have  StatusCode        : 200 StatusDescription : OK Content           : {"status":"ok","message":"Session cleared for BOSS"} RawContent        : HTTP/1.1 200 OK                     Content-Length: 52                     Content-Type: application/json                     Date: Thu, 10 Sep 2026 22:50:40 GMT                     Server: uvicorn                      {"status":"ok","message":"Session cleared for BOSS"} Forms             : {} Headers           : {[Content-Length, 52], [Content-Type, application/json], [Date, Thu, 10 Sep 2026 22:50:40 GMT],                     [Server, uvicorn]} Images            : {} InputFields       : {} Links             : {} ParsedHtml        : System.__ComObject RawContentLength  : 52    PS C:\Users\lou>
+2026-09-10 18:50:55 [Memory] INFO: Appended to tier0, size: 6326
+2026-09-10 18:50:55 [History] INFO: Appended to draft, size: 2229
+2026-09-10 18:50:55 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:50:55 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:50:58 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:50:58 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:50:58 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:50:58 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:51:02 [Agent] INFO: [BOSS] Done. (6.4s, 15251+73 tokens)
+2026-09-10 18:51:02 [Memory] INFO: Appended to tier0, size: 6476
+2026-09-10 18:51:02 [History] INFO: Appended to draft, size: 2552
+2026-09-10 18:51:13 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 18:51:13 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:51:20 [WS] INFO: User: omg looks like we are back
+2026-09-10 18:51:20 [Memory] INFO: Appended to tier0, size: 6523
+2026-09-10 18:51:20 [History] INFO: Appended to draft, size: 2599
+2026-09-10 18:51:20 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:51:20 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:51:23 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:51:23 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:51:23 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:51:23 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:51:26 [Agent] INFO: [BOSS] Done. (6.0s, 15251+50 tokens)
+2026-09-10 18:51:26 [Memory] INFO: Appended to tier0, size: 6693
+2026-09-10 18:51:26 [History] INFO: Appended to draft, size: 2834
+2026-09-10 18:52:10 [WS] INFO: User: review the context you get passed how many messages do you see everytime i type?
+2026-09-10 18:52:10 [Memory] INFO: Appended to tier0, size: 6794
+2026-09-10 18:52:10 [History] INFO: Appended to draft, size: 2935
+2026-09-10 18:52:10 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:52:10 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:52:13 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:52:13 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:52:13 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:52:13 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:52:14 [Studio] DEBUG: tick #41 | active_agents=[]
+2026-09-10 18:52:14 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:52:16 [Agent] INFO: [BOSS] Done. (6.0s, 31233+15 tokens)
+2026-09-10 18:52:16 [Memory] INFO: Appended to tier0, size: 6870
+2026-09-10 18:52:16 [History] INFO: Appended to draft, size: 3011
+2026-09-10 18:52:26 [WS] INFO: User: omg
+2026-09-10 18:52:26 [Memory] INFO: Appended to tier0, size: 6894
+2026-09-10 18:52:26 [History] INFO: Appended to draft, size: 3035
+2026-09-10 18:52:26 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:52:26 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:52:28 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:52:28 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:52:28 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:52:28 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:52:31 [Agent] INFO: [BOSS] Done. (5.0s, 31327+13 tokens)
+2026-09-10 18:52:31 [Memory] INFO: Appended to tier0, size: 6961
+2026-09-10 18:52:31 [History] INFO: Appended to draft, size: 3102
+2026-09-10 18:52:59 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:52:59 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:52:59 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:52:59 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:52:59 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Audit] Loaded role.md: 793 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Code] Loaded role.md: 737 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Research] Loaded role.md: 809 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Structure] Loaded role.md: 948 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 18:52:59 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 18:52:59 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 18:52:59 [Lockfile] INFO: Cleaning up stale lock file (PID 2320 not running)
+2026-09-10 18:52:59 [Memory] INFO: Appended to tier0, size: 7010
+2026-09-10 18:52:59 [History] INFO: Appended to draft, size: 3151
+2026-09-10 18:52:59 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 18:52:59 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 18:52:59 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 18:53:01 [WS] INFO: Client connected. Total: 1
+2026-09-10 18:53:01 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:53:11 [WS] INFO: User: well thi sis weird do you see past messages?
+2026-09-10 18:53:11 [Memory] INFO: Appended to tier0, size: 7075
+2026-09-10 18:53:11 [History] INFO: Appended to draft, size: 3216
+2026-09-10 18:53:11 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:53:11 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:53:13 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:53:13 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:53:13 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:53:13 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:53:17 [Agent] INFO: [BOSS] Done. (6.0s, 31386+14 tokens)
+2026-09-10 18:53:17 [Memory] INFO: Appended to tier0, size: 7149
+2026-09-10 18:53:17 [History] INFO: Appended to draft, size: 3290
+2026-09-10 18:53:34 [WS] INFO: User: try again?
+2026-09-10 18:53:34 [Memory] INFO: Appended to tier0, size: 7180
+2026-09-10 18:53:34 [History] INFO: Appended to draft, size: 3321
+2026-09-10 18:53:34 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:53:34 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:53:36 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:53:36 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:53:36 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:53:36 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:53:44 [Agent] INFO: [BOSS] Done. (10.4s, 46412+292 tokens)
+2026-09-10 18:53:44 [Memory] INFO: Appended to tier0, size: 7299
+2026-09-10 18:53:44 [History] INFO: Appended to draft, size: 3842
+2026-09-10 18:53:59 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 18:53:59 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:54:08 [WS] INFO: User: ok and as i type you just error out or something.....queu a task for testing the app plz
+2026-09-10 18:54:08 [Memory] INFO: Appended to tier0, size: 7408
+2026-09-10 18:54:08 [History] INFO: Appended to draft, size: 3951
+2026-09-10 18:54:08 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:54:08 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:54:10 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:54:10 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:54:10 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:54:10 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:54:14 [Agent] INFO: [BOSS] Done. (6.0s, 15251+21 tokens)
+2026-09-10 18:54:14 [Memory] INFO: Appended to tier0, size: 7499
+2026-09-10 18:54:14 [History] INFO: Appended to draft, size: 4042
+2026-09-10 18:54:31 [WS] INFO: User: any test task delegate an agent to report on any script
+2026-09-10 18:54:31 [Memory] INFO: Appended to tier0, size: 7575
+2026-09-10 18:54:31 [History] INFO: Appended to draft, size: 4118
+2026-09-10 18:54:31 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:54:31 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:54:33 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:54:33 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:54:33 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:54:33 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:54:38 [Agent] INFO: [BOSS] Done. (7.0s, 62989+65 tokens)
+2026-09-10 18:54:38 [Memory] INFO: Appended to tier0, size: 7623
+2026-09-10 18:54:38 [History] INFO: Appended to draft, size: 4166
+2026-09-10 18:54:43 [WS] INFO: User: hmm....
+2026-09-10 18:54:43 [Memory] INFO: Appended to tier0, size: 7651
+2026-09-10 18:54:43 [History] INFO: Appended to draft, size: 4194
+2026-09-10 18:54:43 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:54:43 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:54:46 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:54:46 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:54:46 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:54:46 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:54:50 [Agent] INFO: [BOSS] Done. (7.0s, 63192+63 tokens)
+2026-09-10 18:54:50 [Memory] INFO: Appended to tier0, size: 7699
+2026-09-10 18:54:50 [History] INFO: Appended to draft, size: 4242
+2026-09-10 18:54:59 [Studio] DEBUG: tick #41 | active_agents=[]
+2026-09-10 18:54:59 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:55:06 [WS] INFO: Client disconnected. Total: 0
+2026-09-10 18:57:20 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:57:20 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:57:20 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:57:20 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:57:20 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Audit] Loaded role.md: 793 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Code] Loaded role.md: 737 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Research] Loaded role.md: 809 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Structure] Loaded role.md: 948 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 18:57:20 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 18:57:20 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 18:57:20 [Lockfile] INFO: Cleaning up stale lock file (PID 23932 not running)
+2026-09-10 18:57:20 [Memory] INFO: Appended to tier0, size: 7748
+2026-09-10 18:57:20 [History] INFO: Appended to draft, size: 4291
+2026-09-10 18:57:20 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 18:57:20 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 18:57:20 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 18:57:22 [WS] INFO: Client connected. Total: 1
+2026-09-10 18:57:22 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 18:57:46 [WS] INFO: User: APPARENTLY Fixed. The bug was that incremental prompts only sent ## TASK which for BOSS is just "New user message above..." without the actual user    message (which was in ## CONTEXT).                                                                                                                                                                                                                                                     Now BOSS incremental prompts include ### RECENT context (where user messages live) + ## TASK.
+2026-09-10 18:57:46 [Memory] INFO: Appended to tier0, size: 7969
+2026-09-10 18:57:46 [History] INFO: Appended to draft, size: 4812
+2026-09-10 18:57:46 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:57:47 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:57:49 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:57:49 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:57:49 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:57:49 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:57:55 [Agent] INFO: [BOSS] Done. (8.0s, 47226+118 tokens)
+2026-09-10 18:57:55 [Memory] INFO: Appended to tier0, size: 8190
+2026-09-10 18:57:55 [History] INFO: Appended to draft, size: 5036
+2026-09-10 18:58:10 [WS] INFO: User: OK SO WHAT DO YOU GET INTO YOU CONTEXT EXACTLY?
+2026-09-10 18:58:10 [Memory] INFO: Appended to tier0, size: 8258
+2026-09-10 18:58:10 [History] INFO: Appended to draft, size: 5104
+2026-09-10 18:58:10 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:58:10 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:58:13 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:58:13 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:58:13 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:58:13 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:58:18 [Agent] INFO: [BOSS] Done. (8.0s, 31743+220 tokens)
+2026-09-10 18:58:18 [Memory] INFO: Appended to tier0, size: 8315
+2026-09-10 18:58:18 [History] INFO: Appended to draft, size: 5625
+2026-09-10 18:58:20 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 18:58:20 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:58:56 [WS] INFO: User: good! and what about eveythime i prompt you get them again?
+2026-09-10 18:58:56 [Memory] INFO: Appended to tier0, size: 8395
+2026-09-10 18:58:56 [History] INFO: Appended to draft, size: 5705
+2026-09-10 18:58:56 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:58:56 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 18:58:59 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 18:58:59 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 18:58:59 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 18:58:59 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 18:59:03 [Agent] INFO: [BOSS] Done. (7.0s, 32036+129 tokens)
+2026-09-10 18:59:03 [Memory] INFO: Appended to tier0, size: 8497
+2026-09-10 18:59:03 [History] INFO: Appended to draft, size: 6226
+2026-09-10 18:59:20 [Studio] DEBUG: tick #41 | active_agents=[]
+2026-09-10 18:59:20 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 18:59:58 [WS] INFO: User: ok let's fix that you are supposed to get all this context only once on injection
+2026-09-10 18:59:58 [Memory] INFO: Appended to tier0, size: 8599
+2026-09-10 18:59:58 [History] INFO: Appended to draft, size: 6328
+2026-09-10 18:59:58 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 18:59:58 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:00:01 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:00:01 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:00:01 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:00:01 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:00:05 [Agent] INFO: [BOSS] Done. (7.0s, 32441+59 tokens)
+2026-09-10 19:00:05 [Memory] INFO: Appended to tier0, size: 8754
+2026-09-10 19:00:05 [History] INFO: Appended to draft, size: 6627
+2026-09-10 19:00:19 [WS] INFO: User: yes delegate
+2026-09-10 19:00:19 [Memory] INFO: Appended to tier0, size: 8787
+2026-09-10 19:00:19 [History] INFO: Appended to draft, size: 6660
+2026-09-10 19:00:19 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 19:00:19 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:00:20 [Studio] DEBUG: tick #61 | active_agents=[]
+2026-09-10 19:00:20 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:00:22 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:00:22 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:00:22 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:00:22 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:00:26 [Memory] INFO: Appended to tier0, size: 9008
+2026-09-10 19:00:26 [History] INFO: Appended to draft, size: 7181
+2026-09-10 19:00:26 [Tasks] INFO: Synced new task from disk: T444
+2026-09-10 19:00:26 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 19:00:26 [Studio] INFO: Started T444 for Code
+2026-09-10 19:00:26 [Studio] DEBUG: submitted T444 to executor for Code
+2026-09-10 19:00:26 [Studio] INFO: _run_agent_task() start | task=T444 | agent=Code
+2026-09-10 19:00:26 [Studio] DEBUG: tick done | elapsed=0.009s | did_work=True | active=1
+2026-09-10 19:00:26 [Studio] DEBUG: _run_agent_task() building context for T444
+2026-09-10 19:00:26 [Studio] DEBUG: _run_agent_task() calling agent.respond() for T444 | prompt_len=2803 | est_tokens=700
+2026-09-10 19:00:26 [Agent] INFO: [Code] Thinking...
+2026-09-10 19:00:29 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:00:29 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:00:29 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:00:29 [Agent] INFO: [BOSS] Done. (10.0s, 67129+258 tokens)
+2026-09-10 19:00:29 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:00:29 [Memory] INFO: Appended to tier0, size: 9169
+2026-09-10 19:00:29 [History] INFO: Appended to draft, size: 7342
+2026-09-10 19:01:22 [Studio] DEBUG: tick #82 | active_agents=['Code']
+2026-09-10 19:01:22 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=1
+2026-09-10 19:01:24 [WS] INFO: User: think we should prefix user message with your last message first x chars on each prompt? would that help output faster?
+2026-09-10 19:01:24 [Memory] INFO: Appended to tier0, size: 9309
+2026-09-10 19:01:24 [History] INFO: Appended to draft, size: 7482
+2026-09-10 19:01:24 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 19:01:24 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:01:27 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:01:27 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:01:27 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:01:27 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:01:31 [Agent] INFO: [BOSS] Done. (7.0s, 33565+105 tokens)
+2026-09-10 19:01:31 [Memory] INFO: Appended to tier0, size: 9487
+2026-09-10 19:01:31 [History] INFO: Appended to draft, size: 7931
+2026-09-10 19:02:22 [Studio] DEBUG: tick #102 | active_agents=['Code']
+2026-09-10 19:02:22 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=1
+2026-09-10 19:02:37 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:02:37 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:02:37 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:02:57 [Agent] INFO: [Code] Done. (150.5s, 1138688+6861 tokens)
+2026-09-10 19:02:57 [Memory] INFO: Appended to tier0, size: 9591
+2026-09-10 19:02:57 [History] INFO: Appended to draft, size: 8452
+2026-09-10 19:02:57 [Studio] DEBUG: _run_agent_task() usage for T444: in=1138688 out=6861 keys=['total_input_tokens', 'total_output_tokens', 'token_log']
+2026-09-10 19:02:57 [Studio] INFO: _run_agent_task() done | task=T444 | elapsed=150.5s | retries=0 | tool_errors=0
+2026-09-10 19:02:59 [Studio] DEBUG: future DONE for Code
+2026-09-10 19:02:59 [Studio] DEBUG: got result for T444 | has_response=True
+2026-09-10 19:02:59 [Tasks] INFO: Saved deliverable: C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\deliverables\T444.md
+2026-09-10 19:02:59 [Memory] INFO: Appended to tier0, size: 9858
+2026-09-10 19:02:59 [Studio] INFO: Completed T444
+2026-09-10 19:02:59 [Studio] INFO: _handle_successful_task T444: usage=['total_input_tokens', 'total_output_tokens', 'token_log'], in=1138688 out=6861
+2026-09-10 19:02:59 [Tasks] INFO: Archived 1 old tasks, kept 10 recent
+2026-09-10 19:02:59 [Studio] DEBUG: removed completed: ['Code']
+2026-09-10 19:02:59 [Studio] DEBUG: tick done | elapsed=0.041s | did_work=True | active=0
+2026-09-10 19:03:01 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 19:03:25 [Studio] DEBUG: tick #123 | active_agents=[]
+2026-09-10 19:03:25 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:04:01 [WS] INFO: User: goal is you dont have to search the hub chat for context on each prompt,. for example do you read chat in this very call? to make sure youre staying relevent to the project? like whats the last task code agent output
+2026-09-10 19:04:01 [Memory] INFO: Appended to tier0, size: 10079
+2026-09-10 19:04:01 [Memory] INFO: Tier0 exceeded threshold (10079/10000), compressing...
+2026-09-10 19:04:01 [Memory] INFO: Starting compression #1 this hour
+2026-09-10 19:04:01 [Agent] DEBUG: [Prompt] Building context (is_vanilla=False, is_boss=False)
+2026-09-10 19:04:01 [Agent] INFO: [Prompt] Thinking...
+2026-09-10 19:04:04 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:04:04 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:04:04 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:04:04 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:04:19 [Agent] INFO: [Prompt] Done. (18.3s, 15249+445 tokens)
+2026-09-10 19:04:19 [Studio] INFO: AC-Memory: Tier 0 split by Context agent (keep=650 chars, push=641 chars)
+2026-09-10 19:04:19 [Memory] INFO: Tier0 compressed: kept 650 chars
+2026-09-10 19:04:19 [Memory] INFO: Appended to tier1, size: 5721
+2026-09-10 19:04:19 [History] INFO: Appended to draft, size: 8689
+2026-09-10 19:04:19 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 19:04:19 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:04:22 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:04:22 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:04:22 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:04:22 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:04:25 [Studio] DEBUG: tick #143 | active_agents=[]
+2026-09-10 19:04:25 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:04:25 [Agent] INFO: [BOSS] Done. (6.0s, 15251+24 tokens)
+2026-09-10 19:04:25 [Memory] INFO: Appended to tier0, size: 750
+2026-09-10 19:04:25 [History] INFO: Appended to draft, size: 8789
+2026-09-10 19:04:39 [WS] INFO: User: interesting
+2026-09-10 19:04:39 [Memory] INFO: Appended to tier0, size: 782
+2026-09-10 19:04:39 [History] INFO: Appended to draft, size: 8821
+2026-09-10 19:04:39 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 19:04:39 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:04:41 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:04:41 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:04:41 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:04:41 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:04:44 [Agent] INFO: [BOSS] Done. (5.0s, 34889+14 tokens)
+2026-09-10 19:04:44 [Memory] INFO: Appended to tier0, size: 854
+2026-09-10 19:04:44 [History] INFO: Appended to draft, size: 8893
+2026-09-10 19:04:53 [WS] INFO: User: again?
+2026-09-10 19:04:53 [Memory] INFO: Appended to tier0, size: 881
+2026-09-10 19:04:53 [History] INFO: Appended to draft, size: 8920
+2026-09-10 19:04:53 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 19:04:53 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:04:55 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:04:55 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:04:55 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:04:55 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:04:59 [Agent] INFO: [BOSS] Done. (6.0s, 34956+15 tokens)
+2026-09-10 19:04:59 [Memory] INFO: Appended to tier0, size: 949
+2026-09-10 19:04:59 [History] INFO: Appended to draft, size: 8988
+2026-09-10 19:05:10 [WS] INFO: Client disconnected. Total: 0
+2026-09-10 19:13:58 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:13:58 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:13:58 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:13:58 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:13:58 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Audit] Loaded role.md: 793 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Code] Loaded role.md: 737 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Research] Loaded role.md: 809 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Structure] Loaded role.md: 948 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 19:13:58 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 19:13:58 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 19:13:59 [Lockfile] INFO: Cleaning up stale lock file (PID 18584 not running)
+2026-09-10 19:13:59 [Memory] INFO: Appended to tier0, size: 998
+2026-09-10 19:13:59 [History] INFO: Appended to draft, size: 9037
+2026-09-10 19:13:59 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 19:13:59 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 19:13:59 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 19:14:00 [WS] INFO: Client connected. Total: 1
+2026-09-10 19:14:00 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 19:14:01 [WS] INFO: Client disconnected. Total: 0
+2026-09-10 19:14:02 [WS] INFO: Client connected. Total: 1
+2026-09-10 19:14:02 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 19:14:43 [WS] INFO: User: apparently we migh be able to work now??                                                                                                                                             ● Simplified. Now the flow is:                                                                                                                                                                                                                                                            1. User message goes directly into the trigger: [USER]: {message}                                                                          2. That gets put in ## TASK                                                                                                                 3. Incremental prompt extracts ## TASK content                                                                                             4. Claude sees the actual user message every time
+2026-09-10 19:14:43 [Memory] INFO: Appended to tier0, size: 1219
+2026-09-10 19:14:43 [History] INFO: Appended to draft, size: 9558
+2026-09-10 19:14:43 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 19:14:43 [Agent] INFO: [BOSS] BOSS initialized - subsequent calls use incremental mode
+2026-09-10 19:14:43 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:14:46 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:14:46 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:14:46 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:14:46 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:14:49 [Agent] INFO: [BOSS] Done. (6.0s, 15250+12 tokens)
+2026-09-10 19:14:49 [Memory] INFO: Appended to tier0, size: 1282
+2026-09-10 19:14:49 [History] INFO: Appended to draft, size: 9621
+2026-09-10 19:14:59 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 19:14:59 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:15:27 [WS] INFO: User: ..
+2026-09-10 19:15:27 [Memory] INFO: Appended to tier0, size: 1305
+2026-09-10 19:15:27 [History] INFO: Appended to draft, size: 9644
+2026-09-10 19:15:27 [Agent] DEBUG: [BOSS] INCREMENTAL MODE - skipping FILES/MEMORY
+2026-09-10 19:15:27 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:15:30 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:15:30 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:15:30 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:15:30 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:15:34 [Agent] INFO: [BOSS] Done. (6.4s, 15251+99 tokens)
+2026-09-10 19:15:34 [Memory] INFO: Appended to tier0, size: 1419
+2026-09-10 19:15:34 [History] INFO: Appended to draft, size: 10004
+2026-09-10 19:15:34 [History] INFO: Draft exceeded threshold (10004/10000), compressing...
+2026-09-10 19:15:34 [History] INFO: Starting compression #1 this hour
+2026-09-10 19:15:34 [Agent] DEBUG: [Text] Building context (is_vanilla=False, is_boss=False)
+2026-09-10 19:15:34 [Agent] INFO: [Text] Thinking...
+2026-09-10 19:15:36 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:15:36 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:15:36 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:15:36 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:15:58 [Agent] INFO: [Text] Done. (24.0s, 78241+612 tokens)
+2026-09-10 19:15:58 [History] INFO: draft compressed: 1624 chars (entry #77)
+2026-09-10 19:15:59 [Studio] DEBUG: tick #41 | active_agents=[]
+2026-09-10 19:15:59 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:16:56 [WS] INFO: User: yeah im just still debugging this app externally...let's see how many prompts you can handle before crashing, i just cleared your session since it was broken
+2026-09-10 19:16:56 [Memory] INFO: Appended to tier0, size: 1597
+2026-09-10 19:16:56 [History] INFO: Appended to draft, size: 1802
+2026-09-10 19:16:56 [Agent] DEBUG: [BOSS] INCREMENTAL MODE - skipping FILES/MEMORY
+2026-09-10 19:16:56 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:16:59 [Studio] DEBUG: tick #61 | active_agents=[]
+2026-09-10 19:16:59 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:16:59 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:16:59 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:16:59 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:16:59 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:17:02 [Agent] INFO: [BOSS] Done. (6.0s, 15251+28 tokens)
+2026-09-10 19:17:02 [Memory] INFO: Appended to tier0, size: 1681
+2026-09-10 19:17:02 [History] INFO: Appended to draft, size: 1922
+2026-09-10 19:17:53 [WS] INFO: User: there is supposed to be a feature that appends a prfix to agent names in the hub chat : Mr Text is what i should see in my interface (DO NOT CHANGE BACKEND NAMES)
+2026-09-10 19:17:53 [Memory] INFO: Appended to tier0, size: 1864
+2026-09-10 19:17:53 [History] INFO: Appended to draft, size: 2105
+2026-09-10 19:17:53 [Agent] DEBUG: [BOSS] INCREMENTAL MODE - skipping FILES/MEMORY
+2026-09-10 19:17:53 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:17:55 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:17:55 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:17:55 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:17:55 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:17:59 [Studio] DEBUG: tick #81 | active_agents=[]
+2026-09-10 19:17:59 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:18:04 [Memory] INFO: Appended to tier0, size: 2060
+2026-09-10 19:18:04 [History] INFO: Appended to draft, size: 2626
+2026-09-10 19:18:04 [Tasks] INFO: Synced new task from disk: T445
+2026-09-10 19:18:05 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 19:18:05 [Studio] INFO: Started T445 for Research
+2026-09-10 19:18:05 [Studio] DEBUG: submitted T445 to executor for Research
+2026-09-10 19:18:05 [Studio] INFO: _run_agent_task() start | task=T445 | agent=Research
+2026-09-10 19:18:05 [Studio] DEBUG: tick done | elapsed=0.010s | did_work=True | active=1
+2026-09-10 19:18:05 [Studio] DEBUG: _run_agent_task() building context for T445
+2026-09-10 19:18:05 [Studio] DEBUG: _run_agent_task() calling agent.respond() for T445 | prompt_len=2743 | est_tokens=685
+2026-09-10 19:18:05 [Agent] INFO: [Research] Thinking...
+2026-09-10 19:18:06 [Agent] INFO: [BOSS] Done. (13.0s, 113941+527 tokens)
+2026-09-10 19:18:06 [Memory] INFO: Appended to tier0, size: 2211
+2026-09-10 19:18:06 [History] INFO: Appended to draft, size: 2777
+2026-09-10 19:18:08 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:18:08 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:18:08 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:18:08 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:18:40 [Agent] INFO: [Research] Done. (35.4s, 163918+1198 tokens)
+2026-09-10 19:18:40 [Memory] INFO: Appended to tier0, size: 2314
+2026-09-10 19:18:40 [History] INFO: Appended to draft, size: 3302
+2026-09-10 19:18:40 [Studio] DEBUG: _run_agent_task() usage for T445: in=163918 out=1198 keys=['total_input_tokens', 'total_output_tokens', 'token_log']
+2026-09-10 19:18:40 [Studio] INFO: _run_agent_task() done | task=T445 | elapsed=35.4s | retries=0 | tool_errors=0
+2026-09-10 19:18:43 [WS] INFO: User: AMAZGING WE QUEUED A TASK TOGHETER!
+2026-09-10 19:18:43 [Memory] INFO: Appended to tier0, size: 2370
+2026-09-10 19:18:43 [History] INFO: Appended to draft, size: 3358
+2026-09-10 19:18:43 [Agent] DEBUG: [BOSS] INCREMENTAL MODE - skipping FILES/MEMORY
+2026-09-10 19:18:43 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:18:43 [Studio] DEBUG: future DONE for Research
+2026-09-10 19:18:43 [Studio] DEBUG: got result for T445 | has_response=True
+2026-09-10 19:18:43 [Tasks] INFO: Saved deliverable: C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\deliverables\T445.md
+2026-09-10 19:18:43 [Memory] INFO: Appended to tier0, size: 2632
+2026-09-10 19:18:43 [Studio] INFO: Completed T445
+2026-09-10 19:18:43 [Studio] INFO: _handle_successful_task T445: usage=['total_input_tokens', 'total_output_tokens', 'token_log'], in=163918 out=1198
+2026-09-10 19:18:43 [Tasks] INFO: Archived 1 old tasks, kept 10 recent
+2026-09-10 19:18:43 [Studio] DEBUG: removed completed: ['Research']
+2026-09-10 19:18:43 [Studio] DEBUG: tick done | elapsed=0.049s | did_work=True | active=0
+2026-09-10 19:18:45 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 19:18:45 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:18:45 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:18:45 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:18:45 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:18:50 [Agent] INFO: [BOSS] Done. (7.0s, 44639+72 tokens)
+2026-09-10 19:18:50 [Memory] INFO: Appended to tier0, size: 2680
+2026-09-10 19:18:50 [History] INFO: Appended to draft, size: 3406
+2026-09-10 19:19:00 [Studio] DEBUG: tick #102 | active_agents=[]
+2026-09-10 19:19:00 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:20:00 [Studio] DEBUG: tick #122 | active_agents=[]
+2026-09-10 19:20:00 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:21:00 [Studio] DEBUG: tick #142 | active_agents=[]
+2026-09-10 19:21:00 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:21:18 [WS] INFO: User: YES THE FUNCTION EXISTS   but i swear i see nothing in hub chat : Research 7:18:40 PM DONE: "Mr" prefix feature already exists and works correctly in chat messages. - Code at `studio.js:211` adds "Mr" prefix for all agents except BOSS and user - Agent panel/cards use raw names (correct - backend names unchanged)  ---Text 7:15:58 PM Now I have the full context. Let me write Draft 77.  # Draft 77. FIX IT
+2026-09-10 19:21:18 [Memory] INFO: Appended to tier0, size: 2901
+2026-09-10 19:21:18 [History] INFO: Appended to draft, size: 3832
+2026-09-10 19:21:18 [Agent] DEBUG: [BOSS] INCREMENTAL MODE - skipping FILES/MEMORY
+2026-09-10 19:21:18 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:21:21 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:21:21 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:21:21 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:21:21 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:21:25 [Memory] INFO: Appended to tier0, size: 3095
+2026-09-10 19:21:25 [History] INFO: Appended to draft, size: 4353
+2026-09-10 19:21:26 [Tasks] INFO: Synced new task from disk: T446
+2026-09-10 19:21:27 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 19:21:27 [Studio] INFO: Started T446 for Code
+2026-09-10 19:21:27 [Studio] DEBUG: submitted T446 to executor for Code
+2026-09-10 19:21:27 [Studio] DEBUG: tick done | elapsed=0.003s | did_work=True | active=1
+2026-09-10 19:21:27 [Studio] INFO: _run_agent_task() start | task=T446 | agent=Code
+2026-09-10 19:21:27 [Studio] DEBUG: _run_agent_task() building context for T446
+2026-09-10 19:21:27 [Studio] DEBUG: _run_agent_task() calling agent.respond() for T446 | prompt_len=2689 | est_tokens=672
+2026-09-10 19:21:27 [Agent] INFO: [Code] Thinking...
+2026-09-10 19:21:28 [Agent] INFO: [BOSS] Done. (10.0s, 58786+273 tokens)
+2026-09-10 19:21:28 [Memory] INFO: Appended to tier0, size: 3209
+2026-09-10 19:21:28 [History] INFO: Appended to draft, size: 4467
+2026-09-10 19:21:30 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:21:30 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:21:30 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:21:30 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:22:02 [Studio] DEBUG: tick #163 | active_agents=['Code']
+2026-09-10 19:22:02 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=1
+2026-09-10 19:22:24 [Agent] INFO: [Code] Done. (57.0s, 691328+1914 tokens)
+2026-09-10 19:22:24 [Memory] INFO: Appended to tier0, size: 3309
+2026-09-10 19:22:24 [History] INFO: Appended to draft, size: 4831
+2026-09-10 19:22:24 [Studio] DEBUG: _run_agent_task() usage for T446: in=691328 out=1914 keys=['total_input_tokens', 'total_output_tokens', 'token_log']
+2026-09-10 19:22:24 [Studio] INFO: _run_agent_task() done | task=T446 | elapsed=57.1s | retries=0 | tool_errors=0
+2026-09-10 19:22:26 [Studio] DEBUG: future DONE for Code
+2026-09-10 19:22:26 [Studio] DEBUG: got result for T446 | has_response=True
+2026-09-10 19:22:26 [Tasks] INFO: Saved deliverable: C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\deliverables\T446.md
+2026-09-10 19:22:26 [Memory] INFO: Appended to tier0, size: 3563
+2026-09-10 19:22:26 [Studio] INFO: Completed T446
+2026-09-10 19:22:26 [Studio] INFO: _handle_successful_task T446: usage=['total_input_tokens', 'total_output_tokens', 'token_log'], in=691328 out=1914
+2026-09-10 19:22:26 [Tasks] INFO: Archived 1 old tasks, kept 10 recent
+2026-09-10 19:22:26 [Studio] DEBUG: removed completed: ['Code']
+2026-09-10 19:22:26 [Studio] DEBUG: tick done | elapsed=0.033s | did_work=True | active=0
+2026-09-10 19:22:28 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 19:22:39 [WS] INFO: User: same thing for token streams, there should be a per-agent token livestream on tasks i dont see it.
+2026-09-10 19:22:39 [Memory] INFO: Appended to tier0, size: 3682
+2026-09-10 19:22:39 [History] INFO: Appended to draft, size: 4950
+2026-09-10 19:22:39 [Agent] DEBUG: [BOSS] INCREMENTAL MODE - skipping FILES/MEMORY
+2026-09-10 19:22:39 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 19:22:42 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:22:42 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:22:42 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:22:42 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:22:48 [Memory] INFO: Appended to tier0, size: 3869
+2026-09-10 19:22:48 [History] INFO: Appended to draft, size: 5471
+2026-09-10 19:22:48 [Tasks] INFO: Synced new task from disk: T447
+2026-09-10 19:22:49 [Studio] DEBUG: found 1 ready tasks
+2026-09-10 19:22:49 [Studio] INFO: Started T447 for Research
+2026-09-10 19:22:49 [Studio] DEBUG: submitted T447 to executor for Research
+2026-09-10 19:22:49 [Studio] DEBUG: tick done | elapsed=0.005s | did_work=True | active=1
+2026-09-10 19:22:49 [Studio] INFO: _run_agent_task() start | task=T447 | agent=Research
+2026-09-10 19:22:49 [Studio] DEBUG: _run_agent_task() building context for T447
+2026-09-10 19:22:49 [Studio] DEBUG: _run_agent_task() calling agent.respond() for T447 | prompt_len=2760 | est_tokens=690
+2026-09-10 19:22:49 [Agent] INFO: [Research] Thinking...
+2026-09-10 19:22:50 [Agent] INFO: [BOSS] Done. (11.0s, 75673+323 tokens)
+2026-09-10 19:22:50 [Memory] INFO: Appended to tier0, size: 4000
+2026-09-10 19:22:50 [History] INFO: Appended to draft, size: 5602
+2026-09-10 19:22:52 [Tasks] INFO: Loaded 11 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 19:22:52 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 19:22:52 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 19:22:52 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 19:23:03 [Studio] DEBUG: tick #184 | active_agents=['Research']
+2026-09-10 19:23:03 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=1
+2026-09-10 19:23:35 [Agent] INFO: [Research] Done. (46.0s, 242593+1661 tokens)
+2026-09-10 19:23:35 [Memory] INFO: Appended to tier0, size: 4096
+2026-09-10 19:23:35 [History] INFO: Appended to draft, size: 6127
+2026-09-10 19:23:35 [Studio] DEBUG: _run_agent_task() usage for T447: in=242593 out=1661 keys=['total_input_tokens', 'total_output_tokens', 'token_log']
+2026-09-10 19:23:35 [Studio] INFO: _run_agent_task() done | task=T447 | elapsed=46.1s | retries=0 | tool_errors=0
+2026-09-10 19:23:36 [Studio] DEBUG: future DONE for Research
+2026-09-10 19:23:36 [Studio] DEBUG: got result for T447 | has_response=True
+2026-09-10 19:23:36 [Tasks] INFO: Saved deliverable: C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\deliverables\T447.md
+2026-09-10 19:23:36 [Memory] INFO: Appended to tier0, size: 4364
+2026-09-10 19:23:36 [Studio] INFO: Completed T447
+2026-09-10 19:23:36 [Studio] INFO: _handle_successful_task T447: usage=['total_input_tokens', 'total_output_tokens', 'token_log'], in=242593 out=1661
+2026-09-10 19:23:36 [Tasks] INFO: Archived 1 old tasks, kept 10 recent
+2026-09-10 19:23:36 [Studio] DEBUG: removed completed: ['Research']
+2026-09-10 19:23:36 [Studio] DEBUG: tick done | elapsed=0.047s | did_work=True | active=0
+2026-09-10 19:23:38 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 19:24:06 [Studio] DEBUG: tick #205 | active_agents=[]
+2026-09-10 19:24:06 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:25:06 [Studio] DEBUG: tick #225 | active_agents=[]
+2026-09-10 19:25:06 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:26:09 [Studio] DEBUG: tick #246 | active_agents=[]
+2026-09-10 19:26:09 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:27:12 [Studio] DEBUG: tick #267 | active_agents=[]
+2026-09-10 19:27:12 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:28:12 [Studio] DEBUG: tick #287 | active_agents=[]
+2026-09-10 19:28:12 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:29:15 [Studio] DEBUG: tick #308 | active_agents=[]
+2026-09-10 19:29:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:30:15 [Studio] DEBUG: tick #328 | active_agents=[]
+2026-09-10 19:30:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:31:15 [Studio] DEBUG: tick #348 | active_agents=[]
+2026-09-10 19:31:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:32:15 [Studio] DEBUG: tick #368 | active_agents=[]
+2026-09-10 19:32:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:33:15 [Studio] DEBUG: tick #388 | active_agents=[]
+2026-09-10 19:33:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:34:15 [Studio] DEBUG: tick #408 | active_agents=[]
+2026-09-10 19:34:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:35:15 [Studio] DEBUG: tick #428 | active_agents=[]
+2026-09-10 19:35:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:36:15 [Studio] DEBUG: tick #448 | active_agents=[]
+2026-09-10 19:36:15 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:37:18 [Studio] DEBUG: tick #469 | active_agents=[]
+2026-09-10 19:37:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:38:18 [Studio] DEBUG: tick #489 | active_agents=[]
+2026-09-10 19:38:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:39:18 [Studio] DEBUG: tick #509 | active_agents=[]
+2026-09-10 19:39:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:40:18 [Studio] DEBUG: tick #529 | active_agents=[]
+2026-09-10 19:40:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:41:18 [Studio] DEBUG: tick #549 | active_agents=[]
+2026-09-10 19:41:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:42:18 [Studio] DEBUG: tick #569 | active_agents=[]
+2026-09-10 19:42:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:43:18 [Studio] DEBUG: tick #589 | active_agents=[]
+2026-09-10 19:43:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:44:18 [Studio] DEBUG: tick #609 | active_agents=[]
+2026-09-10 19:44:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:45:18 [Studio] DEBUG: tick #629 | active_agents=[]
+2026-09-10 19:45:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:46:18 [Studio] DEBUG: tick #649 | active_agents=[]
+2026-09-10 19:46:18 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:47:19 [Studio] DEBUG: tick #669 | active_agents=[]
+2026-09-10 19:47:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:48:19 [Studio] DEBUG: tick #689 | active_agents=[]
+2026-09-10 19:48:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:49:19 [Studio] DEBUG: tick #709 | active_agents=[]
+2026-09-10 19:49:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:50:19 [Studio] DEBUG: tick #729 | active_agents=[]
+2026-09-10 19:50:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:51:19 [Studio] DEBUG: tick #749 | active_agents=[]
+2026-09-10 19:51:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:52:19 [Studio] DEBUG: tick #769 | active_agents=[]
+2026-09-10 19:52:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:53:19 [Studio] DEBUG: tick #789 | active_agents=[]
+2026-09-10 19:53:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:54:19 [Studio] DEBUG: tick #809 | active_agents=[]
+2026-09-10 19:54:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:55:19 [Studio] DEBUG: tick #829 | active_agents=[]
+2026-09-10 19:55:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:56:19 [Studio] DEBUG: tick #849 | active_agents=[]
+2026-09-10 19:56:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:57:19 [Studio] DEBUG: tick #869 | active_agents=[]
+2026-09-10 19:57:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:58:19 [Studio] DEBUG: tick #889 | active_agents=[]
+2026-09-10 19:58:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 19:59:19 [Studio] DEBUG: tick #909 | active_agents=[]
+2026-09-10 19:59:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:00:19 [Studio] DEBUG: tick #929 | active_agents=[]
+2026-09-10 20:00:19 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:01:22 [Studio] DEBUG: tick #950 | active_agents=[]
+2026-09-10 20:01:22 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 20:02:25 [Studio] DEBUG: tick #971 | active_agents=[]
+2026-09-10 20:02:25 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:03:25 [Studio] DEBUG: tick #991 | active_agents=[]
+2026-09-10 20:03:25 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:04:25 [Studio] DEBUG: tick #1011 | active_agents=[]
+2026-09-10 20:04:25 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:05:25 [Studio] DEBUG: tick #1031 | active_agents=[]
+2026-09-10 20:05:25 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:06:30 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 20:06:30 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 20:06:30 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 20:06:30 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 20:06:30 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Audit] Loaded role.md: 910 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Code] Loaded role.md: 847 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Research] Loaded role.md: 918 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Structure] Loaded role.md: 1051 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 20:06:30 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 20:06:30 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 20:06:31 [Lockfile] INFO: Cleaning up stale lock file (PID 13968 not running)
+2026-09-10 20:06:31 [Memory] INFO: Appended to tier0, size: 4413
+2026-09-10 20:06:31 [History] INFO: Appended to draft, size: 6176
+2026-09-10 20:06:31 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 20:06:31 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 20:06:31 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 20:06:32 [WS] INFO: Client connected. Total: 1
+2026-09-10 20:06:32 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 20:06:43 [WS] INFO: User: back from an external session again!
+2026-09-10 20:06:43 [Memory] INFO: Appended to tier0, size: 4470
+2026-09-10 20:06:43 [History] INFO: Appended to draft, size: 6233
+2026-09-10 20:06:43 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 20:06:43 [Agent] INFO: [BOSS] BOSS initialized - subsequent calls use incremental mode
+2026-09-10 20:06:43 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 20:06:45 [Agent] INFO: [BOSS] Done. (1.3s, 0+0 tokens)
+2026-09-10 20:06:45 [Memory] INFO: Appended to tier0, size: 4567
+2026-09-10 20:06:45 [History] INFO: Appended to draft, size: 6331
+2026-09-10 20:07:31 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 20:07:31 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:07:53 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 20:07:53 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 20:07:53 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 20:07:53 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 20:07:53 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Audit] Loaded role.md: 910 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Code] Loaded role.md: 847 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Research] Loaded role.md: 918 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Structure] Loaded role.md: 1051 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 20:07:53 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 20:07:53 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 20:07:53 [Lockfile] INFO: Cleaning up stale lock file (PID 33272 not running)
+2026-09-10 20:07:53 [Memory] INFO: Appended to tier0, size: 4616
+2026-09-10 20:07:53 [History] INFO: Appended to draft, size: 6380
+2026-09-10 20:07:53 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 20:07:53 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 20:07:53 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 20:07:55 [WS] INFO: Client connected. Total: 1
+2026-09-10 20:07:55 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 20:08:01 [WS] INFO: User: guess whos back
+2026-09-10 20:08:01 [Memory] INFO: Appended to tier0, size: 4652
+2026-09-10 20:08:01 [History] INFO: Appended to draft, size: 6416
+2026-09-10 20:08:01 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 20:08:01 [Agent] INFO: [BOSS] BOSS initialized - subsequent calls use incremental mode
+2026-09-10 20:08:01 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 20:08:04 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 20:08:04 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 20:08:04 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 20:08:04 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 20:08:11 [Agent] INFO: [BOSS] Done. (9.3s, 29043+181 tokens)
+2026-09-10 20:08:11 [Memory] INFO: Appended to tier0, size: 4708
+2026-09-10 20:08:11 [History] INFO: Appended to draft, size: 6844
+2026-09-10 20:08:27 [WS] INFO: User: ok good ! archive all tasks so we get a fresh count of tokens
+2026-09-10 20:08:27 [Memory] INFO: Appended to tier0, size: 4790
+2026-09-10 20:08:27 [History] INFO: Appended to draft, size: 6926
+2026-09-10 20:08:27 [Agent] DEBUG: [BOSS] INCREMENTAL MODE - skipping FILES/MEMORY
+2026-09-10 20:08:27 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 20:08:30 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 20:08:30 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 20:08:30 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 20:08:30 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 20:08:34 [Git Routine] INFO: Step 1: Checking git status...
+2026-09-10 20:08:34 [Git Routine] INFO: Found 163 changed file(s)
+2026-09-10 20:08:34 [Git Routine] INFO: Step 2: Analyzing changes...
+2026-09-10 20:08:34 [Git Routine] INFO: Step 3: Staging changes...
+2026-09-10 20:08:34 [Git Routine] ERROR: FAILED: Failed to stage changes: warning: in the working copy of '.claude/settings.local.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_GAME_STUDIO_/studio/agents/artspec/__init__.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_GAME_STUDIO_/studio/agents/code/__init__.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_GAME_STUDIO_/studio/agents/design/__init__.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_GAME_STUDIO_/studio/agents/text/__init__.py', LF will be replaced by CRLF the next time Git touches it
+error: open("_GAME_STUDIO_/nul"): No such file or directory
+error: unable to index file '_GAME_STUDIO_/nul'
+fatal: adding files failed
+2026-09-10 20:08:38 [Agent] INFO: [BOSS] Done. (11.0s, 73681+289 tokens)
+2026-09-10 20:08:38 [Memory] INFO: Appended to tier0, size: 4900
+2026-09-10 20:08:38 [History] INFO: Appended to draft, size: 7359
+2026-09-10 20:08:53 [Studio] DEBUG: tick #21 | active_agents=[]
+2026-09-10 20:08:53 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:09:53 [Studio] DEBUG: tick #41 | active_agents=[]
+2026-09-10 20:09:53 [Studio] DEBUG: tick done | elapsed=0.000s | did_work=False | active=0
+2026-09-10 20:10:08 [WS] INFO: Client disconnected. Total: 0
+2026-09-10 20:10:08 [WS] INFO: Client connected. Total: 1
+2026-09-10 20:10:08 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 20:10:28 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 20:10:28 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 20:10:28 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 20:10:28 [Suggestions] INFO: Loaded 19 suggestions
+2026-09-10 20:10:28 [Agent] INFO: [ArtSpec] Loaded role.md: 678 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [ArtSpec] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Audio] Loaded role.md: 806 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Audio] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Audit] Loaded role.md: 910 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Audit] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [BOSS] Loaded role.md: 5465 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [BOSS] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Code] Loaded role.md: 847 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Code] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Design] Loaded role.md: 721 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Design] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Image] Loaded role.md: 719 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Image] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Prompt] Loaded role.md: 814 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Prompt] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Research] Loaded role.md: 918 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Research] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Routine] Loaded role.md: 894 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Routine] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Structure] Loaded role.md: 1051 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Structure] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Text] Loaded role.md: 740 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Text] Using backend: persistent-claude
+2026-09-10 20:10:28 [Agent] INFO: [Video] Loaded role.md: 857 chars, is_vanilla=False
+2026-09-10 20:10:28 [Agent] INFO: [Video] Using backend: persistent-claude
+2026-09-10 20:10:29 [Lockfile] INFO: Cleaning up stale lock file (PID 14496 not running)
+2026-09-10 20:10:29 [Memory] INFO: Appended to tier0, size: 4949
+2026-09-10 20:10:29 [History] INFO: Appended to draft, size: 7408
+2026-09-10 20:10:29 [Studio] DEBUG: tick #1 | active_agents=[]
+2026-09-10 20:10:29 [Studio] INFO: Task queue empty - cleared all agent sessions
+2026-09-10 20:10:29 [Studio] DEBUG: tick done | elapsed=0.001s | did_work=False | active=0
+2026-09-10 20:10:30 [WS] INFO: Client connected. Total: 1
+2026-09-10 20:10:30 [WS] DEBUG: Sending 3 schedules to new client
+2026-09-10 20:10:35 [WS] INFO: User: why did you try to git ?
+2026-09-10 20:10:35 [Memory] INFO: Appended to tier0, size: 4994
+2026-09-10 20:10:35 [History] INFO: Appended to draft, size: 7453
+2026-09-10 20:10:35 [Agent] DEBUG: [BOSS] Building context (is_vanilla=False, is_boss=True)
+2026-09-10 20:10:35 [Agent] INFO: [BOSS] BOSS initialized - subsequent calls use incremental mode
+2026-09-10 20:10:35 [Agent] INFO: [BOSS] Thinking...
+2026-09-10 20:10:38 [Tasks] INFO: Loaded 10 tasks from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\tasks.json
+2026-09-10 20:10:38 [Hub] INFO: Loaded 50 messages from C:\Users\lou\__MY_WORK__\_GAME_STUDIO_GIT\_GAME_STUDIO_\data\messages.json
+2026-09-10 20:10:38 [Schedules] INFO: Loaded 3 schedules from history
+2026-09-10 20:10:38 [Suggestions] INFO: Loaded 19 suggestions

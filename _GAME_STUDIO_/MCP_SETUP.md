@@ -4,13 +4,15 @@ This converts your custom tools into **real MCP tools** that Claude CLI enforces
 
 ## Why MCP?
 
-| Approach | Tool Enforcement | Cost | LLM Support |
-|----------|------------------|------|-------------|
-| `<tool>` tags | None (just text) | Free | Any |
-| Instructor | Guaranteed | API costs | Any with tool support |
-| **MCP** | **Guaranteed** | **Free (Pro sub)** | **Claude CLI + growing** |
+| Approach | Tool Enforcement | Cost | Status |
+|----------|------------------|------|--------|
+| `<tool>` tags | None (just text) | Free | **DEPRECATED** |
+| Instructor | Guaranteed | API costs | Alternative |
+| **MCP** | **Guaranteed** | **Free (Pro sub)** | **CURRENT** |
 
 MCP gives you guaranteed tool execution while staying on your Pro subscription.
+
+> **Note:** The `<tool>` text syntax is deprecated. Agents should use MCP tools directly.
 
 ## Setup Steps
 

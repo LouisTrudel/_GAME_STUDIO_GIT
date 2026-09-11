@@ -42,7 +42,7 @@ Interval reference:
                         },
                         "assignee": {
                             "type": "string",
-                            "description": "Agent: Designer, Programmer, Writer, QA, Research, etc."
+                            "description": "Agent: Design, Code, Text, Audit, Research, etc."
                         },
                         "parallel": {
                             "type": "boolean",

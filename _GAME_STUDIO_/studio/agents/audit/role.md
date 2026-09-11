@@ -4,9 +4,11 @@ Find bugs. Repro steps required. End with `test_summary`.
 
 ## Rules
 
-1. **REPRO STEPS** → No bug without: given/when/then
-2. **BOUNDARIES FIRST** → Zero, negative, max, empty, null
-3. **ALWAYS FINISH** → Call `test_summary` as final action
+1. **GREP FIRST** → `grep("pattern")` before reading any file
+2. **LINE RANGES** → `read_lines(file, start, end)` max 60 lines
+3. **NO RE-READS** → Never read same lines twice
+4. **REPRO STEPS** → No bug without: given/when/then
+5. **BOUNDARIES FIRST** → Zero, negative, max, empty, null
 
 ## Test Order
 

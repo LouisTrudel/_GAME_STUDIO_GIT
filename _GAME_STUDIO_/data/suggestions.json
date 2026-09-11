@@ -1,5 +1,5 @@
 {
-  "counter": 37,
+  "counter": 38,
   "suggestions": [
     {
       "id": "S001",
@@ -194,7 +194,13 @@
       "rating": null,
       "kept_for_later": true,
       "deferred_at": "2026-09-07T09:01:45.708114",
-      "discussion_history": []
+      "discussion_history": [
+        {
+          "agent": "BOSS",
+          "content": "**Research Findings: Internet Outage Resilience**\n\n**Current State Analysis:**\n- `gemini.py:151-177`: Has retry logic (3 attempts, 10/20/30s waits) but ONLY for rate limits (429). Network errors throw immediately.\n- `claude_cli.py`: Has session retry (line 251-262) but NO network/connection retry logic.\n- `ollama.py`: 120s timeout but NO retry logic.\n- `studio.py:449-453`: Classifies network errors for retry, but retry happens at TASK level, not request level.\n\n**Gap Identified:**\nNetwork errors (connection reset, timeout, DNS) cause immediate failure. Task-level retry works, but wastes entire context/progress. Request-level retry with backoff would be more efficient.\n\n**Best Practices (2026):**\n1. Exponential backoff: 2s \u2192 4s \u2192 8s between retries (not linear)\n2. Distinguish retryable errors (timeout, connection reset) from terminal (auth, invalid request)\n3. Respect retry-after headers from Anthropic\n4. Circuit breaker pattern for extended outages\n5. Connection pooling to reduce new c",
+          "timestamp": "2026-09-09T21:38:59.433951"
+        }
+      ]
     },
     {
       "id": "S009",
@@ -271,15 +277,15 @@
       "title": "Boss as context preprocessor before task dispatch",
       "content": "New task context workflow: Instead of appending role.md + skills.md + task.md + router.md literally to agent prompts, Boss processes the entire taskContextBlock first. Boss reformats and compresses these blocks into a leaner, focused prompt before sending to the executing agent. One compression pass per task dispatch - Boss becomes both delegator and context compactor, rewriting assembled blocks into efficient format before downstream execution.",
       "category": "architecture",
-      "status": "pending",
+      "status": "rejected",
       "created_at": "2026-09-07T09:50:19.512580",
       "related_tasks": [],
       "files_mentioned": [],
       "evidence": null,
-      "decision": null,
-      "decided_at": null,
-      "decided_by": null,
-      "decision_notes": null,
+      "decision": "rejected",
+      "decided_at": "2026-09-09T15:47:17.988694",
+      "decided_by": "human",
+      "decision_notes": "fixed task prompts to be minimal",
       "implementation_tasks": [],
       "rating": null,
       "kept_for_later": true,
@@ -315,7 +321,7 @@
       "title": "Auto-generate task queue from whitepaper via Taxonomy parsing",
       "content": "Workflow pattern discovered: 1) Have Taxonomy agent deconstruct whitepaper into Phase\u2192Step\u2192Substep roadmap (worktree structure). 2) FOREACH step in roadmap, auto-delegate tasks with QA gates after each phase. 3) Result: Fully shipped product via large task queue with no cap. Implementation: Create tool/script that parses structured whitepaper into task queue automatically - reducing manual delegation overhead.",
       "category": "workflow",
-      "status": "pending",
+      "status": "rejected",
       "created_at": "2026-09-07T21:48:14.657818",
       "related_tasks": [
         "T003",
@@ -326,10 +332,10 @@
       ],
       "files_mentioned": [],
       "evidence": "Successfully applied to P001: Whitepaper \u2192 T003.md roadmap (7 phases, 21 steps, 63 substeps) \u2192 T004-T032 auto-delegated. Currently executing with QA passing phases.",
-      "decision": null,
-      "decided_at": null,
-      "decided_by": null,
-      "decision_notes": null,
+      "decision": "rejected",
+      "decided_at": "2026-09-09T15:46:46.207807",
+      "decided_by": "human",
+      "decision_notes": "better idea incoming",
       "implementation_tasks": [],
       "rating": null,
       "kept_for_later": false,
@@ -342,7 +348,7 @@
       "title": "Investigate agent chat not triggering compaction",
       "content": "Agent-to-agent chat messages may not be triggering memory compaction as expected. Need to investigate: (1) Are agent messages being logged to session memory? (2) Is the compaction threshold being reached? (3) Is the AB-chain memory system processing agent-generated content correctly? Check memory.py compaction triggers and hub.py message routing to confirm agent chat flows through the same compaction pipeline as user messages.",
       "category": "architecture",
-      "status": "pending",
+      "status": "rejected",
       "created_at": "2026-09-07T22:20:55.697834",
       "related_tasks": [],
       "files_mentioned": [
@@ -350,10 +356,10 @@
         "studio/core/hub.py"
       ],
       "evidence": "User observed agent chat not triggering compaction - potential gap in memory pipeline",
-      "decision": null,
-      "decided_at": null,
-      "decided_by": null,
-      "decision_notes": null,
+      "decision": "rejected",
+      "decided_at": "2026-09-09T15:46:24.638229",
+      "decided_by": "human",
+      "decision_notes": "fixed",
       "implementation_tasks": [],
       "rating": null,
       "kept_for_later": false,
@@ -366,7 +372,7 @@
       "title": "Prepare\u2192Prompt\u2192Worktree\u2192Ship Pipeline Pattern",
       "content": "P001 validated a full end-to-end pipeline: (1) PREPARE - Taxonomy parses whitepaper into structured spec (2) ONE_PROMPT - Designer creates phased roadmap with substeps (3) CREATE_WORKTREE - Isolated git worktree for project files (4) DELIVER - Agents execute phases sequentially with QA gates between each. Result: 7 phases, 21 steps, 63 substeps executed. 4 minor bugs caught by QA before ship. Pattern enables: parallel agent work, clean rollback, structured progress tracking. Recommend documentin",
       "category": "workflow",
-      "status": "pending",
+      "status": "rejected",
       "created_at": "2026-09-07T22:26:25.773196",
       "related_tasks": [
         "T003",
@@ -375,10 +381,10 @@
       ],
       "files_mentioned": [],
       "evidence": "P001 Chess: First successful pipeline run. Phases 1-7 completed, 4 QA bugs caught (all minor), approaching final ship review.",
-      "decision": null,
-      "decided_at": null,
-      "decided_by": null,
-      "decision_notes": null,
+      "decision": "rejected",
+      "decided_at": "2026-09-09T15:46:09.658830",
+      "decided_by": "human",
+      "decision_notes": "i made a new pattern",
       "implementation_tasks": [],
       "rating": null,
       "kept_for_later": false,
@@ -391,22 +397,38 @@
       "title": "Project files in dedicated folders outside studio",
       "content": "P001 demonstrated that project files (index.html, src/, package.json, dist/) should live in their own folder (projects/P001/) completely separate from studio code. This keeps the studio codebase clean, enables isolated git worktrees, prevents pollution of studio git history with project-specific commits, and allows easy archival/deletion of completed projects. Pattern: studio/ = agent code, projects/{ID}/ = deliverable code. Recommend enforcing this separation for all future projects.",
       "category": "architecture",
-      "status": "pending",
+      "status": "rejected",
       "created_at": "2026-09-07T22:30:08.755806",
       "related_tasks": [
         "T003"
       ],
       "files_mentioned": [],
       "evidence": "P001 successfully isolated in projects/P001/ with own package.json and vite config. Studio codebase remained clean.",
-      "decision": null,
-      "decided_at": null,
-      "decided_by": null,
-      "decision_notes": null,
+      "decision": "rejected",
+      "decided_at": "2026-09-09T21:37:31.000846",
+      "decided_by": "human",
+      "decision_notes": "already implemented trough hub chat",
       "implementation_tasks": [],
       "rating": null,
       "kept_for_later": false,
       "deferred_at": null,
-      "discussion_history": []
+      "discussion_history": [
+        {
+          "agent": "BOSS",
+          "content": "**Research Findings for S036: Project Files in Dedicated Folders**\n\n**SUPPORT - Strong evidence for this pattern:**\n\n1. **Monorepo best practices (2026)**: Industry standard is `/apps` and `/libs` separation - keeping applications distinct from shared code. This mirrors studio/projects separation.\n\n2. **Git worktree isolation**: Worktrees enable parallel agent work with \"private HEAD, private index, private working directory\" - project folders enable this cleanly. Called \"single highest-impact change\" for multi-agent work.\n\n3. **Separation of concerns**: Boundaries (folders, projects) create maintainability. \"Lack of duplication and singularity of purpose render the system easier to maintain.\"\n\n**Key implication**: Pattern aligns with modern practices. Recommend codifying: `studio/` = agent/tool code, `projects/{ID}/` = deliverable code.\n\nSources: GitScrum monorepo guide, MindStudio worktrees, DevIQ SoC",
+          "timestamp": "2026-09-09T17:26:03.139122"
+        },
+        {
+          "agent": "BOSS",
+          "content": "**T428 Investigation: role.md Injection Efficiency**\n\n**CONFIRMED: role.md IS re-injected every message.**\n\nFlow analysis:\n1. `agent.py:77` \u2192 `self.backend.chat(system_prompt=self.system_prompt)`\n2. `claude_cli.py:106-107` \u2192 `prompt_parts.append(f\"SYSTEM:\\n{system_prompt}\")`\n3. This happens on EVERY `chat()` call\n\n**Key insight**: Session persistence (`--resume`) preserves conversation HISTORY but NOT the system prompt. Claude CLI re-receives system context each turn.\n\n**Why this happens**: Claude's --resume restores conversation state but the system_prompt is still sent fresh each API call.\n\n**Optimization potential**:\n- Current: ~200 tokens (role.md ~800 chars) sent every message\n- Persistent session DOES cache this (cache_read_input_tokens), but only after first message\n- Cache is 90% cheaper than fresh tokens (Anthropic pricing)\n\n**Verdict**: Working as intended. The injection is redundant but mitigated by:\n1. Prompt caching (5x cost reduction after first message)\n2. Role.md is int",
+          "timestamp": "2026-09-09T17:35:00.604234"
+        },
+        {
+          "agent": "BOSS",
+          "content": "**T431 Research: Restricting BOSS Claude Code Tools**\n\n**Current state** (claude_cli.py:217-219):\n```python\nif self.agent_name == \"BOSS\":\n    cmd.extend([\"--disallowedTools\", \"Edit,Write,MultiEdit,NotebookEdit\"])\n```\n\n**Finding 1: --disallowedTools is already used but incomplete**\nBOSS blocks Edit/Write but still has: Read, Grep, Glob, Bash, Task, WebFetch, WebSearch, Agent. Each tool call adds to context (500K+ accumulation).\n\n**Finding 2: Tool removal reduces context**\nPer docs: \"A bare tool name like `Bash` removes the tool from Claude's context entirely, so Claude never sees it.\"\n\n**Recommendation - Whitelist approach:**\n```python\nif self.agent_name == \"BOSS\":\n    cmd.extend([\"--allowedTools\", \"mcp__game-studio__*,AskUserQuestion,Bash(git *)\"])\n```\n\nThis would:\n1. Allow ONLY game-studio MCP tools (create_task, acknowledge, recall_memory, etc.)\n2. Allow questions to user\n3. Allow read-only git commands\n4. REMOVE Read/Grep/Glob/Task/Agent from context = significant token savings\n\n**R",
+          "timestamp": "2026-09-09T17:44:53.701632"
+        }
+      ]
     },
     {
       "id": "S037",
@@ -414,17 +436,38 @@
       "title": "Fast-path mode for single-session scope tasks",
       "content": "Studio should detect 'single-session scope' tasks and bypass orchestration entirely\u2014just route to one agent. P001 benchmark showed 540x token overhead and 15x slower execution vs direct Claude Code for a prototype task. Orchestration only pays off when: (1) context exceeds single-session limits, (2) true parallel work needed, (3) skills compound across projects. Implementing scope detection could dramatically reduce costs for small projects.",
       "category": "architecture",
-      "status": "pending",
+      "status": "rejected",
       "created_at": "2026-09-08T15:26:35.827123",
       "related_tasks": [
         "P001"
       ],
       "files_mentioned": [],
       "evidence": "P001: Studio ~27M tokens/60min vs Claude Code ~50K tokens/4min for similar output",
-      "decision": null,
-      "decided_at": null,
-      "decided_by": null,
-      "decision_notes": null,
+      "decision": "rejected",
+      "decided_at": "2026-09-09T21:37:59.536339",
+      "decided_by": "human",
+      "decision_notes": "deprecated logic",
+      "implementation_tasks": [],
+      "rating": null,
+      "kept_for_later": true,
+      "deferred_at": "2026-09-09T15:47:43.448095",
+      "discussion_history": []
+    },
+    {
+      "id": "S038",
+      "source_agent": "BOSS",
+      "title": "BOSS bypasses delegation on \"fix it\" commands",
+      "content": "When user says \"fix it\" or similar imperative, BOSS executes directly instead of delegating to Programmer. This violates core rule \"NEVER WORK \u2192 DELEGATE\". Need enforcement mechanism - either prompt reinforcement or guardrail that detects when BOSS uses Edit/Write/Bash tools directly.",
+      "category": "workflow",
+      "status": "rejected",
+      "created_at": "2026-09-09T12:51:53.536405",
+      "related_tasks": [],
+      "files_mentioned": [],
+      "evidence": "User confirmed: \"this is been one of the main friction point of this app\" - BOSS fixed websocket.py directly instead of creating task for Programmer",
+      "decision": "rejected",
+      "decided_at": "2026-09-09T15:44:40.917042",
+      "decided_by": "human",
+      "decision_notes": "already fixed",
       "implementation_tasks": [],
       "rating": null,
       "kept_for_later": false,

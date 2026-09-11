@@ -25,7 +25,7 @@ Use after testing when you find issues that need fixing.""",
             },
             "assignee": {
                 "type": "string",
-                "description": "Agent to fix the bug: Programmer, Designer, Artist, Writer"
+                "description": "Agent to fix the bug: Code, Design, ArtSpec, Text"
             },
             "severity": {
                 "type": "string",

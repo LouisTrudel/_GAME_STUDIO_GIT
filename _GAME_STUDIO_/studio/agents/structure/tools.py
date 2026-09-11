@@ -302,7 +302,7 @@ Creates a task for the responsible agent with specific rename recommendations.""
             },
             "assignee": {
                 "type": "string",
-                "description": "Agent to fix the issue: Programmer, Designer, Artist, Writer"
+                "description": "Agent to fix the issue: Code, Design, ArtSpec, Text"
             },
             "priority": {
                 "type": "string",

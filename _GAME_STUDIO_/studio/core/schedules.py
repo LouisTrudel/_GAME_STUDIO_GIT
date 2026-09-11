@@ -454,18 +454,18 @@ def create_code_review_schedule(interval_hours: int = 12) -> Schedule:
 def create_taxonomy_review_schedule(interval_hours: int = 24) -> Schedule:
     """Create daily codebase organization review.
 
-    Spec from Designer:
-    - Taxonomy scans at 06:00 UTC daily
+    Spec from Design:
+    - Structure scans at 06:00 UTC daily
     - Output: /reports/codebase_review_YYYY-MM-DD.md
     - Format: Priority sections (High/Medium/Low) with checkboxes
-    - Auto-creates Programmer task to apply recommendations
+    - Auto-creates Code task to apply recommendations
     """
     today = datetime.now().strftime("%Y-%m-%d")
     report_path = f"reports/codebase_review_{today}.md"
 
     return schedule_manager.create(
         name="Daily Codebase Review",
-        description="Taxonomy analyzes codebase structure, Programmer applies fixes",
+        description="Structure analyzes codebase structure, Code applies fixes",
         interval_seconds=interval_hours * 3600,
         tasks=[
             {

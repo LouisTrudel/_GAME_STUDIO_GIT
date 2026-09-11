@@ -68,10 +68,10 @@ Status flags: `[DONE]` `[LOOKINTO]` `[NOTWORTH]` `[OVERHYPED]`
 
 ---
 
-### 8. Dynamic Model Routing `[LOOKINTO]`
+### 8. Dynamic Model Routing `[DONE]`
 
 - **What:** Use cheaper models (haiku) for simple tasks, escalate to sonnet for complex reasoning.
-- **Current state:** All agents use default sonnet. Agent configs support `"model"` field.
+- **Current state:** DONE
 - **Candidates for haiku:**
   - Research (web searches, summaries)
   - Context (memory management)
@@ -121,14 +121,14 @@ Status flags: `[DONE]` `[LOOKINTO]` `[NOTWORTH]` `[OVERHYPED]`
 
 ## Reference Libraries
 
-| Library | Use Case | Status |
-|---------|----------|--------|
-| `fastmcp` | MCP server implementation | **In use** |
-| `grep_ast` | AST symbol extraction | Consider |
-| `ruff` | Fast Python linting | Consider for hooks |
-| `diff_match_patch` | Patch application | Not needed (Edit tool) |
-| `langgraph` | Agent orchestration | Not needed (custom hub) |
-| `pylsp` / `pyright` | LSP integration | Not worth it |
+| Library             | Use Case                  | Status                  |
+| ------------------- | ------------------------- | ----------------------- |
+| `fastmcp`           | MCP server implementation | **In use**              |
+| `grep_ast`          | AST symbol extraction     | Consider                |
+| `ruff`              | Fast Python linting       | Consider for hooks      |
+| `diff_match_patch`  | Patch application         | Not needed (Edit tool)  |
+| `langgraph`         | Agent orchestration       | Not needed (custom hub) |
+| `pylsp` / `pyright` | LSP integration           | Not worth it            |
 
 ---
 
