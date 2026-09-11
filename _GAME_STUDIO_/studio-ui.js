@@ -14,14 +14,10 @@ function addMessage(msg) {
 
     const time = new Date(msg.timestamp).toLocaleTimeString();
 
-    // Check if message is long enough to collapse (more than 8 lines, roughly 400 chars)
-    const lineCount = msg.content.split('\n').length;
-    const shouldCollapse = msg.content.length > 400 || lineCount > 8;
-    const contentClass = shouldCollapse ? 'message-content collapsible' : 'message-content';
-
     // Add "Mr" prefix for agents (except BOSS and user)
     const displayName = isUser ? 'You' : (msg.sender === 'BOSS' ? 'BOSS' : `Mr ${msg.sender}`);
 
+    // Always add collapsible class initially to measure overflow
     div.innerHTML = `
         <div class="message-header">
             <span class="message-sender" style="color: ${color}">
@@ -29,14 +25,20 @@ function addMessage(msg) {
             </span>
             <span class="message-time">${time}</span>
         </div>
-        <div class="${contentClass}">${highlightMentions(escapeHtml(msg.content))}</div>
-        ${shouldCollapse ? '<div class="message-expand-hint">Click to expand</div>' : ''}
+        <div class="message-content collapsible">${highlightMentions(escapeHtml(msg.content))}</div>
+        <div class="message-expand-hint" style="display: none;">Click to expand</div>
     `;
 
-    // Add click handler for collapsible messages
-    if (shouldCollapse) {
-        const contentEl = div.querySelector('.message-content');
-        const hintEl = div.querySelector('.message-expand-hint');
+    messagesEl.appendChild(div);
+
+    // Check if content actually overflows after rendering
+    const contentEl = div.querySelector('.message-content');
+    const hintEl = div.querySelector('.message-expand-hint');
+    const isOverflowing = contentEl.scrollHeight > contentEl.clientHeight;
+
+    if (isOverflowing) {
+        // Content is actually truncated - enable expand functionality
+        hintEl.style.display = '';
 
         const toggleExpand = () => {
             contentEl.classList.toggle('expanded');
@@ -46,9 +48,11 @@ function addMessage(msg) {
 
         contentEl.addEventListener('click', toggleExpand);
         hintEl.addEventListener('click', toggleExpand);
+    } else {
+        // Content fits - remove collapsible styling
+        contentEl.classList.remove('collapsible');
     }
 
-    messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
 
     log('wsLogs', `${msg.sender}: ${msg.content.substring(0, 50)}...`, 'info');
