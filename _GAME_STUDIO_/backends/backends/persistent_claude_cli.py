@@ -71,6 +71,9 @@ class PersistentClaudeCLI(Backend):
     _running_processes: dict[str, subprocess.Popen] = {}  # agent_name -> process
     _lock = threading.Lock()
 
+    # Reinitialize session after N tasks to refresh role.md context
+    REINIT_AFTER_TASKS = 20
+
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
         self.model = model
