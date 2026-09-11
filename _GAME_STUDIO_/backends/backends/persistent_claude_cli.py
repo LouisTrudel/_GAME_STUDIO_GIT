@@ -1,34 +1,18 @@
 """
-Persistent Claude CLI backend - Session-aware context management.
+Claude CLI backend - Fresh context each call.
 
-Instead of re-sending context every call, this backend:
-1. First call: Full initialization (system prompt + context)
-2. Subsequent calls: Only the trigger message
+Memory is managed server-side (hub, memory tiers, task_manager).
+No --resume, no session file loading - each call gets full context:
+  role.md + memory_tier1 + hub_recent + trigger
 
-The session file (.jsonl) stores conversation history. Claude CLI loads it
-via --resume, so we don't need to re-inject context every time.
-
-Token savings:
-- First call: Full context (~5K tokens: role.md + memory + file tree)
-- Subsequent calls: Just trigger (~100-500 tokens)
-- 90%+ reduction after initialization
-
-Auto-compaction:
-- Per-task compaction via /compact command after each task
-- Full reinit every 10 tasks for fresh role.md injection
-- Keeps role.md (system prompt) intact
-- Summarizes conversation history to preserve key decisions
-- Prevents session bloat that caused 691K token issues
-
-This is NOT about keeping processes alive - it's about not defeating
-the session system by re-sending everything via stdin.
+Prompt caching still works (Anthropic caches first N tokens for 5 min).
+Session files are created by Claude CLI but never resumed.
 """
 
 import subprocess
 import json
 import os
 import time
-import threading
 import hashlib
 import uuid
 from pathlib import Path
@@ -48,46 +32,8 @@ def get_session_uuid(agent_name: str) -> str:
     return str(uuid.UUID(bytes=hash_bytes[:16]))
 
 
-def _session_file_exists(cwd: Path, session_uuid: str) -> bool:
-    """Check if a session file exists in Claude's storage."""
-    home = Path.home()
-    claude_projects = home / ".claude" / "projects"
-
-    if not claude_projects.exists():
-        return False
-
-    cwd_str = str(cwd.resolve())
-    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
-
-    project_dir = claude_projects / encoded
-    if not project_dir.exists():
-        return False
-
-    session_file = project_dir / f"{session_uuid}.jsonl"
-    return session_file.exists()
-
-
 class PersistentClaudeCLI(Backend):
-    """
-    Session-aware Claude CLI backend.
-
-    Key difference from ClaudeCLIBackend:
-    - Tracks initialization state per agent
-    - First call: sends full context (role, AC-Memory, files)
-    - Subsequent calls: sends ONLY the trigger message
-    - Session persistence handles the rest
-
-    Usage:
-        # In config.json, set: "backend": "persistent-claude"
-    """
-
-    # Class-level session state - tracks which agents are initialized
-    _initialized_sessions: dict[str, bool] = {}
-    _task_counts: dict[str, int] = {}  # Tasks completed per agent
-    _lock = threading.Lock()
-
-    # Full reinit after N tasks to keep role.md fresh
-    REINIT_AFTER_TASKS = 10
+    """Claude CLI backend with deterministic session IDs (no resume)."""
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
@@ -96,14 +42,7 @@ class PersistentClaudeCLI(Backend):
         self.cwd = Path(__file__).parent.parent.parent
         self._session_uuid = get_session_uuid(self.agent_name)
         self._reset_metrics()
-
-        # Check if session already exists (from previous run)
-        if _session_file_exists(self.cwd, self._session_uuid):
-            with self._lock:
-                self._initialized_sessions[self.agent_name] = True
-            logger.info("[%s] Found existing session %s", self.agent_name, self._session_uuid[:8])
-        else:
-            logger.info("[%s] New session %s", self.agent_name, self._session_uuid[:8])
+        logger.info("[%s] Session %s (fresh each call)", self.agent_name, self._session_uuid[:8])
 
     def _reset_metrics(self):
         """Reset metrics for new call."""
@@ -113,6 +52,9 @@ class PersistentClaudeCLI(Backend):
         self.last_duration_ms = 0
         self.last_num_turns = 0
         self.last_cache_creation_tokens = 0
+        self.last_cache_read_tokens = 0
+        self.last_is_error = False
+        self.last_error_message = None
         self._streaming_input_tokens = 0
         self._streaming_output_tokens = 0
 
@@ -129,20 +71,6 @@ class PersistentClaudeCLI(Backend):
             )
         except ImportError:
             pass  # Server not running (e.g., CLI mode)
-        self.last_cache_read_tokens = 0
-        self.last_is_error = False
-        self.last_error_message = None
-        self._tool_use_count = 0
-
-    def _is_initialized(self) -> bool:
-        """Check if this agent's session is initialized."""
-        with self._lock:
-            return self._initialized_sessions.get(self.agent_name, False)
-
-    def _mark_initialized(self):
-        """Mark this agent's session as initialized."""
-        with self._lock:
-            self._initialized_sessions[self.agent_name] = True
 
     def chat(
         self,
@@ -152,24 +80,17 @@ class PersistentClaudeCLI(Backend):
         tools: list[dict] = None,
         tool_handlers: dict = None,
     ) -> str:
-        """Send message to Claude CLI with session awareness."""
+        """Send message to Claude CLI - fresh context each call."""
         self._reset_token_tracking()
         self._reset_metrics()
 
-        # Decide what to send based on initialization state
-        if self._is_initialized():
-            # Session exists - only send the new message
-            prompt = self._build_incremental_prompt(messages)
-            logger.info("[%s] Incremental call (%d chars)", self.agent_name, len(prompt))
-        else:
-            # First call - send full context
-            prompt = self._build_full_prompt(messages, system_prompt)
-            logger.info("[%s] Init call (%d chars)", self.agent_name, len(prompt))
+        # Always send full context (we manage memory server-side, no --resume)
+        prompt = self._build_full_prompt(messages, system_prompt)
+        logger.info("[%s] Call (%d chars)", self.agent_name, len(prompt))
 
         # Run CLI
         try:
             response = self._run_cli(prompt)
-            self._mark_initialized()
 
             # Execute tool tags if present
             if tool_handlers and "<tool>" in response:
@@ -195,33 +116,6 @@ class PersistentClaudeCLI(Backend):
 
         parts.append("\nRespond concisely:")
         return "\n".join(parts)
-
-    def _build_incremental_prompt(self, messages: list[dict]) -> str:
-        """Build minimal prompt for incremental calls.
-
-        After initialization, Claude's session has the role and context.
-        We just need to send the new task/message.
-        """
-        if not messages:
-            return "Continue with the current task."
-
-        last_msg = messages[-1].get("content", "")
-
-        # Extract ## TASK section if present (contains user message directly now)
-        if "## TASK" in last_msg:
-            task_start = last_msg.find("## TASK")
-            task_content = last_msg[task_start + len("## TASK"):].strip()
-
-            # Remove any trailing sections
-            if "\n## " in task_content:
-                task_content = task_content[:task_content.find("\n## ")]
-
-            logger.debug("[%s] Extracted TASK (%d chars)", self.agent_name, len(task_content))
-            return task_content
-
-        # No section markers - use as-is
-        return last_msg
-
     def _run_cli(self, prompt: str) -> str:
         """Run Claude CLI subprocess."""
         import tempfile
@@ -267,12 +161,9 @@ class PersistentClaudeCLI(Backend):
 
         cmd = [claude_cmd, "-p", "-", "--output-format", "stream-json", "--verbose"]
 
-        # Session handling
-        session_exists = _session_file_exists(self.cwd, self._session_uuid)
-        if session_exists:
-            cmd.extend(["--resume", self._session_uuid])
-        else:
-            cmd.extend(["--session-id", self._session_uuid])
+        # Fresh session each call - no --resume (we manage memory server-side)
+        # Session ID kept for organization but never resumed
+        cmd.extend(["--session-id", self._session_uuid])
 
         # MCP config
         mcp_config = self.cwd / ".claude" / "settings.json"

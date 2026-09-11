@@ -169,59 +169,44 @@ class StudioAgent:
         return "\n\n".join(parts)
 
     def _build_context(self, trigger_message: str = None) -> str:
-        """Build scoped context with section markers for user message.
+        """Build scoped context for agents.
 
-        Uses ## CONTEXT and ## TASK markers for consistency with system prompt.
-        T356: Vanilla agents skip context injection - only get the trigger message.
-        T444: BOSS gets full context only on first call, incremental after.
+        T356: Vanilla agents get raw trigger only.
+        BOSS incremental: trigger only (session has history via --resume).
+        BOSS init: purpose + memory + trimmed hub + trigger.
         """
-        sections = []
+        trigger = trigger_message or "Respond appropriately."
 
-        # T356: Vanilla agents get raw trigger only, no context injection
+        # T356: Vanilla agents get raw trigger only
         if self.is_vanilla:
-            logger.debug("[%s] VANILLA MODE - skipping context injection", self.name)
-            return trigger_message or "Respond appropriately."
+            logger.debug("[%s] VANILLA MODE", self.name)
+            return trigger
 
-        # T444: BOSS incremental mode - skip static context after initialization
+        # BOSS INCREMENTAL: Session already has history, just send trigger
         if self.is_boss and StudioAgent._boss_initialized:
-            logger.debug("[%s] INCREMENTAL MODE - skipping FILES/MEMORY", self.name)
-            # Put USER MESSAGE FIRST (primacy effect), then recent context
-            trigger = trigger_message or "Respond appropriately."
-            sections.append("## YOUR TASK NOW\n\n" + trigger)
-            # Recent context is secondary - don't get distracted by agent outputs
-            recent_context = hub.get_incremental_context_for_boss()
-            if recent_context:
-                sections.append("### Recent Activity (FYI only)\n\n" + recent_context)
+            logger.debug("[%s] INCREMENTAL - trigger only", self.name)
+            return trigger
+
+        # BOSS INIT: First call - purpose + trigger only
+        # Memory exists (BOSS knows via role.md) but not injected - too much noise
+        # Cannot rely on --resume to enforce role.md
+        if self.is_boss:
+            sections = []
+
+            # Purpose block (strategic context)
+            sections.append(hub._get_boss_purpose_block())
+
+            # THE USER MESSAGE - timestamped and prominent
+            from datetime import datetime
+            now = datetime.now().strftime("%H:%M:%S")
+            sections.append(f"## NEW MESSAGE [{now}] - RESPOND TO THIS\n{trigger}")
+
+            StudioAgent._boss_initialized = True
+            logger.info("[%s] BOSS initialized", self.name)
             return "\n\n".join(sections)
 
-        # Debug: confirm non-vanilla path
-        logger.debug("[%s] Building context (is_vanilla=%s, is_boss=%s)", self.name, self.is_vanilla, self.is_boss)
-
-        # BOSS gets file tree + context for orchestration
-        # Employees get just the task - file paths come in task description
-        if self.is_boss:
-            # ## FILES - File tree for orientation (T402)
-            active_project = project_manager.get_active()
-            project_id = active_project.id if active_project else None
-            file_tree = get_file_tree(project_id)
-            if file_tree:
-                sections.append("## FILES\n\n```\n" + file_tree + "\n```")
-
-            # ## CONTEXT - Hub messages + active tasks
-            context_md = self.get_context_md()
-            if context_md:
-                sections.append("## CONTEXT\n\n" + context_md)
-
-        # ## TASK - The trigger/instruction for this turn
-        trigger = trigger_message or "Respond appropriately."
-        sections.append("## TASK\n\n" + trigger)
-
-        # T444: Mark BOSS as initialized after first full context build
-        if self.is_boss:
-            StudioAgent._boss_initialized = True
-            logger.info("[%s] BOSS initialized - subsequent calls use incremental mode", self.name)
-
-        return "\n\n".join(sections)
+        # Non-BOSS employees: just the trigger (task details in description)
+        return trigger
 
     def respond(self, trigger_message: str = None, full_prompt: str = None) -> str:
         """Generate a response based on scoped context.
