@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Optional
 
 from .base import Backend, INITIAL_DELAY, BACKOFF_MULTIPLIER, MAX_RETRIES
-from server_modules.broadcast import broadcast_terminal_line_sync
 import logging
 
 logger = logging.getLogger("PersistentCLI")
@@ -435,6 +434,7 @@ class PersistentClaudeCLI(Backend):
                 # Stream to terminal UI
                 if text:
                     try:
+                        from server_modules.broadcast import broadcast_terminal_line_sync
                         broadcast_terminal_line_sync(self.agent_name, text)
                     except Exception:
                         pass  # Non-fatal - don't break agent on terminal broadcast failure
