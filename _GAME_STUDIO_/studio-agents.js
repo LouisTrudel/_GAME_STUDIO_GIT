@@ -49,6 +49,15 @@ const terminalCollapsed = new Set();  // Track which terminals are collapsed (de
 // Render agent cards
 function renderAgentCards() {
     const panel = document.getElementById('panel-agents');
+
+    // Dispose existing terminals before destroying DOM
+    for (const name in agentTerminals) {
+        if (agentTerminals[name]?.term) {
+            agentTerminals[name].term.dispose();
+        }
+        delete agentTerminals[name];
+    }
+
     panel.innerHTML = '';
 
     // Sort agents by tokens (highest first)
@@ -153,9 +162,44 @@ async function fetchAgentStats() {
     try {
         const res = await fetch(`${API_URL}/agents/stats`);
         agentStats = await res.json();
-        renderAgentCards();
+        // Update in-place if cards exist, otherwise full render
+        if (document.querySelector('.agent-card')) {
+            updateAgentStatsInPlace();
+        } else {
+            renderAgentCards();
+        }
     } catch (e) {
         console.error('Failed to fetch agent stats:', e);
+    }
+}
+
+// Update agent stats without destroying terminals
+function updateAgentStatsInPlace() {
+    for (const [name, stats] of Object.entries(agentStats)) {
+        const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
+        if (!card) continue;
+
+        // Update header stats
+        const tokenEl = card.querySelector('.token-total');
+        if (tokenEl) tokenEl.textContent = formatTokens(stats.tokens || 0);
+
+        const statValues = card.querySelectorAll('.stat .stat-value');
+        if (statValues[1]) statValues[1].textContent = stats.tasks?.assigned || 0;
+        if (statValues[2]) statValues[2].textContent = formatUptime(stats.uptime_seconds || 0);
+
+        // Update status dot
+        const dot = card.querySelector('.status-dot');
+        if (dot) {
+            dot.className = `status-dot ${stats.status || 'idle'}`;
+            dot.title = stats.status || 'idle';
+        }
+
+        // Update token grid
+        const tokenGrid = card.querySelectorAll('.agent-token-value');
+        if (tokenGrid[0]) tokenGrid[0].textContent = formatTokens(stats.tokens_input || 0);
+        if (tokenGrid[1]) tokenGrid[1].textContent = formatTokens(stats.tokens_output || 0);
+        if (tokenGrid[2]) tokenGrid[2].textContent = formatTokens(stats.tokens_cache_read || 0);
+        if (tokenGrid[3]) tokenGrid[3].textContent = formatTokens(stats.tokens_cache_creation || 0);
     }
 }
 

@@ -2113,7 +2113,12 @@ function connect() {
         } else if (data.type === 'agent_stats_update') {
             // Real-time agent stats for cards
             agentStats = data.data;
-            renderAgentCards();
+            // Update in-place to preserve terminals
+            if (document.querySelector('.agent-card')) {
+                updateAgentStatsInPlace();
+            } else {
+                renderAgentCards();
+            }
         } else if (data.type === 'suggestions_update') {
             console.log('[WS] suggestions_update - received', data.data.length, 'suggestions');
             suggestions = data.data;
