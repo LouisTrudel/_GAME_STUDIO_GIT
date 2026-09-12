@@ -115,58 +115,55 @@ class Studio:
         Returns:
             dict with {keep: str, push: str, friction: str}
         """
-        context_agent = self.agents.get("Prompt")
+        context_agent = self.agents.get("Compression")
         if not context_agent:
-            logger.debug("Prompt agent not found for AC-Memory compression")
-            return self._fallback_compress(content, tier_index, prev_tier_context)
+            logger.debug("Compression agent not found - skipping compression")
+            return None
 
         # Truncate for context window
         content_preview = content[:8000] if len(content) > 8000 else content
         prev_preview = prev_tier_context[:2000] if prev_tier_context else "(empty - this is tier 0)"
 
-        prompt = f"""AC-MEMORY COMPACTION: Tier {tier_index}
+        # Read current friction (whole file - only contains unresolved now)
+        friction_path = Path(__file__).parent / "data" / "memory" / "friction.md"
+        current_friction = ""
+        if friction_path.exists():
+            try:
+                content = friction_path.read_text(encoding="utf-8").strip()
+                # Skip header, get just the items
+                if content and "No unresolved issues" not in content:
+                    lines = [l.strip() for l in content.split("\n") if l.strip() and not l.startswith("#") and not l.startswith("*")]
+                    if lines:
+                        current_friction = "\n".join(lines[:15])
+            except Exception:
+                pass
 
-## Reference (Tier {tier_index - 1})
-{prev_preview}
+        friction_section = ""
+        if current_friction:
+            friction_section = f"""## Active Friction
+{current_friction}
 
-## Content to Compress ({len(content)} chars)
+"""
+
+        prompt = f"""Tier {tier_index} → Compress into bullets
+
+{friction_section}## Content ({len(content)} chars)
 {content_preview}
 
 ---
 
-## Classification
+| Tag | Destination |
+|-----|-------------|
+| [ACTIVE] | ===KEEP=== |
+| [DONE] | ===PUSH=== (include fixed friction) |
+| [FRICTION] | ===FRICTION=== (unresolved from above + new) |
 
-| Tag | Meaning | Destination |
-|-----|---------|-------------|
-| [ACTIVE] | Ongoing, needed now | ===KEEP=== (stays tier {tier_index}) |
-| [DONE] | Completed, historical | ===PUSH=== (moves tier {tier_index + 1}) |
-| [FRICTION] | Error, bug, blocker | ===FRICTION=== (tracked separately) |
-
-## Constraints
-
-- Summarize into bullets, don't copy raw text
-- Max 60% KEEP (older = DONE when uncertain)
-- FRICTION: prefix with [RESOLVED] or [UNRESOLVED]
-
-## Output Format
-
-===KEEP===
-- [ACTIVE] bullet points
-
-===PUSH===
-- [DONE] bullet points
-
-===FRICTION===
-- [RESOLVED/UNRESOLVED] bullet points
-
----
-
-Compress the content above into classified bullet points. Output ===KEEP===, ===PUSH===, ===FRICTION=== sections."""
+Max 60% KEEP. When uncertain → DONE."""
 
         try:
-            self._notify_status("Prompt", "working", f"Compacting tier {tier_index}...")
+            self._notify_status("Compression", "working", f"Compacting tier {tier_index}...")
             response = context_agent.respond(prompt)
-            self._notify_status("Prompt", "idle", "")
+            self._notify_status("Compression", "idle", "")
 
             # Parse response into keep/push
             result = self._parse_split_response(response)
@@ -175,8 +172,8 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
             return result
 
         except Exception as e:
-            logger.error("AC-Memory compression failed: %s", e)
-            return self._fallback_compress(content, tier_index, prev_tier_context)
+            logger.error("AC-Memory compression failed: %s - skipping", e)
+            return None
 
     def _parse_split_response(self, response: str) -> dict:
         """Parse Context agent response into keep/push/friction sections."""
@@ -228,33 +225,6 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
 
         return {"keep": keep, "push": push, "friction": friction}
 
-    def _fallback_compress(self, content: str, tier_index: int, prev_tier_context: str) -> dict:
-        """Fallback compression when Context agent unavailable.
-
-        Simple split by lines, extracts friction keywords.
-        """
-        lines = [l.strip() for l in content.split('\n') if l.strip()]
-
-        # Extract friction lines (errors, bugs, failures)
-        friction_keywords = ['error', 'bug', 'fail', 'block', 'retry', 'crash', 'broke', 'issue']
-        friction_lines = []
-        other_lines = []
-
-        for line in lines:
-            line_lower = line.lower()
-            if any(kw in line_lower for kw in friction_keywords):
-                friction_lines.append(line)
-            else:
-                other_lines.append(line)
-
-        # Split remaining 50/50
-        mid = len(other_lines) // 2
-        keep = '\n'.join(other_lines[:mid]) if mid > 0 else '\n'.join(other_lines)
-        push = '\n'.join(other_lines[mid:]) if mid > 0 else ""
-        friction = '\n'.join(friction_lines)
-
-        return {"keep": keep, "push": push, "friction": friction}
-
     def _trigger_history_tier(self, content: str, tier_index: int):
         """Trigger history tier system after memory compression (T309).
 
@@ -292,67 +262,34 @@ Compress the content above into classified bullet points. Output ===KEEP===, ===
         Returns:
             Narrative markdown string, or None on failure
         """
-        writer_agent = self.agents.get("Text")
+        writer_agent = self.agents.get("Compression")
         if not writer_agent:
-            logger.debug("Text agent not found for tier narrative")
+            logger.debug("Compression agent not found for tier narrative")
             return None
 
         # Truncate content for Writer
         content_preview = content[:6000] if len(content) > 6000 else content
 
-        # Tier-specific prompts with compression targets
-        tier_prompts = {
-            "draft": """| Aspect | Value |
-|--------|-------|
-| Style | Journal, "we", informal |
-| Target | ~10% of input |
-| Include | Work done, decisions, blockers resolved, open threads |
-| Omit | Chatter, repeated status, raw dumps |""",
-
-            "chapter": """| Aspect | Value |
-|--------|-------|
-| Style | Project log, chronological, cause-effect |
-| Target | ~15% of input |
-| Include | Milestones, approach evolution, patterns, turning points |
-| Omit | Session minutiae, redundant summaries |""",
-
-            "book": """| Aspect | Value |
-|--------|-------|
-| Style | Technical memoir, reflective |
-| Target | ~15% of input |
-| Include | Phase objectives, architecture decisions, lessons, what worked/didn't |
-| Omit | Chapter-level details already captured |""",
-
-            "collection": """| Aspect | Value |
-|--------|-------|
-| Style | Historical record, factual, searchable |
-| Target | No limit (permanent archive) |
-| Include | Phase ID, time period, accomplishments, lessons, links to books |
-| Omit | Nothing - this is the permanent record |""",
+        tier_style = {
+            "draft": "episode - one session's adventure",
+            "chapter": "chapter - weave episodes into story arc",
+            "book": "volume - major phase narrative",
+            "collection": "series entry - era summary",
         }
+        style = tier_style.get(tier_name, tier_style["draft"])
 
-        tier_prompt = tier_prompts.get(tier_name, tier_prompts["draft"])
+        prompt = f"""# {tier_name.title()} {compression_count}
 
-        date_str = datetime.now().strftime("%Y-%m-%d")
-
-        prompt = f"""HISTORY NARRATIVE: {tier_name.upper()} #{compression_count} | {date_str} | {len(content)} chars
-
-## Content
 {content_preview}
 
 ---
 
-## Specs
-{tier_prompt}
-
----
-
-Write narrative as markdown. Start with `# {tier_name.title()} {compression_count}`"""
+Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
 
         try:
-            self._notify_status("Text", "working", f"Writing {tier_name} narrative...")
+            self._notify_status("Compression", "working", f"Writing {tier_name} narrative...")
             narrative = writer_agent.respond(prompt)
-            self._notify_status("Text", "idle", "")
+            self._notify_status("Compression", "idle", "")
             return narrative
         except Exception as e:
             logger.error("Tier narrative generation failed: %s", e)
@@ -382,7 +319,7 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
         self._notify_status("BOSS", "working", "Processing user message...")
         self._notify_thinking("BOSS")
         # Include user message directly in trigger - don't rely on context extraction
-        boss_response = self.boss.respond(f"[USER]: {content}\n\nRespond with MCP tools. Imperative = DELEGATE.")
+        boss_response = self.boss.respond(f"Client: {content}\n\nUse your studio to help the client.")
 
         # Track Boss token usage
         usage = self.boss.get_last_token_usage()
@@ -392,6 +329,9 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
             output_tokens=usage.get("total_output_tokens", 0),
             task_id=None  # Boss messages aren't task-specific
         )
+
+        # Compact BOSS session if threshold exceeded
+        self._compact_agent_session("BOSS")
 
         self._notify_thinking(None)
         self._notify_status("BOSS", "idle", "")
@@ -817,7 +757,12 @@ Memory: data/memory/tier1.md (recent work context)
         backend = getattr(agent.agent, 'backend', None)
         if backend and hasattr(backend, 'compact_session'):
             try:
-                backend.compact_session()
+                cleared = backend.compact_session()
+                # Reset BOSS init flag if session was cleared
+                if cleared and agent_name == "BOSS":
+                    from studio.agent import StudioAgent
+                    StudioAgent.reset_boss_initialized()
+                    logger.info("[BOSS] Session cleared, will re-inject hub+friction")
             except Exception as e:
                 logger.warning("Compact failed for %s: %s", agent_name, e)
 

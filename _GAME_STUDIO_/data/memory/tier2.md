@@ -27,3 +27,24 @@
 - [DONE] Auto-generate task queue from whitepaper via Taxonomy parsing
 - [DONE] Codebase reviews → suggestions (human-in-loop for structural changes)
 - [DONE] Boss delegates fixes instead of investigating - agents have file access
+
+---
+
+## [DONE] Sept 9-10 Sprint
+- [DONE] Role.md optimization: all agents trimmed to 50-70 lines, tables > prose
+- [DONE] MCP integration: Claude CLI with --mcp-config, deleted role_base.md
+- [DONE] Compression prompts refactored: classification tables, tier formats
+- [DONE] Session-based context: deterministic UUIDs, auto-recovery for session errors
+- [DONE] Dynamic file tree injection (T402) - reduces 80% orientation tokens
+- [DONE] Logging refactor: 80+ print() calls converted to proper logging
+- [DONE] Thread safety: threading.Lock() added to session_tokens and agent_statuses
+- [DONE] Retry wrapper: exponential backoff (2s→4s→8s) for network errors
+- [DONE] Agents tab: auto-sort by tokens, expandable cards with role.md display
+
+## [DONE] Sept 11 Sprint
+- [DONE] Live token tracking: per-agent, per-task, persisted to token_usage.json
+- [DONE] Token metrics dashboard: live streaming tokens reflected correctly
+- [DONE] Race condition fix: live token counts no longer vanish on DOM rebuild
+- [DONE] Terminal dock: moved to bottom of Agents tab (VS Code style)
+- [DONE] Agent tab consolidation: duplicate renderAgentCards removed
+- [DONE] 50%-50% layout bug: fixed CSS causing hub/agents side-by-side

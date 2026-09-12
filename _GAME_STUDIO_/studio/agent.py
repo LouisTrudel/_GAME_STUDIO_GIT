@@ -79,6 +79,11 @@ class StudioAgent:
     # Class-level tracking for BOSS initialization (persists across calls)
     _boss_initialized: bool = False
 
+    @classmethod
+    def reset_boss_initialized(cls):
+        """Reset BOSS init flag when session is cleared."""
+        cls._boss_initialized = False
+
     def __init__(self, name: str, backend: str = "claude-cli"):
         self.name_raw = name
         config = load_agent_config(name)
@@ -192,30 +197,38 @@ class StudioAgent:
             logger.debug("[%s] INCREMENTAL - trigger only", self.name)
             return trigger
 
-        # BOSS INIT: First call - full context injected into session
+        # BOSS INIT: First call - hub + friction + trigger
         # Subsequent calls just append trigger (session remembers via --resume)
         if self.is_boss:
-            from studio.core.memory import memory_manager
             sections = []
 
-            # Purpose block (strategic context)
-            sections.append(hub._get_boss_purpose_block())
+            # Hub messages (trimmed to 24 chars each)
+            messages = hub.get_history(limit=50)
+            if messages:
+                lines = ["## Hub"]
+                for msg in messages:
+                    content = msg.content[:24].replace("\n", " ")
+                    if len(msg.content) > 24:
+                        content += "..."
+                    lines.append(f"- **{msg.sender}**: {content}")
+                sections.append("\n".join(lines))
 
-            # Memory tiers (unified source - no duplicate hub access)
-            # tier0 = messages.json (recent chat)
-            # tier1 = compressed recent history
-            tier0 = memory_manager.get_tier(0)
-            tier1 = memory_manager.get_tier(1)
-            if tier0 or tier1:
-                memory_block = "## MEMORY\n"
-                if tier1:
-                    memory_block += "### Compressed\n" + tier1 + "\n\n"
-                if tier0:
-                    memory_block += "### Recent Chat\n" + tier0
-                sections.append(memory_block)
+            # Friction (whole file - only contains unresolved now)
+            friction_path = Path(__file__).parent.parent / "data" / "memory" / "friction.md"
+            if friction_path.exists():
+                try:
+                    friction_content = friction_path.read_text(encoding="utf-8").strip()
+                    # Skip if empty or just header
+                    if friction_content and "No unresolved issues" not in friction_content:
+                        # Trim to ~1KB
+                        if len(friction_content) > 1000:
+                            friction_content = friction_content[:1000] + "..."
+                        sections.append(f"## Friction\n{friction_content}")
+                except Exception:
+                    pass
 
             # User message
-            sections.append(f"## USER MESSAGE\n{trigger}")
+            sections.append(f"## Request\n{trigger}")
 
             StudioAgent._boss_initialized = True
             logger.info("[%s] BOSS initialized", self.name)

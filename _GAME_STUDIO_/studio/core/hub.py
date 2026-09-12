@@ -222,9 +222,9 @@ class Hub:
         History: Narrative prose for human reading (Writer agent compresses).
         Format: fuller context for narrative generation.
         """
-        # Skip Text/Prompt messages - they ARE the compression output, not input
-        # This prevents infinite loops where Text output triggers more compression
-        if msg.sender in ("Text", "Prompt"):
+        # Skip compression agents - they ARE the compression output, not input
+        # This prevents infinite loops where compression output triggers more compression
+        if msg.sender in ("Text", "Prompt", "Compression"):
             return
 
         try:

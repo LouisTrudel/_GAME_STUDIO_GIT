@@ -4,20 +4,17 @@ AC-Memory: Accumulated-Compacted Memory Tier System
 Simple markdown-based tiered memory with compression.
 
 Structure:
-  tier0 = messages.json (hub chat, rolling 50 buffer, no separate file)
+  tier0 = messages.json (hub chat + task completions, rolling 50 buffer)
   memory/
-  ├── tier1.md  ← Recent: injected as "### Recent" (50KB)
-  ├── tier2.md  ← Archive: injected as "### Archive" (200KB)
+  ├── tier1.md  ← Compressed bullets: ACTIVE/DONE (50KB)
+  ├── tier2.md  ← Archive (200KB)
   └── tier3+.md ← Reference only: searchable, NOT injected (500KB+)
 
-Injection (hub.py):
-  - tier1 + tier2 → injected into agent prompts
-  - tier3+ → exist on disk, queryable via search(), not auto-injected
-
 Flow:
-  Hub chat (tier0/messages.json) → threshold → compress →
-  PUSH appends to tier1 (messages.json keeps rolling) → tier1 grows → ...
-  (cascades up to tier10+ as needed)
+  Hub chat + task completions → messages.json (tier0)
+  tier0 > 10KB → compress → bullets → tier1
+  tier1 > 50KB → compress → archive → tier2
+  (cascades up as needed)
 """
 
 import json
@@ -39,16 +36,15 @@ CompressCallback = Callable[[str, int, str], dict]
 # tier0-2: injected into prompts (Recent/Archive)
 # tier3+: reference only (searchable, not injected)
 TIER_THRESHOLDS = {
-    0: 10_000,       # ~10KB  - raw session buffer
-    1: 50_000,       # ~50KB  - recent (injected)
-    2: 200_000,      # ~200KB - archive (injected)
-    # tier3+: reference tiers - larger thresholds, not injected
-    3: 500_000,      # ~500KB
-    4: 1_000_000,    # ~1MB
-    5: 2_000_000,    # ~2MB
+    # ~50-60 chars per bullet, keep tiers tight for search
+    0: 10_000,   # ~50 hub messages (variable length)
+    1: 3_000,    # ~50 bullets (recent, hot)
+    2: 3_000,    # ~50 bullets (recent archive)
+    3: 4_500,    # ~75 bullets (older archive)
+    4: 6_000,    # ~100 bullets (older archive)
 }
-# Tiers beyond defined use this (grows indefinitely)
-DEFAULT_THRESHOLD = 5_000_000  # ~5MB
+# tier5+: deep archive, grows gradually
+DEFAULT_THRESHOLD = 9_000  # ~150 bullets
 
 
 class MemoryManager:
@@ -74,6 +70,7 @@ class MemoryManager:
         self._hour_start: Optional[datetime] = None
         # Friction buffer to prevent file contention during cascades
         self._friction_buffer: list[str] = []
+        self._friction_processed: bool = False
 
     def set_project(self, project_name: Optional[str]):
         """Switch to a different project's memory."""
@@ -185,25 +182,6 @@ class MemoryManager:
 
     # ============ APPEND (main entry point) ============
 
-    def add_hot(self, content: str, source: str = "", tags: list = None,
-                task_ids: list = None, agent: str = None, outcome: str = None):
-        """Add task completion log to tier1.
-
-        tier0 = messages.json (hub chat), so task logs go to tier1 directly.
-        Used by tasks.py to log completed/failed tasks.
-        """
-        # Format entry with metadata
-        parts = [content]
-        if outcome:
-            parts.insert(0, f"[{outcome.upper()}]")
-        if agent:
-            parts.append(f"(agent: {agent})")
-        if tags:
-            parts.append(f"tags: {', '.join(tags)}")
-
-        entry = " ".join(parts)
-        self.append(1, entry)  # tier1, not tier0
-
     def append(self, index: int, content: str):
         """Append content to a tier. Auto-compresses if threshold exceeded.
 
@@ -274,15 +252,23 @@ class MemoryManager:
             prev_content = self.get_tier(index - 1)
             prev_context = prev_content[:2000] if prev_content else ""
 
-        # Compress via callback or fallback
-        if self._compress_callback:
-            try:
-                result = self._compress_callback(content, index, prev_context)
-            except Exception as e:
-                logger.error("Compression callback failed: %s", e)
-                result = self._fallback_compress(content)
-        else:
-            result = self._fallback_compress(content)
+        # Compress via callback - skip if unavailable
+        if not self._compress_callback:
+            logger.debug("No compression callback set - skipping")
+            self._is_compressing = False
+            return False
+
+        try:
+            result = self._compress_callback(content, index, prev_context)
+        except Exception as e:
+            logger.error("Compression callback failed: %s - skipping", e)
+            self._is_compressing = False
+            return False
+
+        if not result:
+            logger.debug("Compression returned None - skipping")
+            self._is_compressing = False
+            return False
 
         keep = result.get("keep", "")
         push = result.get("push", "")
@@ -310,31 +296,34 @@ class MemoryManager:
         self._flush_friction()
         return True
 
-    def _fallback_compress(self, content: str) -> dict:
-        """Simple 50/50 split when no callback available."""
-        lines = content.strip().split('\n')
-        mid = len(lines) // 2
-
-        return {
-            "keep": '\n'.join(lines[:mid]) if mid > 0 else content,
-            "push": '\n'.join(lines[mid:]) if mid > 0 else ""
-        }
 
     def _log_friction(self, friction: str):
-        """Buffer friction event (flushed after cascade completes)."""
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        entry = f"\n## [{timestamp}]\n{friction}\n"
-        self._friction_buffer.append(entry)
+        """Buffer friction (overwrites on flush - only current unresolved kept)."""
+        self._friction_processed = True
+        # Only keep lines with [UNRESOLVED] tag
+        lines = friction.strip().split("\n")
+        unresolved = [l.strip() for l in lines if l.strip() and "[UNRESOLVED]" in l.upper()]
+        self._friction_buffer.extend(unresolved)
 
     def _flush_friction(self):
-        """Write all buffered friction events to friction.md in one operation."""
-        if not self._friction_buffer:
-            return
+        """Overwrite friction.md with current unresolved items only."""
+        if not self._friction_processed:
+            return  # No friction section in output, keep existing file
+
         friction_file = self._memory_dir / "friction.md"
         try:
-            with open(friction_file, "a", encoding="utf-8") as f:
-                f.write("".join(self._friction_buffer))
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            if self._friction_buffer:
+                content = f"# Active Friction\n\n*Updated: {timestamp}*\n\n"
+                content += "\n".join(self._friction_buffer)
+                friction_file.write_text(content, encoding="utf-8")
+                logger.info("Friction updated: %d unresolved items", len(self._friction_buffer))
+            else:
+                # All resolved - clear the file
+                friction_file.write_text(f"# Active Friction\n\n*Updated: {timestamp}*\n\nNo unresolved issues.\n", encoding="utf-8")
+                logger.info("Friction cleared: all issues resolved")
             self._friction_buffer.clear()
+            self._friction_processed = False
         except IOError as e:
             logger.warning("Failed to write friction log: %s", e)
 
@@ -377,14 +366,18 @@ class MemoryManager:
         compressed_count = 0
 
         for i in range(20):  # Check up to 20 tiers
+            # tier0 = messages.json (no file, but still check threshold)
+            if i == 0:
+                if self.tier_needs_compression(0):
+                    if self.compress_tier(0):
+                        compressed_count += 1
+                    else:
+                        break  # Rate limited
+                continue
+
             filepath = self._tier_path(i)
-            # tier0 has no file (reads from messages.json)
-            if filepath is None:
-                continue
             if not filepath.exists():
-                if i > 0:
-                    break
-                continue
+                break
 
             if self.tier_needs_compression(i):
                 if self.compress_tier(i):
@@ -400,14 +393,21 @@ class MemoryManager:
         stats = {}
 
         for i in range(20):  # Check up to 20 tiers
+            # tier0 = messages.json (always exists)
+            if i == 0:
+                size = self.tier_size(0)
+                threshold = self.tier_threshold(0)
+                stats["tier0"] = {
+                    "size": size,
+                    "threshold": threshold,
+                    "utilization": f"{(size / threshold) * 100:.1f}%" if threshold else "N/A",
+                    "needs_compression": self.tier_needs_compression(0),
+                }
+                continue
+
             filepath = self._tier_path(i)
-            # tier0 has no file (reads from messages.json)
-            if filepath is None:
-                continue
             if not filepath.exists():
-                if i > 0:
-                    break
-                continue
+                break
 
             size = self.tier_size(i)
             threshold = self.tier_threshold(i)

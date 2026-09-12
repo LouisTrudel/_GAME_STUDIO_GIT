@@ -37,22 +37,22 @@ NarrativeCallback = Callable[[str, str, int], Optional[str]]
 TIER_CONFIG = {
     "draft": {
         "file": "draft.md",
-        "threshold": 10_000,       # ~10KB raw → compress to ~1-2KB
+        "threshold": 8_000,        # ~3 pages → episode
         "next": "chapter",
     },
     "chapter": {
         "file": "chapter.md",
-        "threshold": 50_000,       # ~50KB drafts → compress to ~5-10KB
+        "threshold": 30_000,       # ~12 pages → chapter arc
         "next": "book",
     },
     "book": {
         "file": "book.md",
-        "threshold": 300_000,      # ~300KB chapters → compress to ~30-50KB
+        "threshold": 150_000,      # ~60 pages → volume
         "next": "collection",
     },
     "collection": {
         "file": "collection.md",
-        "threshold": None,         # Final tier, grows indefinitely
+        "threshold": None,         # Full series, grows indefinitely
         "next": None,
     },
 }
@@ -246,18 +246,23 @@ class HistoryManager:
         self._compression_counts[tier] = count
         self._save_counts()
 
-        # Generate narrative via callback or fallback
-        if self._narrative_callback:
-            try:
-                narrative = self._narrative_callback(content, tier, count)
-            except Exception as e:
-                logger.error("Narrative callback failed: %s", e)
-                narrative = self._fallback_compress(content, tier, count)
-        else:
-            narrative = self._fallback_compress(content, tier, count)
+        # Generate narrative via callback - skip if unavailable
+        if not self._narrative_callback:
+            logger.debug("No narrative callback set - skipping")
+            self._is_compressing = False
+            return False
+
+        try:
+            narrative = self._narrative_callback(content, tier, count)
+        except Exception as e:
+            logger.error("Narrative callback failed: %s - skipping", e)
+            self._is_compressing = False
+            return False
 
         if not narrative:
-            narrative = self._fallback_compress(content, tier, count)
+            logger.debug("Narrative returned None - skipping")
+            self._is_compressing = False
+            return False
 
         # Replace current tier with narrative
         self._write_tier(tier, narrative)
@@ -297,31 +302,6 @@ class HistoryManager:
         if len(narrative) > len(summary):
             summary += "..."
         return summary
-
-    def _fallback_compress(self, content: str, tier: str, count: int) -> str:
-        """Simple compression when Writer unavailable."""
-        lines = content.strip().split('\n')
-
-        # Extract key lines
-        key_lines = []
-        keywords = ['completed', 'decision', 'milestone', 'implemented',
-                    'created', 'fixed', 'shipped', 'task', 'feature']
-
-        for line in lines:
-            line_lower = line.lower()
-            if any(kw in line_lower for kw in keywords):
-                key_lines.append(line.strip())
-
-        # Dedupe
-        seen = set()
-        unique = []
-        for line in key_lines:
-            if line not in seen and len(line) > 10:
-                seen.add(line)
-                unique.append(line)
-
-        date = datetime.now().strftime("%Y-%m-%d")
-        return f"# {tier.title()} #{count}\n\n*{date}*\n\n" + '\n'.join(unique[:50])
 
     # ============ QUERIES ============
 
