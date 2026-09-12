@@ -75,7 +75,7 @@ class PersistentClaudeCLI(Backend):
     # Reinitialize session after N tasks to refresh role.md context
     REINIT_AFTER_TASKS = 20
     # Clear session when cumulative tokens exceed this threshold
-    SESSION_TOKEN_THRESHOLD = 50_000  # 50k tokens
+    SESSION_TOKEN_THRESHOLD = 100_000  # 100k tokens
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
@@ -782,9 +782,10 @@ def list_sessions() -> dict[str, dict]:
 
     sessions = {}
 
-    # Known agents
+    # Known agents (includes all agents that might have sessions)
     agents = ["BOSS", "Code", "Design", "ArtSpec", "Text", "Audit",
-              "Prompt", "Research", "Routine", "Structure", "Image", "Audio", "Video"]
+              "Prompt", "Research", "Routine", "Structure", "Image", "Audio", "Video",
+              "Compression", "Frontend", "Backend", "Network", "Data"]
 
     for agent in agents:
         uuid = get_session_uuid(agent)
@@ -842,9 +843,16 @@ def clear_session(agent_name: str) -> bool:
     return cleared
 
 
+def _get_cli_session_uuid(agent_name: str) -> str:
+    """UUID for ClaudeCLIBackend (non-persistent backend)."""
+    hash_bytes = hashlib.sha256(f"game-studio-{agent_name}".encode()).digest()
+    return str(uuid.UUID(bytes=hash_bytes[:16]))
+
+
 def clear_all_sessions() -> int:
     """Clear all agent session files and kill stale processes.
 
+    Clears both persistent and non-persistent backend sessions.
     Returns number of sessions cleared.
     """
     import subprocess
@@ -874,14 +882,32 @@ def clear_all_sessions() -> int:
         PersistentClaudeCLI._running_processes.clear()
         PersistentClaudeCLI._initialized.clear()
 
-    # Clear session files
+    # Clear session files (both UUID schemes)
     sessions = list_sessions()
     cleared = 0
 
+    cwd = Path(__file__).parent.parent.parent
+    home = Path.home()
+    cwd_str = str(cwd.resolve())
+    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
+    project_dir = home / ".claude" / "projects" / encoded
+
     for agent, info in sessions.items():
+        # Clear persistent-claude sessions (game-studio-persistent-{name})
         if info["exists"]:
             if clear_session(agent):
                 cleared += 1
+
+        # Also clear non-persistent claude sessions (game-studio-{name})
+        cli_uuid = _get_cli_session_uuid(agent)
+        cli_session_file = project_dir / f"{cli_uuid}.jsonl"
+        if cli_session_file.exists():
+            try:
+                cli_session_file.unlink()
+                logger.info("[%s] Cleared CLI session %s", agent, cli_uuid[:8])
+                cleared += 1
+            except Exception as e:
+                logger.warning("[%s] Failed to clear CLI session: %s", agent, e)
 
     return cleared
 

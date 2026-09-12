@@ -46,6 +46,7 @@ class Agent:
         max_turns: int = None,
         tools: list[dict] | None = None,
         tool_handlers: dict[str, Callable] | None = None,
+        session_enabled: bool = True,
     ):
         self.name = name
         self.system_prompt = system_prompt
@@ -58,8 +59,9 @@ class Agent:
             if backend not in self.BACKENDS:
                 raise ValueError(f"Unknown backend: {backend}. Use: {list(self.BACKENDS.keys())}")
             backend_cls = self.BACKENDS[backend]
-            # Pass agent_name to backend for role-based tool restrictions
-            kwargs = {"agent_name": name}
+            # Pass agent_name to backend for session + role-based restrictions
+            # session_enabled=False -> no session (stateless, fresh each call)
+            kwargs = {"agent_name": name if session_enabled else None}
             if model:
                 kwargs["model"] = model
             self.backend = backend_cls(**kwargs)

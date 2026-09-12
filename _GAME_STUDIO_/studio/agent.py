@@ -117,6 +117,7 @@ class StudioAgent:
             max_turns=self.max_turns,
             tools=[],
             tool_handlers=handlers,
+            session_enabled=not self.is_vanilla,  # Vanilla agents are stateless
         )
         logger.info("[%s] Using backend: %s", self.name, backend)
 
