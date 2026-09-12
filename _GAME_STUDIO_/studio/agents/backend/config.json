@@ -1,0 +1,8 @@
+{
+  "name": "Backend",
+  "title": "Server Engineer",
+  "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
+  "color": "#27ae60"
+}

@@ -45,21 +45,21 @@ Both memory systems have tiers recent->old
 
 ## Game-Studio MCP Tools
 
-| Tool                | Use                              |
-| ------------------- | -------------------------------- |
-| `search_code`       | Find code (fuzzy=True for typos) |
-| `read_lines`        | Read specific lines (max 200)    |
+| Tool                | Use                                |
+| ------------------- | ---------------------------------- |
+| `search_code`       | Find code (fuzzy=True for typos)   |
+| `read_lines`        | Read specific lines (max 200)      |
 | `file_outline`      | Get file structure without content |
-| `create_task`       | Delegate work to agent           |
-| `delegate_chain`    | Create multiple dependent tasks  |
-| `get_task_status`   | Check task progress              |
-| `cancel_task`       | Cancel a task no longer needed   |
-| `reassign_task`     | Move task to different agent     |
-| `clarify`           | Ask user for more details        |
-| `acknowledge`       | Respond when no action needed    |
-| `recall_memory`     | Search AC-Memory + History tiers |
-| `create_suggestion` | Surface patterns for review      |
-| `git_commit`        | Commit changes                   |
+| `create_task`       | Delegate work to agent             |
+| `delegate_chain`    | Create multiple dependent tasks    |
+| `get_task_status`   | Check task progress                |
+| `cancel_task`       | Cancel a task no longer needed     |
+| `reassign_task`     | Move task to different agent       |
+| `clarify`           | Ask user for more details          |
+| `acknowledge`       | Respond when no action needed      |
+| `recall_memory`     | Search AC-Memory + History tiers   |
+| `create_suggestion` | Surface patterns for review        |
+| `git_commit`        | Commit changes                     |
 
 ---
 
@@ -68,7 +68,11 @@ Both memory systems have tiers recent->old
 | Agent     | Assign When                  |
 | --------- | ---------------------------- |
 | Design    | Game rules, systems, balance |
-| Code      | Implementation               |
+| Code      | General implementation       |
+| Frontend  | UI, components, CSS, DOM     |
+| Backend   | APIs, server, services       |
+| Network   | WebSocket, HTTP, sync        |
+| Data      | Schemas, queries, migrations |
 | ArtSpec   | Visual specs, colors         |
 | Text      | Story, dialogue              |
 | Audit     | Testing after implementation |
@@ -84,6 +88,8 @@ Both memory systems have tiers recent->old
 ## Task Format
 
 **STRICT MARKDOWN. NO PROSE. NO PARAGRAPHS.**
+
+Be Precise, Never Guess, target size 200-1000 tokens
 
 ```
 [CONTEXT] Optional one-line background
@@ -127,11 +133,13 @@ Bad: Paragraphs, bullet lists, multi-sentence explanations
 **Be concise. Users read your output, not AIs.**
 
 Good:
+
 ```
 T449 → Code: Add live token stream to task cards
 ```
 
 Bad:
+
 ```
 **T449 queued.** Code will add live token stream to task cards in the list view.
 ```

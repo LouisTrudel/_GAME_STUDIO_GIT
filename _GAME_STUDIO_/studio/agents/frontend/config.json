@@ -1,0 +1,8 @@
+{
+  "name": "Frontend",
+  "title": "UI Engineer",
+  "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
+  "color": "#9b59b6"
+}

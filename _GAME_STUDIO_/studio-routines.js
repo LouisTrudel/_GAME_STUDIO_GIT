@@ -3,6 +3,8 @@
 
 // Drag-and-drop state for routine cards
 let draggedRoutineCard = null;
+// Edit mode state
+let editingRoutineId = null;
 
 async function fetchSchedules() {
     console.log('[Routines] Fetching schedules...');
@@ -112,6 +114,7 @@ function renderRoutines() {
                                 ? `<button class="secondary" onclick="resumeRoutine('${routine.id}')">▶ Resume</button>`
                                 : ''
                         }
+                        <button class="secondary" onclick="editRoutine('${routine.id}')">✏ Edit</button>
                         <button class="danger" onclick="deleteRoutine('${routine.id}')">Delete</button>
                     </div>
                 </div>
@@ -142,6 +145,83 @@ function showCreateRoutine() {
 
 function hideCreateRoutine() {
     document.getElementById('createRoutineModal').classList.remove('show');
+    editingRoutineId = null;
+    updateRoutineModalTitle();
+}
+
+function editRoutine(id) {
+    const routine = routines.find(r => r.id === id);
+    if (!routine) return;
+
+    editingRoutineId = id;
+    updateRoutineModalTitle();
+
+    // Populate form fields
+    document.getElementById('routineName').value = routine.name || '';
+    document.getElementById('routineDescription').value = routine.description || '';
+
+    // Parse interval
+    const intervalSeconds = routine.interval_seconds || 3600;
+    const intervalUnit = document.getElementById('routineIntervalUnit');
+    const intervalValue = document.getElementById('routineIntervalValue');
+
+    if (intervalSeconds % 86400 === 0) {
+        intervalUnit.value = '86400';
+        intervalValue.value = intervalSeconds / 86400;
+    } else if (intervalSeconds % 3600 === 0) {
+        intervalUnit.value = '3600';
+        intervalValue.value = intervalSeconds / 3600;
+    } else if (intervalSeconds % 60 === 0) {
+        intervalUnit.value = '60';
+        intervalValue.value = intervalSeconds / 60;
+    } else {
+        intervalUnit.value = '60';
+        intervalValue.value = Math.ceil(intervalSeconds / 60);
+    }
+
+    // Clear and rebuild task chain
+    const builder = document.getElementById('routineChainBuilder');
+    builder.innerHTML = '';
+    routineChainCount = 0;
+
+    const tasks = routine.tasks || [];
+    if (tasks.length === 0) {
+        addRoutineChainTask();
+    } else {
+        tasks.forEach((task, i) => {
+            addRoutineChainTask();
+            const item = builder.children[i];
+            if (!item) return;
+
+            // Parse description to extract WHAT, CONTEXT, CONSTRAINTS
+            const desc = task.description || '';
+            const whatMatch = desc.match(/\[WHAT\]\s*(.+?)(?=\n\[|$)/s);
+            const contextMatch = desc.match(/\[CONTEXT\]\s*(.+?)(?=\n\[|$)/s);
+            const constraintsMatch = desc.match(/\[CONSTRAINTS\]\s*(.+?)(?=\n\[|$)/s);
+
+            item.querySelector('.chain-what').value = whatMatch ? whatMatch[1].trim() : desc;
+            item.querySelector('.chain-context').value = contextMatch ? contextMatch[1].trim() : (task.context || '');
+            item.querySelector('.chain-constraints').value = constraintsMatch ? constraintsMatch[1].trim() : '';
+            item.querySelector('.chain-assignee').value = task.assignee || 'Code';
+            item.querySelector('.chain-output').value = task.output || 'hub';
+        });
+    }
+
+    showCreateRoutine();
+}
+
+function updateRoutineModalTitle() {
+    const modal = document.getElementById('createRoutineModal');
+    const title = modal.querySelector('h2');
+    const submitBtn = modal.querySelector('button[onclick="createRoutine()"]');
+
+    if (editingRoutineId) {
+        if (title) title.textContent = 'Edit Routine';
+        if (submitBtn) submitBtn.textContent = 'Save Changes';
+    } else {
+        if (title) title.textContent = 'Create Routine';
+        if (submitBtn) submitBtn.textContent = 'Create Routine';
+    }
 }
 
 function addRoutineChainTask() {
@@ -278,12 +358,12 @@ function createRoutine() {
         const output = item.querySelector('.chain-output').value;
 
         if (what) {
-            let description = `[WHAT] ${what}`;
-            if (context) description += `\n[CONTEXT] ${context}`;
-            if (constraints) description += `\n[CONSTRAINTS] ${constraints}`;
+            let taskDesc = `[WHAT] ${what}`;
+            if (context) taskDesc += `\n[CONTEXT] ${context}`;
+            if (constraints) taskDesc += `\n[CONSTRAINTS] ${constraints}`;
 
             tasks.push({
-                description,
+                description: taskDesc,
                 assignee,
                 context: context || '',
                 output,
@@ -298,13 +378,26 @@ function createRoutine() {
         return;
     }
 
-    ws.send(JSON.stringify({
-        type: 'create_schedule',
-        name,
-        description,
-        interval_seconds: intervalValue * intervalUnit,
-        tasks,
-    }));
+    if (editingRoutineId) {
+        // Update existing routine
+        ws.send(JSON.stringify({
+            type: 'update_schedule',
+            id: editingRoutineId,
+            name,
+            description,
+            interval_seconds: intervalValue * intervalUnit,
+            tasks,
+        }));
+    } else {
+        // Create new routine
+        ws.send(JSON.stringify({
+            type: 'create_schedule',
+            name,
+            description,
+            interval_seconds: intervalValue * intervalUnit,
+            tasks,
+        }));
+    }
 
     document.getElementById('routineName').value = '';
     document.getElementById('routineDescription').value = '';

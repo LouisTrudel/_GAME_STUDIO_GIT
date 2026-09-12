@@ -68,11 +68,14 @@ class PersistentClaudeCLI(Backend):
     _initialized: dict[str, bool] = {}
     _initialized_sessions: dict[str, bool] = {}
     _task_counts: dict[str, int] = {}
+    _session_tokens: dict[str, int] = {}  # Cumulative tokens per session
     _running_processes: dict[str, subprocess.Popen] = {}  # agent_name -> process
     _lock = threading.Lock()
 
     # Reinitialize session after N tasks to refresh role.md context
     REINIT_AFTER_TASKS = 20
+    # Clear session when cumulative tokens exceed this threshold
+    SESSION_TOKEN_THRESHOLD = 50_000  # 50k tokens
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
@@ -118,15 +121,22 @@ class PersistentClaudeCLI(Backend):
         """Broadcast live token count during streaming."""
         self._streaming_input_tokens += input_tokens
         self._streaming_output_tokens += output_tokens
+        print(f"[TERM-DEBUG] {self.agent_name}: tokens in={self._streaming_input_tokens} out={self._streaming_output_tokens}")
         try:
-            from server_modules.broadcast import broadcast_live_tokens_sync
+            from server_modules.broadcast import broadcast_live_tokens_sync, broadcast_terminal_line_sync
             broadcast_live_tokens_sync(
                 self.agent_name,
                 self._streaming_input_tokens,
                 self._streaming_output_tokens
             )
-        except ImportError:
-            pass  # Server not running (e.g., CLI mode)
+            # Also send token info to terminal (we know this path works)
+            broadcast_terminal_line_sync(
+                self.agent_name,
+                f"[tokens: in={self._streaming_input_tokens}, out={self._streaming_output_tokens}]\n"
+            )
+            print(f"[TERM-DEBUG] {self.agent_name}: broadcast_terminal_line_sync called")
+        except Exception as e:
+            print(f"[TERM-DEBUG] {self.agent_name}: ERROR {e}")
 
     def is_initialized(self) -> bool:
         """Check if this agent has been initialized this boot (public API)."""
@@ -258,6 +268,18 @@ class PersistentClaudeCLI(Backend):
 
     def _run_subprocess(self, temp_path: str, prompt: str, is_init: bool) -> str:
         """Run single Claude CLI subprocess."""
+        # Kill any stale process for this agent first
+        with PersistentClaudeCLI._lock:
+            old_process = PersistentClaudeCLI._running_processes.get(self.agent_name)
+            if old_process and old_process.poll() is None:
+                logger.warning("[%s] Killing stale process PID %d", self.agent_name, old_process.pid)
+                try:
+                    old_process.kill()
+                    old_process.wait(timeout=2)
+                except Exception:
+                    pass
+                PersistentClaudeCLI._running_processes.pop(self.agent_name, None)
+
         if os.name == 'nt':
             claude_cmd = os.path.join(os.environ.get('APPDATA', ''), 'npm', 'claude.cmd')
             shell = True
@@ -412,12 +434,21 @@ class PersistentClaudeCLI(Backend):
     def _process_event(self, event: dict, text_content: list):
         """Process stream event and accumulate text/metrics."""
         event_type = event.get("type", "")
+        logger.debug("[%s] EVENT: %s", self.agent_name, event_type)
 
         if event_type == "assistant":
             message = event.get("message", {})
             for block in message.get("content", []):
                 if block.get("type") == "text":
-                    text_content.append(block.get("text", ""))
+                    text = block.get("text", "")
+                    text_content.append(text)
+                    # Also broadcast to terminal (final text blocks)
+                    if text:
+                        try:
+                            from server_modules.broadcast import broadcast_terminal_line_sync
+                            broadcast_terminal_line_sync(self.agent_name, text + "\n")
+                        except Exception as e:
+                            logger.warning("[%s] Terminal broadcast failed: %s", self.agent_name, e)
             usage = message.get("usage", {})
             if usage.get("input_tokens"):
                 input_t = usage.get("input_tokens", 0)
@@ -436,8 +467,8 @@ class PersistentClaudeCLI(Backend):
                     try:
                         from server_modules.broadcast import broadcast_terminal_line_sync
                         broadcast_terminal_line_sync(self.agent_name, text)
-                    except Exception:
-                        pass  # Non-fatal - don't break agent on terminal broadcast failure
+                    except Exception as e:
+                        logger.warning("[%s] Terminal broadcast failed: %s", self.agent_name, e)
 
         elif event_type == "content_block_start":
             if event.get("content_block", {}).get("type") == "tool_use":
@@ -485,17 +516,21 @@ class PersistentClaudeCLI(Backend):
             self.last_input_tokens = total_input + self.last_cache_read_tokens
             self.last_output_tokens = total_output
 
-            # Use result text if available
+        # T631 FIX: Prefer accumulated text (all turns) over result (last turn only)
+        # Claude CLI's result field only contains the last text block, missing earlier messages
+        # text_content accumulates all text blocks from all assistant events
+        if text_content:
+            # Join with newlines to separate different turn outputs
+            result = "\n\n".join(text_content)
+            return result
+
+        # Fallback to result text if no accumulated text
+        if result_data:
             result_text = result_data.get("result", "")
             if result_text:
                 return result_text
 
-        # Fallback to accumulated text
-        result = "".join(text_content)
-        if not result:
-            return "No response from Claude CLI"
-
-        return result
+        return "No response from Claude CLI"
 
     def _execute_tool_tags(self, response: str, tool_handlers: dict) -> str:
         """Parse and execute <tool> tags."""
@@ -564,37 +599,42 @@ class PersistentClaudeCLI(Backend):
         logger.info("[%s] Session marked for reinitialization", self.agent_name)
 
     def compact_session(self) -> bool:
-        """Compact or reinit session after task completion.
+        """Clear session after task if token threshold exceeded.
 
-        Called after each task completes:
-        - Normal: Compact (summarize conversation, keep role.md)
-        - Every N tasks: Full reinit (clear session, fresh role.md injection)
+        Only clears when accumulated tokens > 50K to balance:
+        - Cache efficiency (keeping session alive)
+        - Context bloat prevention (clearing when too large)
 
-        Returns True if operation succeeded.
+        Returns True if session was cleared.
         """
         if not self.is_initialized():
-            logger.debug("[%s] Not initialized, skipping compact", self.agent_name)
+            logger.debug("[%s] Not initialized, skipping clear", self.agent_name)
             return False
 
-        # Increment task counter
+        # Accumulate session tokens
         with self._lock:
-            count = self._task_counts.get(self.agent_name, 0) + 1
-            self._task_counts[self.agent_name] = count
+            current = self._session_tokens.get(self.agent_name, 0)
+            task_tokens = getattr(self, 'last_input_tokens', 0) + getattr(self, 'last_output_tokens', 0)
+            current += task_tokens
+            self._session_tokens[self.agent_name] = current
 
-        # Check if time for full reinit
-        if count >= self.REINIT_AFTER_TASKS:
-            logger.info("[%s] %d tasks reached - full reinit for fresh role.md", self.agent_name, count)
-            return self._full_reinit()
+        # Only clear if threshold exceeded
+        if current < self.SESSION_TOKEN_THRESHOLD:
+            logger.debug("[%s] Session tokens %d < %d threshold, keeping session",
+                        self.agent_name, current, self.SESSION_TOKEN_THRESHOLD)
+            return False
 
-        # Normal compaction
         try:
-            logger.info("[%s] Compacting session (task %d/%d)...",
-                       self.agent_name, count, self.REINIT_AFTER_TASKS)
-            self._run_cli("/compact")
-            logger.info("[%s] Session compacted", self.agent_name)
-            return True
+            if clear_session(self.agent_name):
+                logger.info("[%s] Session cleared (tokens: %d exceeded %d)",
+                           self.agent_name, current, self.SESSION_TOKEN_THRESHOLD)
+                with self._lock:
+                    self._initialized_sessions[self.agent_name] = False
+                    self._session_tokens[self.agent_name] = 0
+                return True
+            return False
         except Exception as e:
-            logger.warning("[%s] Compact failed: %s", self.agent_name, e)
+            logger.warning("[%s] Clear failed: %s", self.agent_name, e)
             return False
 
     def _full_reinit(self) -> bool:
@@ -761,7 +801,7 @@ def list_sessions() -> dict[str, dict]:
 
 
 def clear_session(agent_name: str) -> bool:
-    """Clear a specific agent's session file.
+    """Clear a specific agent's session files from all locations.
 
     The agent will reinitialize with full context on next call.
     """
@@ -769,30 +809,72 @@ def clear_session(agent_name: str) -> bool:
 
     cwd = Path(__file__).parent.parent.parent
     home = Path.home()
-    claude_projects = home / ".claude" / "projects"
+    claude_dir = home / ".claude"
 
     cwd_str = str(cwd.resolve())
     encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
-    project_dir = claude_projects / encoded
 
     uuid = get_session_uuid(agent_name)
-    session_file = project_dir / f"{uuid}.jsonl"
+    cleared = False
 
-    if session_file.exists():
-        session_file.unlink()
-        # Also clear in-memory state
+    # All locations where Claude stores session data
+    files_to_delete = [
+        claude_dir / "projects" / encoded / f"{uuid}.jsonl",
+        claude_dir / "debug" / f"{uuid}.txt",
+        claude_dir / "todos" / f"{uuid}-agent-{uuid}.json",
+    ]
+
+    for file_path in files_to_delete:
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                cleared = True
+                logger.debug("[%s] Deleted %s", agent_name, file_path.name)
+        except Exception as e:
+            logger.warning("[%s] Failed to delete %s: %s", agent_name, file_path, e)
+
+    # Clear in-memory state
+    if cleared:
         with PersistentClaudeCLI._lock:
             PersistentClaudeCLI._initialized_sessions.pop(agent_name, None)
         logger.info("[%s] Session cleared", agent_name)
-        return True
-    return False
+
+    return cleared
 
 
 def clear_all_sessions() -> int:
-    """Clear all agent session files.
+    """Clear all agent session files and kill stale processes.
 
     Returns number of sessions cleared.
     """
+    import subprocess
+    import os
+
+    # First, kill any stale Claude CLI processes on Windows
+    if os.name == 'nt':
+        try:
+            # Kill all node processes running claude (aggressive but effective)
+            subprocess.run(
+                ['taskkill', '/F', '/IM', 'node.exe', '/FI', 'WINDOWTITLE eq claude*'],
+                capture_output=True,
+                timeout=5
+            )
+        except Exception:
+            pass
+
+    # Clear tracked running processes
+    with PersistentClaudeCLI._lock:
+        for agent, process in list(PersistentClaudeCLI._running_processes.items()):
+            try:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=2)
+            except Exception:
+                pass
+        PersistentClaudeCLI._running_processes.clear()
+        PersistentClaudeCLI._initialized.clear()
+
+    # Clear session files
     sessions = list_sessions()
     cleared = 0
 

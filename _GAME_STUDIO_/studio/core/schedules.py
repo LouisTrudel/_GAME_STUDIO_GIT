@@ -248,6 +248,49 @@ class ScheduleManager:
         self._save_schedules()
         return schedule
 
+    def update(
+        self,
+        schedule_id: str,
+        name: str = None,
+        description: str = None,
+        interval_seconds: int = None,
+        tasks: list[dict] = None,
+    ) -> bool:
+        """Update an existing schedule."""
+        schedule = self.schedules.get(schedule_id)
+        if not schedule:
+            return False
+
+        if name is not None:
+            schedule.name = name
+        if description is not None:
+            schedule.description = description
+        if interval_seconds is not None:
+            schedule.interval_seconds = interval_seconds
+            # Recalculate next run
+            if schedule.last_run:
+                schedule.next_run = schedule.last_run + timedelta(seconds=interval_seconds)
+            else:
+                schedule.next_run = datetime.now()
+
+        if tasks is not None:
+            task_templates = []
+            for i, t in enumerate(tasks):
+                is_parallel = t.get("parallel", False)
+                task_templates.append(TaskTemplate(
+                    description=t["description"],
+                    assignee=t["assignee"],
+                    depends_on_previous=(i > 0 and not is_parallel),
+                    context=t.get("context", ""),
+                    skills=t.get("skills", []),
+                    output=t.get("output", "hub"),
+                    parallel=is_parallel,
+                ))
+            schedule.tasks = task_templates
+
+        self._save_schedules()
+        return True
+
     def get(self, schedule_id: str) -> Optional[Schedule]:
         return self.schedules.get(schedule_id)
 

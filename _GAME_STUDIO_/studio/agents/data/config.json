@@ -1,0 +1,8 @@
+{
+  "name": "Data",
+  "title": "Data Engineer",
+  "backend": "persistent-claude",
+  "model": "sonnet",
+  "max_turns": 8,
+  "color": "#1abc9c"
+}

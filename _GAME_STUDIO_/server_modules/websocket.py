@@ -116,6 +116,18 @@ async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[
                 logger.info("Schedule created: %s", schedule.name)
                 await _broadcast_schedules()
 
+            elif msg.get("type") == "update_schedule":
+                # Update existing schedule
+                schedule_manager.update(
+                    schedule_id=msg["id"],
+                    name=msg.get("name"),
+                    description=msg.get("description"),
+                    interval_seconds=msg.get("interval_seconds"),
+                    tasks=msg.get("tasks"),
+                )
+                logger.info("Schedule updated: %s", msg["id"])
+                await _broadcast_schedules()
+
             elif msg.get("type") == "pause_schedule":
                 schedule_manager.pause(msg["id"])
                 await _broadcast_schedules()

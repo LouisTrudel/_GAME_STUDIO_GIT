@@ -561,11 +561,17 @@ Write narrative as markdown. Start with `# {tier_name.title()} {compression_coun
 
 ---
 MCP: search_code(path,pattern) | read_lines(path,start,end) | edit_file(path,old,new)
-Out: {task.id} VERB: one-line summary
+Memory: data/memory/tier1.md (recent work context)
+
+## REQUIRED OUTPUT (end your response with this)
+
+{task.id} COMPLETED: [one-line what was done]
+
 ## Summary
-What was done, files changed, key decisions
+[2-3 sentences: what changed, files modified, key decisions]
+
 ## Friction
-Confusion, failures, blocks encountered (or "None")\""""
+[Issues encountered, or "None"]\""""
 
         # Check if agent is initialized (session has context)
         backend = getattr(agent.agent, 'backend', None)
