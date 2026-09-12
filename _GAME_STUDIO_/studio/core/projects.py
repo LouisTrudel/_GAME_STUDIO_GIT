@@ -2,7 +2,7 @@
 Projects manager - handles external project references.
 
 Projects are external folders (outside this repo) that contain:
-- white_paper.md: Game concept document
+- whitepaper.md: Game concept document
 - roadmap.md: Development milestones
 - assets/: 3D models, textures, etc.
 
@@ -359,17 +359,66 @@ class ProjectManager:
         # Create roadmap.md
         roadmap_content = f"""# {name} - Roadmap
 
-## Phase 1: Foundation
-- [ ] Core mechanic prototype
-- [ ] Basic art assets
+> Phases flow top-to-bottom. Each phase gates the next.
 
-## Phase 2: Polish
-- [ ] Full art pass
-- [ ] Sound/Music
+## Phase 0: Setup
+**Goal:** Project scaffold, tooling, dependencies
+- [ ] Repository initialized
+- [ ] Dependencies installed
+- [ ] Dev environment working
 
-## Phase 3: Launch
-- [ ] Testing
-- [ ] Release
+**Exit criteria:** `npm run dev` (or equivalent) runs without errors
+
+---
+
+## Phase 1: Core
+**Goal:** One playable loop, ugly but functional
+- [ ] Core mechanic implemented
+- [ ] Placeholder assets
+- [ ] Minimal UI (buttons work)
+
+**Exit criteria:** User can complete one full loop start-to-finish
+
+---
+
+## Phase 2: Content
+**Goal:** Real assets, multiple levels/stages
+- [ ] Art assets integrated
+- [ ] Audio (SFX + music)
+- [ ] Content variety (levels, items, etc.)
+
+**Exit criteria:** 3+ distinct experiences playable
+
+---
+
+## Phase 3: Polish
+**Goal:** Feels good, looks good
+- [ ] Animations & transitions
+- [ ] Particles & VFX
+- [ ] UI/UX polish
+- [ ] Performance optimization
+
+**Exit criteria:** No placeholder assets, 60fps on target platform
+
+---
+
+## Phase 4: Launch
+**Goal:** Ship it
+- [ ] Testing & bug fixes
+- [ ] Build & deployment
+- [ ] Release notes / marketing
+
+**Exit criteria:** Live and playable by users
+
+---
+
+## Risks & Dependencies
+| Risk | Mitigation |
+|------|------------|
+| [Example: Art delays] | [Fallback: procedural generation] |
+
+## Notes
+[Links to references, inspiration, external docs]
 """
         (project_path / "roadmap.md").write_text(roadmap_content, encoding="utf-8")
 

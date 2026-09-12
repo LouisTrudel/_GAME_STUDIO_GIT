@@ -197,10 +197,15 @@ class StudioAgent:
             logger.debug("[%s] INCREMENTAL - trigger only", self.name)
             return trigger
 
-        # BOSS INIT: First call - hub + friction + trigger
+        # BOSS INIT: First call - project + hub + friction + trigger
         # Subsequent calls just append trigger (session remembers via --resume)
         if self.is_boss:
             sections = []
+
+            # Active project context
+            active_project = project_manager.get_active()
+            if active_project:
+                sections.append(f"## Project: {active_project.name}\n`{active_project.path}`")
 
             # Hub messages (trimmed to 24 chars each)
             messages = hub.get_history(limit=50)
