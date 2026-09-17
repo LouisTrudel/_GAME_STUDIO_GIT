@@ -7,9 +7,13 @@ from .backends import (
     GeminiBackend,
     AnthropicBackend,
     OllamaBackend,
+    BossCLI,
+    FleetCLI,
+    VanillaCLI,
+    Backend,
+    # Legacy (deprecated)
     ClaudeCLIBackend,
     PersistentClaudeCLI,
-    Backend,
 )
 
 
@@ -18,31 +22,39 @@ class Agent:
     A conversational agent with pluggable LLM backends.
 
     Backends:
-    - "stateless-claude" (default - fresh context each call, --max-turns controlled)
-    - "claude-cli" (legacy alias for stateless-claude)
+    - "boss" (BOSS agent - dedicated Haiku session with caching)
+    - "fleet" (Worker agents - shared session with caching)
+    - "vanilla" (Stateless - Compression, Text, Image, Audio, Video)
     - "gemini" (free tier limited)
     - "anthropic" (requires API credits)
     - "ollama" (free, local)
 
-    For custom tools, configure MCP server (mcp_server.py) - tools are enforced
-    at protocol level, not backend level.
+    Legacy aliases (deprecated):
+    - "claude-cli", "claude" -> FleetCLI
+    - "stateless-claude", "persistent-claude" -> VanillaCLI
     """
 
     BACKENDS = {
-        "stateless-claude": PersistentClaudeCLI,  # Stateless, max-turns controlled
-        "persistent-claude": PersistentClaudeCLI,  # Legacy alias
-        "claude-cli": ClaudeCLIBackend,
-        "claude": ClaudeCLIBackend,  # Alias
+        # New architecture
+        "boss": BossCLI,
+        "fleet": FleetCLI,
+        "vanilla": VanillaCLI,
+        # Other providers
         "gemini": GeminiBackend,
         "anthropic": AnthropicBackend,
         "ollama": OllamaBackend,
+        # Legacy aliases (deprecated - map to new)
+        "claude-cli": FleetCLI,
+        "claude": FleetCLI,
+        "stateless-claude": VanillaCLI,
+        "persistent-claude": VanillaCLI,
     }
 
     def __init__(
         self,
         name: str,
         system_prompt: str,
-        backend: str = "gemini",
+        backend: str = "fleet",
         model: str = None,
         max_turns: int = None,
         tools: list[dict] | None = None,
@@ -60,13 +72,12 @@ class Agent:
             if backend not in self.BACKENDS:
                 raise ValueError(f"Unknown backend: {backend}. Use: {list(self.BACKENDS.keys())}")
             backend_cls = self.BACKENDS[backend]
-            # Pass agent_name to backend for session + role-based restrictions
-            # session_enabled=False -> no session (stateless, fresh each call)
-            kwargs = {"agent_name": name if session_enabled else None}
+            # Pass agent_name to backend
+            kwargs = {"agent_name": name}
             if model:
                 kwargs["model"] = model
             self.backend = backend_cls(**kwargs)
-            # Allow max_turns override (limits Claude CLI tool use loops)
+            # Allow max_turns override
             if max_turns:
                 self.backend.max_turns = max_turns
         elif isinstance(backend, Backend):

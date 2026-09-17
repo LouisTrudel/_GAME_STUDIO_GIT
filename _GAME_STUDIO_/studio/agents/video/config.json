@@ -1,7 +1,7 @@
 {
   "name": "Video",
   "title": "Video Producer",
-  "backend": "stateless-claude",
+  "backend": "vanilla",
   "model": "sonnet",
   "max_turns": 25,
   "color": "#ff5722"

@@ -29,7 +29,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import gemini
-from backends.backends.claude_cli import ClaudeCLIBackend
+from backends.backends.vanilla_cli import VanillaCLI
 # DEPRECATED: Session clearing on empty queue removed
 # Persistent sessions should persist, not be deleted
 # from backends.backends.persistent_claude_cli import clear_all_sessions
@@ -458,8 +458,8 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
 
                 response = gemini.query(prompt, status_callback=gemini_status_cb)
             elif backend in ("claude_cli", "claude"):
-                # Use Claude CLI backend - leverages Pro subscription
-                cli_backend = ClaudeCLIBackend(agent_name="Raw")
+                # Use Vanilla CLI backend (stateless)
+                cli_backend = VanillaCLI(agent_name="Raw")
                 # Simple prompt, no tools, no context - just prompt → response
                 response = cli_backend.chat(
                     messages=[{"role": "user", "content": prompt}],

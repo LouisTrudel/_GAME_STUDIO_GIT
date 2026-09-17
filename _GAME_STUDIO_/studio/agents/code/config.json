@@ -1,7 +1,7 @@
 {
   "name": "Code",
   "title": "Lead Programmer",
-  "backend": "stateless-claude",
+  "backend": "fleet",
   "model": "sonnet",
   "max_turns": 25,
   "color": "#3498db"

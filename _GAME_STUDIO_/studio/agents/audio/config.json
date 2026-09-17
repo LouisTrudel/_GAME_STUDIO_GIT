@@ -1,7 +1,7 @@
 {
   "name": "Audio",
   "title": "Sound Producer",
-  "backend": "stateless-claude",
+  "backend": "vanilla",
   "model": "sonnet",
   "max_turns": 25,
   "color": "#9c27b0"

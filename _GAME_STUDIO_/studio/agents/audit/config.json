@@ -1,7 +1,7 @@
 {
   "name": "Audit",
   "title": "QA Lead",
-  "backend": "stateless-claude",
+  "backend": "fleet",
   "model": "sonnet",
   "max_turns": 25,
   "color": "#1abc9c"

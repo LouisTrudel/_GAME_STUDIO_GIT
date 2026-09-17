@@ -418,8 +418,8 @@ def cancel_task(task_id: str, reason: str = None) -> str:
             
             # Try to terminate the running agent process
             try:
-                from backends.backends.persistent_claude_cli import PersistentClaudeCLI
-                term_result = PersistentClaudeCLI.terminate_agent(agent_name, timeout=5)
+                from backends.backends.fleet_cli import FleetCLI
+                term_result = FleetCLI.terminate_agent(agent_name, timeout=5)
                 
                 if term_result['terminated']:
                     msg = f"✓ Cancelled {task_id} - {agent_name} terminated"

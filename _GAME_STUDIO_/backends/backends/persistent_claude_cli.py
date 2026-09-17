@@ -1,12 +1,12 @@
 """
-Claude CLI backend - stateless agents with controlled context.
+DEPRECATED: This file is kept for backwards compatibility only.
 
-Each call is independent:
-- --no-session-persistence: No accumulation across calls
-- --max-turns: Limits context growth within a call
-- API-level prompt caching still works (5 min TTL on role.md prefix)
+Use instead:
+- BossCLI (boss_cli.py) - Dedicated BOSS session
+- FleetCLI (fleet_cli.py) - Shared worker session
+- VanillaCLI (vanilla_cli.py) - Stateless, no tools
 
-Simpler than persistent sessions, no token explosion risk.
+This file will be removed in a future version.
 """
 
 import subprocess

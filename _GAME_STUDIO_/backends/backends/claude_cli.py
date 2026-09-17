@@ -1,17 +1,12 @@
 """
-Claude CLI backend - Uses your Claude Pro subscription via the CLI.
+DEPRECATED: This file is kept for backwards compatibility only.
 
-This backend spawns Claude Code CLI as a subprocess, giving access to:
-- Your Pro subscription (no extra API costs)
-- All configured MCP tools (Roblox, Chrome, etc.)
-- File read/write capabilities
-- Token tracking via JSON output
+Use instead:
+- BossCLI (boss_cli.py) - Dedicated BOSS session
+- FleetCLI (fleet_cli.py) - Shared worker session
+- VanillaCLI (vanilla_cli.py) - Stateless, no tools
 
-Uses output streaming with stale detection instead of fixed timeout.
-
-Permanent sessions: Each agent has a deterministic UUID based on their name.
-Sessions persist indefinitely for maximum context caching (5x cost reduction).
-Auto-recovery handles both "session already in use" and "session not found" errors.
+This file will be removed in a future version.
 """
 
 import subprocess

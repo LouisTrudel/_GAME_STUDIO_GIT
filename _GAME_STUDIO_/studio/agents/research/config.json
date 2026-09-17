@@ -1,7 +1,7 @@
 {
   "name": "Research",
   "title": "Research Analyst",
-  "backend": "stateless-claude",
+  "backend": "fleet",
   "model": "sonnet",
   "max_turns": 25,
   "color": "#9c27b0"

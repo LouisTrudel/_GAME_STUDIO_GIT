@@ -1,7 +1,7 @@
 {
   "name": "Compression",
   "title": "Memory Compactor",
-  "backend": "stateless-claude",
+  "backend": "vanilla",
   "model": "haiku",
   "max_turns": 3,
   "color": "#9b59b6",

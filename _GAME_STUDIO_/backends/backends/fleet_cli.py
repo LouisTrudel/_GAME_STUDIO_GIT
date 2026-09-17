@@ -1,0 +1,534 @@
+"""
+Fleet CLI Backend - Shared cached session for all worker agents.
+
+- Single session shared by ALL workers (Code, Frontend, Backend, etc.)
+- Agents are just role.md context prefix + task
+- Auto-clears at token threshold
+- MCP tools: search_code, read_lines, edit_file, write_report
+"""
+
+import subprocess
+import json
+import os
+import time
+import threading
+from pathlib import Path
+
+from .base import Backend, INITIAL_DELAY, BACKOFF_MULTIPLIER, MAX_RETRIES
+from studio.core.logging_config import get_logger
+
+logger = get_logger("FleetCLI")
+
+STALE_TIMEOUT_SECONDS = 1200  # 20 minutes
+SESSION_TOKEN_THRESHOLD = 150_000  # Auto-clear threshold
+FLEET_SESSION_UUID = "fleet-0002-0002-0002-000000000002"
+DEFAULT_MAX_TURNS = 25
+
+
+class FleetCLI(Backend):
+    """
+    Shared CLI session for all worker agents.
+
+    Workers share ONE session for maximum cache reuse.
+    The "agent" is just the role.md context prefix.
+    """
+
+    _cumulative_tokens: int = 0
+    _session_needs_create: bool = True
+    _running_processes: dict[str, subprocess.Popen] = {}
+    _lock = threading.Lock()
+
+    def __init__(self, model: str = "sonnet", agent_name: str = "Worker"):
+        super().__init__()
+        self.model = model
+        self.agent_name = agent_name
+        self.cwd = Path(__file__).parent.parent.parent
+        self._reset_metrics()
+        logger.info("[%s] Fleet CLI initialized (shared session)", agent_name)
+
+    def _reset_metrics(self):
+        """Reset metrics for new call."""
+        self.last_retries = 0
+        self.last_tool_errors = []
+        self.last_cost_usd = 0.0
+        self.last_duration_ms = 0
+        self.last_num_turns = 0
+        self.last_cache_creation_tokens = 0
+        self.last_cache_read_tokens = 0
+        self.last_is_error = False
+        self.last_error_message = None
+        self._tool_use_count = 0
+        self._friction_events = []
+
+    def _add_friction(self, category: str, detail: str):
+        """Record a friction event."""
+        self._friction_events.append({
+            "category": category,
+            "detail": detail[:100]
+        })
+
+    def chat(
+        self,
+        messages: list[dict],
+        system_prompt: str = "",
+        max_tokens: int = 4096,
+        tools: list[dict] = None,
+        tool_handlers: dict = None,
+    ) -> str:
+        """Send message to Fleet CLI session."""
+        self._reset_token_tracking()
+        self._reset_metrics()
+
+        prompt = self._build_prompt(messages, system_prompt)
+
+        logger.info("[%s] Fleet START | prompt=%.1fKB | cumulative=%dK/%dK",
+                    self.agent_name,
+                    len(prompt) / 1024,
+                    FleetCLI._cumulative_tokens // 1000,
+                    SESSION_TOKEN_THRESHOLD // 1000)
+
+        try:
+            response = self._run_cli(prompt)
+
+            # Execute tool tags if present
+            if tool_handlers and "<tool>" in response:
+                response = self._execute_tool_tags(response, tool_handlers)
+
+            return response
+        except Exception as e:
+            self.last_is_error = True
+            self.last_error_message = str(e)
+            logger.error("[%s] Error: %s", self.agent_name, e)
+            return f"Error: {type(e).__name__}: {e}"
+        finally:
+            self._update_cumulative_tokens()
+
+    def _build_prompt(self, messages: list[dict], system_prompt: str) -> str:
+        """Build prompt with system context (agent role.md prefix)."""
+        parts = []
+        if system_prompt:
+            parts.append(f"SYSTEM:\n{system_prompt}")
+        if messages:
+            last_msg = messages[-1].get("content", "")
+            parts.append(f"\nUser says: {last_msg}")
+        parts.append("\nRespond concisely:")
+        return "\n".join(parts)
+
+    def _run_cli(self, prompt: str) -> str:
+        """Run Claude CLI with Fleet session."""
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(prompt)
+            temp_path = f.name
+
+        try:
+            return self._run_with_retry(temp_path, prompt)
+        finally:
+            try:
+                os.unlink(temp_path)
+            except Exception:
+                pass
+
+    def _run_with_retry(self, temp_path: str, prompt: str) -> str:
+        """Run with exponential backoff retry."""
+        delay = INITIAL_DELAY
+        last_error = None
+
+        for attempt in range(1, MAX_RETRIES + 1):
+            try:
+                return self._run_subprocess(temp_path, prompt)
+            except RetryableError as e:
+                last_error = e
+                if attempt < MAX_RETRIES:
+                    logger.warning("[%s] Retry %d/%d: %s", self.agent_name, attempt, MAX_RETRIES, e)
+                    time.sleep(delay)
+                    delay *= BACKOFF_MULTIPLIER
+
+        if last_error:
+            raise last_error
+        return "No response from Fleet CLI"
+
+    def _run_subprocess(self, temp_path: str, prompt: str) -> str:
+        """Run single Fleet CLI subprocess."""
+        # Kill any stale process for this agent
+        with FleetCLI._lock:
+            old_process = FleetCLI._running_processes.get(self.agent_name)
+            if old_process and old_process.poll() is None:
+                logger.warning("[%s] Killing stale process PID %d", self.agent_name, old_process.pid)
+                try:
+                    old_process.kill()
+                    old_process.wait(timeout=2)
+                except Exception:
+                    pass
+
+        if os.name == 'nt':
+            claude_cmd = os.path.join(os.environ.get('APPDATA', ''), 'npm', 'claude.cmd')
+            shell = True
+        else:
+            claude_cmd = "claude"
+            shell = False
+
+        cmd = [claude_cmd, "-p", "-", "--output-format", "stream-json", "--verbose"]
+
+        # Session management - all workers share FLEET_SESSION_UUID
+        session_exists = self._session_file_exists()
+
+        with FleetCLI._lock:
+            if session_exists and not FleetCLI._session_needs_create:
+                cmd.extend(["--resume", FLEET_SESSION_UUID])
+                logger.debug("[%s] Resuming fleet session", self.agent_name)
+            else:
+                cmd.extend(["--session-id", FLEET_SESSION_UUID])
+                FleetCLI._session_needs_create = False
+                logger.info("[%s] Creating new fleet session", self.agent_name)
+
+        # MCP config
+        mcp_config = self.cwd / ".claude" / "settings.json"
+        if mcp_config.exists():
+            cmd.extend(["--mcp-config", str(mcp_config)])
+
+        # Worker tools: file operations
+        allowed = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__edit_file,mcp__game-studio__write_report"
+        cmd.extend(["--allowedTools", allowed])
+        cmd.append("--dangerously-skip-permissions")
+
+        # Model and turns
+        if self.model and self.model != "claude":
+            cmd.extend(["--model", self.model])
+
+        max_turns = getattr(self, 'max_turns', None) or DEFAULT_MAX_TURNS
+        cmd.extend(["--max-turns", str(max_turns)])
+
+        logger.debug("[%s] CMD flags: %s", self.agent_name,
+                    " ".join(f for f in cmd if f.startswith('--')))
+
+        # Read prompt
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            prompt_content = f.read()
+
+        process = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding='utf-8',
+            cwd=str(self.cwd),
+            shell=shell,
+        )
+
+        # Track running process
+        with FleetCLI._lock:
+            FleetCLI._running_processes[self.agent_name] = process
+
+        try:
+            try:
+                process.stdin.write(prompt_content)
+                process.stdin.close()
+            except BrokenPipeError:
+                process.wait()
+                stderr = process.stderr.read() if process.stderr else ""
+
+                # Handle session errors
+                if "already in use" in stderr.lower():
+                    logger.warning("[%s] Session in use, retrying with --resume", self.agent_name)
+                    with FleetCLI._lock:
+                        FleetCLI._session_needs_create = False
+                    return self._run_subprocess(temp_path, prompt)
+                if "No conversation found" in stderr:
+                    logger.warning("[%s] Session expired, creating new", self.agent_name)
+                    with FleetCLI._lock:
+                        FleetCLI._session_needs_create = True
+                    return self._run_subprocess(temp_path, prompt)
+
+                raise RuntimeError(f"CLI exited early: {stderr[:200]}")
+
+            return self._collect_output(process, prompt)
+        finally:
+            with FleetCLI._lock:
+                FleetCLI._running_processes.pop(self.agent_name, None)
+
+    def _session_file_exists(self) -> bool:
+        """Check if Fleet session file exists."""
+        home = Path.home()
+        cwd_str = str(self.cwd.resolve())
+        encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
+        session_file = home / ".claude" / "projects" / encoded / f"{FLEET_SESSION_UUID}.jsonl"
+        return session_file.exists()
+
+    def _collect_output(self, process: subprocess.Popen, prompt: str) -> str:
+        """Collect stream-json output."""
+        text_content = []
+        result_data = [None]
+        last_output_time = time.time()
+        stderr_lines = []
+
+        def read_stdout():
+            nonlocal last_output_time
+            for line in process.stdout:
+                last_output_time = time.time()
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                    self._process_event(event, text_content)
+                    if event.get("type") == "result":
+                        result_data[0] = event
+                except json.JSONDecodeError:
+                    pass
+
+        def read_stderr():
+            nonlocal last_output_time
+            for line in process.stderr:
+                last_output_time = time.time()
+                stderr_lines.append(line.strip())
+
+        stdout_thread = threading.Thread(target=read_stdout, daemon=True)
+        stderr_thread = threading.Thread(target=read_stderr, daemon=True)
+        stdout_thread.start()
+        stderr_thread.start()
+
+        while process.poll() is None:
+            time.sleep(1)
+            if time.time() - last_output_time > STALE_TIMEOUT_SECONDS:
+                process.kill()
+                raise TimeoutError(f"No output for {STALE_TIMEOUT_SECONDS}s")
+
+        stdout_thread.join(timeout=5)
+        stderr_thread.join(timeout=5)
+
+        if process.returncode != 0:
+            error = "\n".join(stderr_lines)
+            error_lower = error.lower()
+
+            if "rate limit" in error_lower or "overloaded" in error_lower:
+                raise RetryableError(f"Rate limited: {error[:100]}")
+
+            # MCP connection errors
+            if any(p in error_lower for p in MCP_ERROR_PATTERNS):
+                raise RetryableError(f"MCP connection failed: {error[:150]}")
+
+            raise RuntimeError(f"CLI error (code {process.returncode}): {error[:200]}")
+
+        return self._extract_result(result_data[0], text_content)
+
+    def _process_event(self, event: dict, text_content: list):
+        """Process stream event."""
+        event_type = event.get("type", "")
+
+        if event_type == "assistant":
+            message = event.get("message", {})
+            for block in message.get("content", []):
+                if block.get("type") == "text":
+                    text = block.get("text", "")
+                    text_content.append(text)
+                    # Broadcast to terminal
+                    if text:
+                        try:
+                            from server_modules.broadcast import broadcast_terminal_line_sync
+                            broadcast_terminal_line_sync(self.agent_name, text + "\n")
+                        except Exception:
+                            pass
+            usage = message.get("usage", {})
+            if usage.get("input_tokens"):
+                self._log_step("reasoning", usage.get("input_tokens", 0), usage.get("output_tokens", 0))
+
+        elif event_type == "content_block_delta":
+            delta = event.get("delta", {})
+            if delta.get("type") == "text_delta":
+                text = delta.get("text", "")
+                text_content.append(text)
+                if text:
+                    try:
+                        from server_modules.broadcast import broadcast_terminal_line_sync
+                        broadcast_terminal_line_sync(self.agent_name, text)
+                    except Exception:
+                        pass
+
+        elif event_type == "content_block_start":
+            if event.get("content_block", {}).get("type") == "tool_use":
+                self._tool_use_count += 1
+
+        elif event_type == "system":
+            if event.get("subtype") == "api_retry":
+                self.last_retries += 1
+                self._add_friction("retry", f"API retry #{self.last_retries}")
+
+    def _extract_result(self, result_data: dict, text_content: list) -> str:
+        """Extract final result and metrics."""
+        if result_data:
+            self.last_cost_usd = result_data.get("total_cost_usd", 0.0) or 0.0
+            self.last_duration_ms = result_data.get("duration_ms", 0) or 0
+            self.last_num_turns = result_data.get("num_turns", 0) or 0
+
+            usage = result_data.get("usage", {})
+            self.last_input_tokens = usage.get("input_tokens", 0)
+            self.last_output_tokens = usage.get("output_tokens", 0)
+            self.last_cache_creation_tokens = usage.get("cache_creation_input_tokens", 0)
+            self.last_cache_read_tokens = usage.get("cache_read_input_tokens", 0)
+
+            cache_pct = (self.last_cache_read_tokens / max(self.last_input_tokens, 1)) * 100
+            logger.info("[%s] Fleet END | turns=%d | in=%dK out=%dK | cache=%.0f%% | $%.4f",
+                        self.agent_name,
+                        self.last_num_turns,
+                        self.last_input_tokens // 1000,
+                        self.last_output_tokens // 1000,
+                        cache_pct,
+                        self.last_cost_usd)
+
+        if text_content:
+            return "\n\n".join(text_content)
+
+        if result_data:
+            return result_data.get("result", "No response")
+
+        return "No response from Fleet CLI"
+
+    def _update_cumulative_tokens(self):
+        """Track cumulative tokens and auto-clear if threshold exceeded."""
+        call_tokens = self.last_input_tokens + self.last_cache_read_tokens
+
+        with FleetCLI._lock:
+            FleetCLI._cumulative_tokens += call_tokens
+
+            if FleetCLI._cumulative_tokens > SESSION_TOKEN_THRESHOLD:
+                logger.warning("[Fleet] Threshold exceeded (%dK > %dK), clearing session",
+                              FleetCLI._cumulative_tokens // 1000,
+                              SESSION_TOKEN_THRESHOLD // 1000)
+                self._clear_session()
+
+    def _clear_session(self):
+        """Clear Fleet session file."""
+        home = Path.home()
+        cwd_str = str(self.cwd.resolve())
+        encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
+        session_file = home / ".claude" / "projects" / encoded / f"{FLEET_SESSION_UUID}.jsonl"
+
+        if session_file.exists():
+            try:
+                session_file.unlink()
+                logger.info("[Fleet] Session cleared")
+            except Exception as e:
+                logger.warning("[Fleet] Failed to clear session: %s", e)
+
+        FleetCLI._cumulative_tokens = 0
+        FleetCLI._session_needs_create = True
+
+    def _execute_tool_tags(self, response: str, tool_handlers: dict) -> str:
+        """Parse and execute <tool> tags."""
+        import re
+
+        pattern = r'<tool>(\w+)</tool>\s*<params>(.*?)</params>'
+        matches = re.findall(pattern, response, re.DOTALL)
+
+        if not matches:
+            return response
+
+        results = []
+        for tool_name, params_str in matches:
+            handler = tool_handlers.get(tool_name)
+            if not handler:
+                results.append(f"[Tool '{tool_name}' not found]")
+                continue
+
+            try:
+                params = json.loads(params_str) if params_str.strip() else {}
+                result = handler(**params)
+                results.append(f"[{tool_name}]: {result}")
+                self._tool_use_count += 1
+            except Exception as e:
+                results.append(f"[{tool_name} error]: {e}")
+                self.last_tool_errors.append(f"{tool_name}: {e}")
+
+        cleaned = re.sub(pattern, '', response, flags=re.DOTALL).strip()
+        if results:
+            cleaned += "\n\n---\nTool Results:\n" + "\n".join(results)
+
+        return cleaned
+
+    def get_quality_metrics(self) -> dict:
+        """Return quality metrics."""
+        return {
+            "retries": self.last_retries,
+            "tool_errors": self.last_tool_errors.copy(),
+            "cost_usd": self.last_cost_usd,
+            "duration_ms": self.last_duration_ms,
+            "input_tokens": self.last_input_tokens,
+            "output_tokens": self.last_output_tokens,
+            "token_log": self.token_log.copy(),
+            "num_turns": self.last_num_turns,
+            "cache_creation_input_tokens": self.last_cache_creation_tokens,
+            "cache_read_input_tokens": self.last_cache_read_tokens,
+            "is_error": self.last_is_error,
+            "error_message": self.last_error_message,
+            "num_tool_uses": self._tool_use_count,
+            "friction_events": self._friction_events.copy(),
+        }
+
+    @classmethod
+    def get_session_stats(cls) -> dict:
+        """Get Fleet session statistics."""
+        return {
+            "session_id": FLEET_SESSION_UUID[:12],
+            "cumulative_tokens": cls._cumulative_tokens,
+            "threshold": SESSION_TOKEN_THRESHOLD,
+            "headroom": SESSION_TOKEN_THRESHOLD - cls._cumulative_tokens,
+        }
+
+    @classmethod
+    def terminate_agent(cls, agent_name: str, timeout: int = 5) -> dict:
+        """Gracefully terminate a running agent process."""
+        with cls._lock:
+            process = cls._running_processes.get(agent_name)
+
+        if not process:
+            return {'success': False, 'message': f'{agent_name} not running', 'terminated': False}
+
+        logger.info("[TERMINATE] Stopping %s (PID: %d)", agent_name, process.pid)
+
+        try:
+            process.terminate()
+            try:
+                process.wait(timeout=timeout)
+                return {'success': True, 'message': f'{agent_name} terminated', 'terminated': True}
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                return {'success': True, 'message': f'{agent_name} force killed', 'terminated': True}
+        except Exception as e:
+            return {'success': False, 'message': str(e), 'terminated': False}
+        finally:
+            with cls._lock:
+                cls._running_processes.pop(agent_name, None)
+
+
+class RetryableError(Exception):
+    """Error that should trigger retry."""
+    pass
+
+
+# MCP error patterns
+MCP_ERROR_PATTERNS = [
+    "mcp server", "mcp connection", "failed to connect", "connection refused",
+    "connection reset", "server disconnected", "transport error", "stdio transport",
+    "spawn error", "econnrefused", "epipe",
+]
+
+
+def terminate_all_fleet_agents() -> int:
+    """Kill all running fleet agent processes."""
+    terminated = 0
+    with FleetCLI._lock:
+        for agent, process in list(FleetCLI._running_processes.items()):
+            try:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=2)
+                    terminated += 1
+                    logger.info("[%s] Terminated", agent)
+            except Exception as e:
+                logger.warning("[%s] Failed to terminate: %s", agent, e)
+        FleetCLI._running_processes.clear()
+    return terminated

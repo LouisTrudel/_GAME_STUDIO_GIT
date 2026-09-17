@@ -1,7 +1,7 @@
 {
   "name": "BOSS",
   "title": "Studio Coordinator",
-  "backend": "claude",
+  "backend": "boss",
   "model": "haiku",
   "max_turns": 5,
   "color": "#e74c3c"
