@@ -67,25 +67,7 @@ def _track_failed(task_id: str, assignee: Optional[str], reason: str):
         pass
 
 
-def _log_to_memory(task_id: str, task: "Task", outcome: str):
-    """Log completed/failed task to hub (tier0) for unified timeline."""
-    try:
-        from studio.core.hub import hub
-
-        # Compact format: [SUCCESS] T623 - task description (Agent)
-        desc_short = task.description[:100].replace("\n", " ")
-        content = f"[{outcome.upper()}] {task_id} - {desc_short}"
-
-        hub.post(
-            sender=task.assignee or "System",
-            content=content,
-            task_id=task_id,
-            task_description=task.description[:200],
-        )
-    except ImportError:
-        pass  # Hub module not available
-    except Exception as e:
-        logger.error("Failed to log to hub: %s", e)
+# _log_to_memory removed - agent.py handles hub posts for task completion
 
 # Default paths (used when no project is active)
 # Actual paths are resolved dynamically via TaskManager._get_tasks_file() etc.
@@ -820,8 +802,7 @@ class TaskManager:
             _track_completed(task_id, task.assignee)
             # T163/T332: Save deliverable (project-aware path) with friction log
             save_deliverable(task_id, result, task.description, self._project_name, friction_events)
-            # T248: Log to memory hot tier
-            _log_to_memory(task_id, task, "success")
+            # Note: Hub post removed - agent.py already posts completion
             return True
 
     def fail_task(self, task_id: str, reason: str) -> bool:
@@ -835,8 +816,7 @@ class TaskManager:
             self._save_tasks()
             # Track metrics
             _track_failed(task_id, task.assignee, reason)
-            # T248: Log to memory hot tier
-            _log_to_memory(task_id, task, "failure")
+            # Note: Hub post removed - agent.py already posts errors
             return True
         return False
 

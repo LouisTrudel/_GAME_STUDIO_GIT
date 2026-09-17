@@ -227,9 +227,10 @@ class StudioAgent:
             tokens_out = usage.get("total_output_tokens", 0)
             logger.info("[%s] Done. (%.1fs, %d+%d tokens)", self.name, elapsed, tokens_in, tokens_out)
 
-            # Post truncated summary to hub (full deliverable saved separately)
-            hub_message = _truncate_for_hub(response)
-            hub.post(self.name, hub_message)
+            # Post truncated summary to hub (skip noisy agents)
+            if self.name not in ("Compression", "Text", "Prompt"):
+                hub_message = _truncate_for_hub(response)
+                hub.post(self.name, hub_message)
             return response
 
         except Exception as e:
