@@ -979,7 +979,7 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
         """Send a message to the Project Chat agent for whitepaper drafting.
 
         T439: Connects Project Chat panel to whitepaper drafting agent.
-        Uses Gemini for speed. Returns updated whitepaper + star rating.
+        Returns updated whitepaper + star rating.
         """
         from studio.project_chat import handle_project_chat
 
@@ -991,7 +991,7 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
         if not project:
             return {"error": "Project not found"}
 
-        # Run chat agent (blocking, but Gemini is fast)
+        # Run chat agent
         try:
             result = await asyncio.to_thread(
                 handle_project_chat,

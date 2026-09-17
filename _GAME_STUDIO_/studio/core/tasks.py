@@ -225,8 +225,8 @@ class Task:
     retry_count: int = 0
     error: Optional[str] = None
 
-    # Backend selection (for Raw pseudo-agent)
-    backend: Optional[str] = None  # e.g., "gemini", "ollama", "openai"
+    # Backend selection (deprecated - Claude only now)
+    backend: Optional[str] = None
 
     # === NEW NESTED SCHEMA (T115) ===
 

@@ -217,7 +217,7 @@ CREATE_TASK_SCHEMA = {
             },
             "backend": {
                 "type": "string",
-                "description": "For Raw tasks: 'gemini', 'claude', 'ollama'"
+                "description": "(deprecated) Claude only now"
             }
         },
         "required": ["what"]

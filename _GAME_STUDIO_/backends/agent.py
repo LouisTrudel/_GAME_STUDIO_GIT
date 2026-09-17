@@ -1,53 +1,30 @@
 """
-Core Agent class - multi-backend support for Claude, Gemini, Ollama.
+Core Agent class - Claude CLI backends.
 """
 
 from typing import Callable
 from .backends import (
-    GeminiBackend,
-    AnthropicBackend,
-    OllamaBackend,
     BossCLI,
     FleetCLI,
     VanillaCLI,
     Backend,
-    # Legacy (deprecated)
-    ClaudeCLIBackend,
-    PersistentClaudeCLI,
 )
 
 
 class Agent:
     """
-    A conversational agent with pluggable LLM backends.
+    A conversational agent with Claude CLI backends.
 
     Backends:
     - "boss" (BOSS agent - dedicated Haiku session with caching)
     - "fleet" (Worker agents - shared session with caching)
     - "vanilla" (Stateless - Compression, Text, Image, Audio, Video)
-    - "gemini" (free tier limited)
-    - "anthropic" (requires API credits)
-    - "ollama" (free, local)
-
-    Legacy aliases (deprecated):
-    - "claude-cli", "claude" -> FleetCLI
-    - "stateless-claude", "persistent-claude" -> VanillaCLI
     """
 
     BACKENDS = {
-        # New architecture
         "boss": BossCLI,
         "fleet": FleetCLI,
         "vanilla": VanillaCLI,
-        # Other providers
-        "gemini": GeminiBackend,
-        "anthropic": AnthropicBackend,
-        "ollama": OllamaBackend,
-        # Legacy aliases (deprecated - map to new)
-        "claude-cli": FleetCLI,
-        "claude": FleetCLI,
-        "stateless-claude": VanillaCLI,
-        "persistent-claude": VanillaCLI,
     }
 
     def __init__(

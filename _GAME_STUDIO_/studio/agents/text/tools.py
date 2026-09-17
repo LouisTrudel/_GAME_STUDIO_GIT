@@ -1,5 +1,5 @@
 """
-Writer-specific tools - TTS removed (requires Gemini billing).
+Writer-specific tools.
 Writer focuses on dialogue, narrative, and text content.
 """
 

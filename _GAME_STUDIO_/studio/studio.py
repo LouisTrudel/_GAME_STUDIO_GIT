@@ -25,15 +25,7 @@ from studio.loader import get_all_agent_names
 from studio.agent import StudioAgent
 
 # Import backends for Raw pseudo-agent
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-import gemini
 from backends.backends.vanilla_cli import VanillaCLI
-# DEPRECATED: Session clearing on empty queue removed
-# Persistent sessions should persist, not be deleted
-# from backends.backends.persistent_claude_cli import clear_all_sessions
-from backends.backends.ollama import OllamaBackend
 
 
 # Re-export for backwards compatibility with server.py imports
@@ -422,7 +414,7 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
         # Default: unknown error
         return error_type, "skip"
 
-    def _run_raw_task(self, task, backend: str = "gemini") -> tuple[str, Optional[str], dict, dict]:
+    def _run_raw_task(self, task, backend: str = "claude") -> tuple[str, Optional[str], dict, dict]:
         """
         Run a Raw task (direct LLM query, no agent overhead).
         Returns (task_id, response, usage, quality_metrics) or (task_id, None, {}, {}) on error.
@@ -431,11 +423,10 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
         - Stateless (no conversation history)
         - No context injection (no role, no memory, no skills)
         - Always return plain text
-        - Default backend: gemini (free tier)
         """
         import time as _task_time
         task_start = _task_time.time()
-        logger.info("_run_raw_task() start | task=%s | backend=%s", task.id, backend)
+        logger.info("_run_raw_task() start | task=%s", task.id)
 
         try:
             # Extract prompt from task description
@@ -447,46 +438,19 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
             # T215: Log char counts (Raw has no context injection)
             task_manager.log_context_injected(task.id, role_md="", skills="", context_md="", task_prompt=prompt)
 
-            # Route to backend (extensible for future LLMs)
-            # Supported: gemini (free tier), claude_cli (Pro subscription), ollama (local), openai (paid)
-            if backend == "gemini":
-                # Status callback for rate limit retries (T196)
-                def gemini_status_cb(msg):
-                    logger.info("[Raw] %s", msg)
-                    if self.status_callback:
-                        self.status_callback("Raw", "working", msg)
-
-                response = gemini.query(prompt, status_callback=gemini_status_cb)
-            elif backend in ("claude_cli", "claude"):
-                # Use Vanilla CLI backend (stateless)
-                cli_backend = VanillaCLI(agent_name="Raw")
-                # Simple prompt, no tools, no context - just prompt → response
-                response = cli_backend.chat(
-                    messages=[{"role": "user", "content": prompt}],
-                    system_prompt="You are a helpful assistant. Respond concisely.",
-                    tools=None,
-                    tool_handlers=None
-                )
-            elif backend == "ollama":
-                # Use Ollama backend - local LLM
-                ollama_backend = OllamaBackend(agent_name="Raw")
-                response = ollama_backend.chat(
-                    messages=[{"role": "user", "content": prompt}],
-                    system_prompt="You are a helpful assistant. Respond concisely.",
-                    tools=None,
-                    tool_handlers=None
-                )
-            elif backend == "openai":
-                # Future: implement openai backend
-                raise ValueError(f"Backend 'openai' not yet implemented. Available: gemini, claude_cli, claude, ollama")
-            else:
-                valid_backends = ["gemini", "claude_cli", "claude", "ollama"]
-                raise ValueError(f"Invalid backend '{backend}'. Valid options: {', '.join(valid_backends)}")
+            # Use Vanilla CLI backend (stateless)
+            cli_backend = VanillaCLI(agent_name="Raw")
+            response = cli_backend.chat(
+                messages=[{"role": "user", "content": prompt}],
+                system_prompt="You are a helpful assistant. Respond concisely.",
+                tools=None,
+                tool_handlers=None
+            )
 
             task_elapsed = _task_time.time() - task_start
             logger.info("_run_raw_task() done | task=%s | elapsed=%.1fs", task.id, task_elapsed)
 
-            # Return minimal usage/metrics (gemini.py doesn't track tokens)
+            # Return usage/metrics
             usage = {"total_input_tokens": 0, "total_output_tokens": 0}
             quality_metrics = {"duration_ms": int(task_elapsed * 1000)}
             return (task.id, response, usage, quality_metrics)
@@ -878,9 +842,8 @@ Memory: data/memory/tier1.md (recent work context)
         self._notify_status("Raw", "working", f"Processing {task.id}...")
         self._notify_thinking("Raw")
 
-        # Submit to executor - read backend from task, default to gemini
-        backend = task.backend or "gemini"
-        future = self._executor.submit(self._run_raw_task, task, backend)
+        # Submit to executor
+        future = self._executor.submit(self._run_raw_task, task)
         self._active_tasks["Raw"] = future
         return True
 

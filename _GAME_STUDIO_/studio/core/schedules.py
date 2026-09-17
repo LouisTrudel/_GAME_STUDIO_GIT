@@ -229,7 +229,7 @@ class ScheduleManager:
         name: str,
         description: str,
         interval_seconds: int,
-        script_module: str,  # e.g., "studio.routines.gemini_research_routine"
+        script_module: str,  # e.g., "studio.routines.my_routine"
     ) -> Schedule:
         """Create a schedule that runs a Python script directly."""
         self._counter += 1
