@@ -190,14 +190,17 @@ class MemoryManager:
         if index == 0:
             return  # tier0 is messages.json, managed by hub.py
         self._append_tier(index, content)
-        size = self.tier_size(index)
+
+        # Read full content for size check AND potential compression (avoid re-read)
+        full_content = self.get_tier(index)
+        size = len(full_content)
         logger.info("Appended to tier%d, size: %d", index, size)
 
-        # Auto-compress if needed
-        if self.tier_needs_compression(index):
-            threshold = self.tier_threshold(index)
+        # Auto-compress if needed (pass content to avoid race)
+        threshold = self.tier_threshold(index)
+        if size > threshold:
             logger.info("Tier%d exceeded threshold (%d/%d), compressing...", index, size, threshold)
-            self.compress_tier(index)
+            self.compress_tier(index, content=full_content)
 
     # ============ COMPRESSION ============
 
@@ -226,18 +229,29 @@ class MemoryManager:
 
         return True, "ok"
 
-    def compress_tier(self, index: int) -> bool:
-        """Compress a tier: KEEP stays, PUSH goes to next tier."""
+    def compress_tier(self, index: int, content: str = None) -> bool:
+        """Compress a tier: KEEP stays, PUSH goes to next tier.
+
+        Args:
+            index: Tier index to compress
+            content: Optional pre-read content (avoids race condition with hub clearing messages)
+        """
         # Loop prevention
         can_compress, reason = self._can_compress()
         if not can_compress:
             logger.debug("Skipping compression: %s", reason)
             return False
 
-        content = self.get_tier(index)
-        if not content:
+        # Use provided content or read fresh (content param avoids race condition)
+        if content is None:
+            content = self.get_tier(index)
+
+        # Minimum content check - avoid compressing empty/tiny content
+        MIN_CONTENT_LENGTH = 100
+        if not content or len(content) < MIN_CONTENT_LENGTH:
+            logger.debug("Skipping compression: content too small (%d chars)", len(content) if content else 0)
             self._is_compressing = False
-            self._flush_friction()  # Flush any buffered friction
+            self._flush_friction()
             return False
 
         # Set compression lock
@@ -368,8 +382,10 @@ class MemoryManager:
         for i in range(20):  # Check up to 20 tiers
             # tier0 = messages.json (no file, but still check threshold)
             if i == 0:
-                if self.tier_needs_compression(0):
-                    if self.compress_tier(0):
+                # Read content ONCE to avoid race condition with hub clearing
+                content = self.get_tier(0)
+                if len(content) > self.tier_threshold(0):
+                    if self.compress_tier(0, content=content):
                         compressed_count += 1
                     else:
                         break  # Rate limited
@@ -379,8 +395,10 @@ class MemoryManager:
             if not filepath.exists():
                 break
 
-            if self.tier_needs_compression(i):
-                if self.compress_tier(i):
+            # Read content ONCE to avoid race with file modifications
+            content = self.get_tier(i)
+            if len(content) > self.tier_threshold(i):
+                if self.compress_tier(i, content=content):
                     compressed_count += 1
                 else:
                     # Rate limited, stop checking further tiers

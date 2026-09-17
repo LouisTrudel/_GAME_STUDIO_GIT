@@ -173,14 +173,17 @@ class HistoryManager:
     def accumulate(self, content: str):
         """Accumulate raw content to draft tier. Auto-compresses if needed."""
         self._append_tier("draft", content)
-        size = self.tier_size("draft")
+
+        # Read full content for size check AND potential compression (avoid re-read race)
+        full_content = self.get_tier("draft")
+        size = len(full_content)
         logger.info("Appended to draft, size: %d", size)
 
-        # Auto-compress if needed
-        if self.tier_needs_compression("draft"):
-            threshold = self.tier_threshold("draft")
+        # Auto-compress if needed (pass content to avoid race)
+        threshold = self.tier_threshold("draft")
+        if threshold and size > threshold:
             logger.info("Draft exceeded threshold (%d/%d), compressing...", size, threshold)
-            self.compress_tier("draft")
+            self.compress_tier("draft", content=full_content)
 
     # ============ COMPRESSION ============
 
@@ -209,12 +212,13 @@ class HistoryManager:
 
         return True, "ok"
 
-    def compress_tier(self, tier: TierName, _depth: int = 0) -> bool:
+    def compress_tier(self, tier: TierName, _depth: int = 0, content: str = None) -> bool:
         """Compress a tier via Writer narrative.
 
         Args:
             tier: The tier to compress
             _depth: Internal recursion depth counter (max 5 to prevent stack overflow)
+            content: Optional pre-read content (avoids race condition)
         """
         # Recursion depth limit to prevent stack overflow
         MAX_CASCADE_DEPTH = 5
@@ -228,8 +232,14 @@ class HistoryManager:
             logger.debug("Skipping compression: %s", reason)
             return False
 
-        content = self.get_tier(tier)
-        if not content:
+        # Use provided content or read fresh (content param avoids race condition)
+        if content is None:
+            content = self.get_tier(tier)
+
+        # Minimum content check - avoid compressing empty/tiny content
+        MIN_CONTENT_LENGTH = 100
+        if not content or len(content) < MIN_CONTENT_LENGTH:
+            logger.debug("Skipping compression: content too small (%d chars)", len(content) if content else 0)
             return False
 
         # Set compression lock

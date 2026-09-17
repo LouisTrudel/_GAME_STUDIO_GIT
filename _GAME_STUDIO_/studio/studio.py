@@ -129,10 +129,10 @@ class Studio:
         current_friction = ""
         if friction_path.exists():
             try:
-                content = friction_path.read_text(encoding="utf-8").strip()
+                friction_raw = friction_path.read_text(encoding="utf-8").strip()
                 # Skip header, get just the items
-                if content and "No unresolved issues" not in content:
-                    lines = [l.strip() for l in content.split("\n") if l.strip() and not l.startswith("#") and not l.startswith("*")]
+                if friction_raw and "No unresolved issues" not in friction_raw:
+                    lines = [l.strip() for l in friction_raw.split("\n") if l.strip() and not l.startswith("#") and not l.startswith("*")]
                     if lines:
                         current_friction = "\n".join(lines[:15])
             except Exception:
@@ -165,6 +165,9 @@ Max 60% KEEP. When uncertain → DONE."""
             response = context_agent.respond(prompt)
             self._notify_status("Compression", "idle", "")
 
+            # Compact session to prevent token bloat
+            self._compact_agent_session("Compression")
+
             # Parse response into keep/push
             result = self._parse_split_response(response)
             logger.info("AC-Memory: Tier %d split by Context agent (keep=%d chars, push=%d chars)",
@@ -173,6 +176,7 @@ Max 60% KEEP. When uncertain → DONE."""
 
         except Exception as e:
             logger.error("AC-Memory compression failed: %s - skipping", e)
+            self._compact_agent_session("Compression")
             return None
 
     def _parse_split_response(self, response: str) -> dict:
@@ -290,9 +294,13 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
             self._notify_status("Compression", "working", f"Writing {tier_name} narrative...")
             narrative = writer_agent.respond(prompt)
             self._notify_status("Compression", "idle", "")
+
+            # Compact session to prevent token bloat
+            self._compact_agent_session("Compression")
             return narrative
         except Exception as e:
             logger.error("Tier narrative generation failed: %s", e)
+            self._compact_agent_session("Compression")
             return None
 
     def _find_agent(self, name: str) -> StudioAgent | None:
@@ -318,8 +326,8 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
         hub.post("user", content)
         self._notify_status("BOSS", "working", "Processing user message...")
         self._notify_thinking("BOSS")
-        # Include user message directly in trigger - don't rely on context extraction
-        boss_response = self.boss.respond(f"Client: {content}\n\nUse your studio to help the client.")
+        # BOSS persistent session: _build_context handles init vs subsequent
+        boss_response = self.boss.respond(content)
 
         # Track Boss token usage
         usage = self.boss.get_last_token_usage()
@@ -327,7 +335,9 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
             agent="BOSS",
             input_tokens=usage.get("total_input_tokens", 0),
             output_tokens=usage.get("total_output_tokens", 0),
-            task_id=None  # Boss messages aren't task-specific
+            task_id=None,  # Boss messages aren't task-specific
+            cache_read_tokens=usage.get("cache_read_input_tokens", 0),
+            cache_creation_tokens=usage.get("cache_creation_input_tokens", 0),
         )
 
         # Compact BOSS session if threshold exceeded
@@ -350,7 +360,9 @@ Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
                 agent=agent_name,
                 input_tokens=usage.get("total_input_tokens", 0),
                 output_tokens=usage.get("total_output_tokens", 0),
-                task_id=None  # Manual pokes aren't task-specific
+                task_id=None,  # Manual pokes aren't task-specific
+                cache_read_tokens=usage.get("cache_read_input_tokens", 0),
+                cache_creation_tokens=usage.get("cache_creation_input_tokens", 0),
             )
 
             self._notify_thinking(None)
