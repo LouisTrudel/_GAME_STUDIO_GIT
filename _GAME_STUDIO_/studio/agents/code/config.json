@@ -3,6 +3,6 @@
   "title": "Lead Programmer",
   "backend": "fleet",
   "model": "sonnet",
-  "max_turns": 25,
+  "max_turns": 50,
   "color": "#3498db"
 }

@@ -9007,5 +9007,31 @@
       "usd": 0.08577400000000002
     },
     "friction": null
+  },
+  {
+    "id": "T730",
+    "desc": "[X] Don't modify task state; Focus on signal flow only\n[>] Find why T729 shows in_progress even thou",
+    "agent": "Audit",
+    "outcome": "ok",
+    "at": "2026-09-17T10:10:56.446658",
+    "tokens": {
+      "in": 169,
+      "out": 9760,
+      "usd": 0.6192441
+    },
+    "friction": null
+  },
+  {
+    "id": "T729",
+    "desc": "[X] Extract chatter from existing history logs; Keep existing agent tab layout; Display real-time up",
+    "agent": "Frontend",
+    "outcome": "ok",
+    "at": "2026-09-17T10:36:18.910856",
+    "tokens": {
+      "in": 48,
+      "out": 2446,
+      "usd": 0.21244724999999998
+    },
+    "friction": null
   }
 ]

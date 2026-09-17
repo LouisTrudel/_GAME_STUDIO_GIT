@@ -3,6 +3,6 @@
   "title": "UI Engineer",
   "backend": "fleet",
   "model": "sonnet",
-  "max_turns": 25,
+  "max_turns": 50,
   "color": "#9b59b6"
 }

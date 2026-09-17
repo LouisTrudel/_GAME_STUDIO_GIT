@@ -202,6 +202,7 @@ function connect() {
         } else if (data.type === 'agent_stats_update') {
             agentStats = data.data;
             renderAgentCards();
+            renderHubMetricsBar();
         } else if (data.type === 'session_stats_update') {
             // Session monitor stats (BOSS + Fleet)
             if (typeof updateSessionStats === 'function') {

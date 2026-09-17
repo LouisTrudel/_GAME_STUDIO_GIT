@@ -397,3 +397,10 @@ Code went deep. Traced the entire task lifecycle en...
 # Episode: Infrastructure Hardening & UI Unification
 
 We diagnosed the cascade: T688 spawned thirteen parallel health checks (T689–T711) scanning tokens, queues, agents, race conditions, broadcast sync—all green at 00:35, threshold stable at 150K. Traced the task lifecycle end-to-end (T719–T720), proved flow works. Then T726 surfaced the real friction: routines fired immediately on creation instead of waiting—root cause `studio/core/schedules.py:73-74` set `next_run = datetime.now()`, fixed it. Frontend hit absence (T728, phantom UI files), pivoted, built T729: unified terminal from history logs showing all agent chatter in single view. Code added session token/cost tracking to agent stats (turns 1–52), wired WebSocket handlers to display live BOSS and Fleet cumulative spend. System operational: health surveillance running, task machinery verified, routine scheduling corrected, terminal unified, cost visibility live. Two noise tasks (T724–T725, random line counts) dropped.
+
+---
+
+[2026-09-17] Draft #105:
+# Episode: Token Metrics & Cost Tracking Fixes
+
+We tracked down cost display issues in the hub metrics bar and discovered a gap: total session tokens weren't shown. Code agent searched 43 turns through studio-core.js and studio-tasks.js, mapping the flow from agent_stats broadcasts to renderHubMetricsBar() rendering. The architecture emerged: agentStats holds _sessions.boss.cumulative_tokens and _sessions.fleet.cumulative_tokens, fed by periodic broadcastAgentStats() calls. We identified the metrics bar updates when agent stats refresh, but total session token display was missing from the UI. The cost update mechanism appeared intact—costs calculate correctly in task metadata—but weren't consistently propagating to display. By turn 43, we had the complete picture: need to (1) add total session tokens to metrics bar display, (2) ensure cost updates trigger metrics re-render. T739 started but incomplete—requires metrics bar component update to surface cumulative tokens and investigate cost broadcast timing.

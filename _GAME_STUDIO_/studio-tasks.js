@@ -148,7 +148,15 @@ function renderHubMetricsBar() {
 
     const metrics = computeAggregateMetrics();
 
-    if (metrics.totalTokens === 0 && metrics.cost === 0) {
+    // Get session tokens from agentStats._sessions
+    let sessionTokens = 0;
+    if (typeof agentStats !== 'undefined' && agentStats._sessions) {
+        const boss = agentStats._sessions.boss?.cumulative_tokens || 0;
+        const fleet = agentStats._sessions.fleet?.cumulative_tokens || 0;
+        sessionTokens = boss + fleet;
+    }
+
+    if (metrics.totalTokens === 0 && metrics.cost === 0 && sessionTokens === 0) {
         bar.innerHTML = '';
         bar.style.display = 'none';
         return;
@@ -157,6 +165,14 @@ function renderHubMetricsBar() {
     bar.style.display = 'flex';
 
     const items = [];
+
+    // Show session tokens (BOSS + Fleet cumulative)
+    if (sessionTokens > 0) {
+        items.push(`<span class="metrics-item">
+            <span class="metrics-value">${formatTokens(sessionTokens)}</span>
+            <span class="metrics-label">session</span>
+        </span>`);
+    }
 
     if (metrics.totalTokens > 0) {
         items.push(`<span class="metrics-item">
