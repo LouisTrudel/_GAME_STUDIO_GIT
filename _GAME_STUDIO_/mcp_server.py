@@ -1,9 +1,10 @@
 """
 Game Studio MCP Server
 
-8 core tools matching role.md definitions:
+9 core tools:
 - BOSS: create_task, create_routine, get_task_status, recall_memory
 - Workers: search_code, read_lines, edit_file, write_report
+- All agents: create_suggestion
 
 Usage:
     python mcp_server.py
@@ -56,7 +57,7 @@ async def create_routine(
     tasks: Annotated[list[dict], Field(description="Task sequence: [{description, assignee}, ...]")],
 ) -> str:
     """Create a scheduled routine (recurring workflow)."""
-    from studio.agents.routine.tools import create_routine as handler
+    from studio.core.routine_tools import create_routine as handler
     return handler(name=name, description=description, interval_seconds=interval_seconds, tasks=tasks)
 
 
@@ -78,6 +79,21 @@ async def recall_memory(
     """Search memory tiers."""
     from studio.agents.boss.tools import recall_memory as handler
     return handler(query=query, max_results=max_results, search_logs=True)
+
+
+@mcp.tool()
+async def create_suggestion(
+    title: Annotated[str, Field(description="Short title (max 80 chars)")],
+    content: Annotated[str, Field(description="Full suggestion text (max 500 chars)")],
+    category: Annotated[str, Field(description="Category: process|architecture|tooling|workflow|documentation|new_skill|feature")],
+    source_agent: Annotated[str, Field(description="Your agent name (e.g., 'Audit', 'Design', 'Code')")],
+    related_tasks: Annotated[Optional[list[str]], Field(description="Related task IDs")] = None,
+    files_mentioned: Annotated[Optional[list[str]], Field(description="Relevant file paths")] = None,
+    evidence: Annotated[Optional[str], Field(description="Supporting evidence")] = None,
+) -> str:
+    """Create a suggestion for human review in the Learning tab."""
+    from studio.agents.boss.tools import create_suggestion as handler
+    return handler(title=title, content=content, category=category, source_agent=source_agent, related_tasks=related_tasks, files_mentioned=files_mentioned, evidence=evidence)
 
 
 # =============================================================================
@@ -234,5 +250,5 @@ async def write_report(
 # =============================================================================
 
 if __name__ == "__main__":
-    logger.info("Starting Game Studio MCP Server (8 tools)...")
+    logger.info("Starting Game Studio MCP Server (9 tools)...")
     mcp.run(transport="stdio")

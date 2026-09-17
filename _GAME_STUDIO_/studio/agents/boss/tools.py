@@ -13,10 +13,6 @@ from studio.core.memory import memory_manager
 from studio.core.history import history_manager
 from studio.core.projects import project_manager
 from studio.routines.git_commit_routine import run_routine as git_commit_routine
-from studio.agents.routine.tools import (
-    TOOLS as ROUTINE_TOOLS,
-    HANDLERS as ROUTINE_HANDLERS,
-)
 
 # Logs directory (for raw log search fallback)
 LOGS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "logs"
@@ -632,12 +628,13 @@ def create_suggestion(
     category: str,
     related_tasks: list = None,
     files_mentioned: list = None,
-    evidence: str = None
+    evidence: str = None,
+    source_agent: str = "unknown"
 ) -> str:
     """Create a suggestion for human review."""
     try:
         suggestion = suggestion_manager.create(
-            source_agent="BOSS",
+            source_agent=source_agent,
             title=title,
             content=content,
             category=category,
@@ -855,8 +852,6 @@ TOOLS = [
     ADD_DISCUSSION_SCHEMA,
     # Git
     GIT_COMMIT_SCHEMA,
-    # Routines
-    *ROUTINE_TOOLS,
 ]
 
 HANDLERS = {
@@ -873,5 +868,4 @@ HANDLERS = {
     "add_discussion": add_discussion,
     "recall_memory": recall_memory,
     "git_commit": git_commit,
-    **ROUTINE_HANDLERS,
 }

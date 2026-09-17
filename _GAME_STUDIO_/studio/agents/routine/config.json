@@ -1,8 +1,0 @@
-{
-  "name": "Routine",
-  "title": "Automation Specialist",
-  "backend": "fleet",
-  "model": "haiku",
-  "max_turns": 25,
-  "color": "#9b59b6"
-}
