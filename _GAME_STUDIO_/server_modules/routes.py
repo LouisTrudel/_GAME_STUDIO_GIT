@@ -133,6 +133,55 @@ def register_routes(app: FastAPI):
 
         return {"status": "ok", "config": existing}
 
+    @app.get("/api/sessions")
+    async def get_session_stats():
+        """Get CLI session stats (BOSS + Fleet)."""
+        try:
+            from backends.backends.boss_cli import BossCLI, BOSS_SESSION_UUID, SESSION_TOKEN_THRESHOLD as BOSS_THRESHOLD
+            from backends.backends.fleet_cli import FleetCLI, FLEET_SESSION_UUID, SESSION_TOKEN_THRESHOLD as FLEET_THRESHOLD
+
+            boss_stats = BossCLI.get_session_stats()
+            fleet_stats = FleetCLI.get_session_stats()
+
+            return {
+                "boss": {
+                    "session_id": BOSS_SESSION_UUID[:12],
+                    "cumulative_tokens": boss_stats["cumulative_tokens"],
+                    "threshold": BOSS_THRESHOLD,
+                    "headroom": BOSS_THRESHOLD - boss_stats["cumulative_tokens"],
+                    "usage_pct": round((boss_stats["cumulative_tokens"] / BOSS_THRESHOLD) * 100, 1),
+                },
+                "fleet": {
+                    "session_id": FLEET_SESSION_UUID[:12],
+                    "cumulative_tokens": fleet_stats["cumulative_tokens"],
+                    "threshold": FLEET_THRESHOLD,
+                    "headroom": FLEET_THRESHOLD - fleet_stats["cumulative_tokens"],
+                    "usage_pct": round((fleet_stats["cumulative_tokens"] / FLEET_THRESHOLD) * 100, 1),
+                }
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
+    @app.post("/api/sessions/clear")
+    async def clear_sessions():
+        """Force clear all CLI sessions."""
+        try:
+            from backends.backends.boss_cli import cleanup_old_sessions as boss_cleanup
+            from backends.backends.fleet_cli import cleanup_old_sessions as fleet_cleanup
+
+            # Reset the cleanup flags to allow re-running
+            import backends.backends.boss_cli as boss_mod
+            import backends.backends.fleet_cli as fleet_mod
+            boss_mod._cleanup_done = False
+            fleet_mod._cleanup_done = False
+
+            boss_cleanup()
+            fleet_cleanup()
+
+            return {"status": "cleared"}
+        except Exception as e:
+            return {"error": str(e)}
+
     # ============ HUB ============
 
     @app.get("/api/history")

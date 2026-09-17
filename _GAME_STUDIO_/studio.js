@@ -1970,15 +1970,19 @@ function connect() {
             }
             // Update activity bar with all agent statuses
             updateActivityBar(data.data);
-        } else if (data.type === 'agent_stats_update') {
-            // Real-time agent stats for cards
-            agentStats = data.data;
-            // Update in-place to preserve terminals
-            if (document.querySelector('.agent-card')) {
-                updateAgentStatsInPlace();
-            } else {
-                renderAgentCards();
+            // Update active agent display in session monitor
+            for (const [name, info] of Object.entries(data.data)) {
+                if (info.status === 'working' || info.status === 'thinking') {
+                    updateActiveAgent(name, info.status);
+                    break;
+                }
             }
+        } else if (data.type === 'agent_stats_update') {
+            // Real-time agent stats for cards (legacy)
+            agentStats = data.data;
+        } else if (data.type === 'session_stats_update') {
+            // Session monitor stats (BOSS + Fleet)
+            updateSessionStats(data.data);
         } else if (data.type === 'suggestions_update') {
             console.log('[WS] suggestions_update - received', data.data.length, 'suggestions');
             suggestions = data.data;

@@ -1,13 +1,24 @@
-// Game Studio - Agents Module
-// Agent cards, stats, and config modal
+// Game Studio - Session Monitor Module
+// Monitors BOSS and Fleet CLI sessions + terminal output
 
-// Fetch roles
+// Track expanded agent cards (legacy - now just active agent)
+let activeAgent = null;
+
+// Terminal dock state
+const agentTerminals = {};  // {name: {term, fitAddon}}
+let activeTerminalAgent = null;
+let terminalDockInitialized = false;
+
+// Session stats cache
+let sessionStats = { boss: {}, fleet: {} };
+
+// Fetch roles (still needed for terminal tabs)
 async function fetchRoles() {
     try {
         const res = await fetch(`${API_URL}/roles`);
         roles = await res.json();
         renderTaskAgentSelect();
-        await fetchAgentStats();
+        renderSessionMonitor();
         log('agentLogs', `Loaded ${Object.keys(roles).length} agents`, 'success');
     } catch (e) {
         log('agentLogs', `Failed to fetch roles: ${e}`, 'error');
@@ -39,108 +50,141 @@ async function reloadHubForProject() {
     await fetchHistory();
 }
 
-// Track expanded agent cards
-const expandedAgents = new Set();
+// Format tokens for display
+function formatTokensK(tokens) {
+    if (tokens >= 1000) {
+        return `${(tokens / 1000).toFixed(1)}K`;
+    }
+    return tokens.toString();
+}
 
-// Terminal dock state
-const agentTerminals = {};  // {name: {term, fitAddon}}
-let activeTerminalAgent = null;
-let terminalDockInitialized = false;
-
-// Render agent cards (without terminals - they're in the dock now)
-function renderAgentCards() {
+// Render session monitor (replaces agent cards)
+function renderSessionMonitor() {
     const panel = document.getElementById('agents-cards');
     if (!panel) return;
 
-    panel.innerHTML = '';
+    const boss = sessionStats.boss || {};
+    const fleet = sessionStats.fleet || {};
 
-    // Sort agents by tokens (highest first)
-    const sortedAgents = Object.entries(roles).sort((a, b) => {
-        const tokensA = agentStats[a[0]]?.tokens || 0;
-        const tokensB = agentStats[b[0]]?.tokens || 0;
-        return tokensB - tokensA;
-    });
-
-    for (const [name, info] of sortedAgents) {
-        const stats = agentStats[name] || {};
-        const status = stats.status || 'idle';
-        const taskCount = stats.tasks?.assigned || 0;
-        const tokens = formatTokens(stats.tokens || 0);
-        const uptime = formatUptime(stats.uptime_seconds || 0);
-
-        // Token breakdown
-        const inputTokens = stats.tokens_input || 0;
-        const outputTokens = stats.tokens_output || 0;
-        const cacheRead = stats.tokens_cache_read || 0;
-        const cacheCreation = stats.tokens_cache_creation || 0;
-
-        // Preserve expanded state
-        const isExpanded = expandedAgents.has(name);
-
-        const card = document.createElement('div');
-        card.className = 'agent-card' + (isExpanded ? ' expanded' : '');
-        card.dataset.agent = name;
-        card.style.setProperty('--agent-color', info.color);
-        card.innerHTML = `
-            <div class="agent-card-header">
-                <span class="status-dot ${status}" title="${status}"></span>
-                <span class="name">${name}</span>
-                <span class="stats">
-                    <span class="stat"><span class="stat-value token-total">${tokens}</span> tokens</span>
-                    <span class="stat"><span class="stat-value">${taskCount}</span> tasks</span>
-                    <span class="stat"><span class="stat-value">${uptime}</span></span>
-                </span>
-                <span class="expand-icon">${isExpanded ? '▲' : '▼'}</span>
-            </div>
-            <div class="agent-card-details" style="display: ${isExpanded ? 'block' : 'none'};">
-                <div class="agent-token-grid">
-                    <div class="agent-token-item">
-                        <span class="agent-token-label">Input</span>
-                        <span class="agent-token-value input">${formatTokens(inputTokens)}</span>
+    panel.innerHTML = `
+        <div class="session-monitor">
+            <div class="session-card boss">
+                <div class="session-header">
+                    <span class="session-icon">👑</span>
+                    <span class="session-name">BOSS Session</span>
+                    <span class="session-badge haiku">Haiku</span>
+                </div>
+                <div class="session-stats">
+                    <div class="session-progress-container">
+                        <div class="session-progress-bar" style="width: ${boss.usage_pct || 0}%"></div>
                     </div>
-                    <div class="agent-token-item">
-                        <span class="agent-token-label">Output</span>
-                        <span class="agent-token-value output">${formatTokens(outputTokens)}</span>
-                    </div>
-                    <div class="agent-token-item">
-                        <span class="agent-token-label">Cache Read</span>
-                        <span class="agent-token-value cache-read">${formatTokens(cacheRead)}</span>
-                    </div>
-                    <div class="agent-token-item">
-                        <span class="agent-token-label">Cache Write</span>
-                        <span class="agent-token-value cache-write">${formatTokens(cacheCreation)}</span>
+                    <div class="session-numbers">
+                        <span class="session-tokens">${formatTokensK(boss.cumulative_tokens || 0)}</span>
+                        <span class="session-sep">/</span>
+                        <span class="session-threshold">${formatTokensK(boss.threshold || 150000)}</span>
+                        <span class="session-pct">(${boss.usage_pct || 0}%)</span>
                     </div>
                 </div>
-                <div class="agent-actions">
-                    <button class="agent-action-btn" onclick="showConfigModal('${name}')">Configure</button>
-                    <button class="agent-action-btn" onclick="handlePromptAction('${name}', 'checkin')">Check In</button>
+            </div>
+
+            <div class="session-card fleet">
+                <div class="session-header">
+                    <span class="session-icon">⚙️</span>
+                    <span class="session-name">Fleet Session</span>
+                    <span class="session-badge sonnet">Sonnet</span>
+                </div>
+                <div class="session-stats">
+                    <div class="session-progress-container">
+                        <div class="session-progress-bar" style="width: ${fleet.usage_pct || 0}%"></div>
+                    </div>
+                    <div class="session-numbers">
+                        <span class="session-tokens">${formatTokensK(fleet.cumulative_tokens || 0)}</span>
+                        <span class="session-sep">/</span>
+                        <span class="session-threshold">${formatTokensK(fleet.threshold || 150000)}</span>
+                        <span class="session-pct">(${fleet.usage_pct || 0}%)</span>
+                    </div>
                 </div>
             </div>
-        `;
 
-        // Toggle expand on header click
-        const header = card.querySelector('.agent-card-header');
-        header.addEventListener('click', (e) => {
-            const details = card.querySelector('.agent-card-details');
-            const icon = card.querySelector('.expand-icon');
-            const wasExpanded = details.style.display !== 'none';
-            details.style.display = wasExpanded ? 'none' : 'block';
-            icon.textContent = wasExpanded ? '▼' : '▲';
-            card.classList.toggle('expanded', !wasExpanded);
-            if (wasExpanded) {
-                expandedAgents.delete(name);
-            } else {
-                expandedAgents.add(name);
-            }
-        });
+            <div class="session-actions">
+                <button class="session-action-btn" onclick="clearAllSessions()">Clear Sessions</button>
+            </div>
+        </div>
 
-        panel.appendChild(card);
-    }
+        <div class="active-agent-section">
+            <h4>Active Agent</h4>
+            <div id="active-agent-display" class="active-agent-display">
+                <span class="no-agent">No agent running</span>
+            </div>
+        </div>
+    `;
 
-    // Initialize terminal dock only if Agents tab is visible (xterm needs visible container)
+    // Initialize terminal dock if needed
     const agentsPanel = document.getElementById('panel-agents');
     if (!terminalDockInitialized && agentsPanel && agentsPanel.classList.contains('active')) {
         initTerminalDock();
+    }
+}
+
+// Update session stats in place (called from WebSocket)
+function updateSessionStats(stats) {
+    sessionStats = stats;
+
+    // Update BOSS progress
+    const bossProgress = document.querySelector('.session-card.boss .session-progress-bar');
+    const bossTokens = document.querySelector('.session-card.boss .session-tokens');
+    const bossPct = document.querySelector('.session-card.boss .session-pct');
+    if (bossProgress && stats.boss) {
+        bossProgress.style.width = `${stats.boss.usage_pct || 0}%`;
+        bossTokens.textContent = formatTokensK(stats.boss.cumulative_tokens || 0);
+        bossPct.textContent = `(${stats.boss.usage_pct || 0}%)`;
+    }
+
+    // Update Fleet progress
+    const fleetProgress = document.querySelector('.session-card.fleet .session-progress-bar');
+    const fleetTokens = document.querySelector('.session-card.fleet .session-tokens');
+    const fleetPct = document.querySelector('.session-card.fleet .session-pct');
+    if (fleetProgress && stats.fleet) {
+        fleetProgress.style.width = `${stats.fleet.usage_pct || 0}%`;
+        fleetTokens.textContent = formatTokensK(stats.fleet.cumulative_tokens || 0);
+        fleetPct.textContent = `(${stats.fleet.usage_pct || 0}%)`;
+    }
+}
+
+// Update active agent display
+function updateActiveAgent(agent, status) {
+    const display = document.getElementById('active-agent-display');
+    if (!display) return;
+
+    if (agent && status === 'working') {
+        const info = roles[agent] || {};
+        display.innerHTML = `
+            <div class="active-agent" style="--agent-color: ${info.color || '#666'}">
+                <span class="status-dot working"></span>
+                <span class="agent-name">${agent}</span>
+                <span class="agent-title">${info.title || ''}</span>
+            </div>
+        `;
+        activeAgent = agent;
+    } else if (activeAgent === agent) {
+        display.innerHTML = '<span class="no-agent">No agent running</span>';
+        activeAgent = null;
+    }
+}
+
+// Clear all sessions
+async function clearAllSessions() {
+    try {
+        const res = await fetch(`${API_URL}/sessions/clear`, { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'cleared') {
+            log('agentLogs', 'Sessions cleared', 'success');
+            // Reset local stats
+            sessionStats = { boss: { cumulative_tokens: 0, usage_pct: 0 }, fleet: { cumulative_tokens: 0, usage_pct: 0 } };
+            renderSessionMonitor();
+        }
+    } catch (e) {
+        log('agentLogs', `Failed to clear sessions: ${e}`, 'error');
     }
 }
 
@@ -272,106 +316,11 @@ async function initTerminalForAgent(name) {
     });
 }
 
-
-// Fetch agent stats
+// Fetch agent stats (legacy - now just for task counts)
 async function fetchAgentStats() {
-    try {
-        const res = await fetch(`${API_URL}/agents/stats`);
-        agentStats = await res.json();
-        // Update in-place if cards exist, otherwise full render
-        if (document.querySelector('.agent-card')) {
-            updateAgentStatsInPlace();
-        } else {
-            renderAgentCards();
-        }
-    } catch (e) {
-        console.error('Failed to fetch agent stats:', e);
-    }
-}
-
-// Update agent stats without destroying terminals
-function updateAgentStatsInPlace() {
-    for (const [name, stats] of Object.entries(agentStats)) {
-        const card = document.querySelector(`.agent-card[data-agent="${name}"]`);
-        if (!card) continue;
-
-        // Update header stats
-        const tokenEl = card.querySelector('.token-total');
-        if (tokenEl) tokenEl.textContent = formatTokens(stats.tokens || 0);
-
-        const statValues = card.querySelectorAll('.stat .stat-value');
-        if (statValues[1]) statValues[1].textContent = stats.tasks?.assigned || 0;
-        if (statValues[2]) statValues[2].textContent = formatUptime(stats.uptime_seconds || 0);
-
-        // Update status dot
-        const dot = card.querySelector('.status-dot');
-        if (dot) {
-            dot.className = `status-dot ${stats.status || 'idle'}`;
-            dot.title = stats.status || 'idle';
-        }
-
-        // Update token grid
-        const tokenGrid = card.querySelectorAll('.agent-token-value');
-        if (tokenGrid[0]) tokenGrid[0].textContent = formatTokens(stats.tokens_input || 0);
-        if (tokenGrid[1]) tokenGrid[1].textContent = formatTokens(stats.tokens_output || 0);
-        if (tokenGrid[2]) tokenGrid[2].textContent = formatTokens(stats.tokens_cache_read || 0);
-        if (tokenGrid[3]) tokenGrid[3].textContent = formatTokens(stats.tokens_cache_creation || 0);
-    }
-}
-
-// Config modal functions
-function showConfigModal(agentName) {
-    configAgent = agentName;
-    const info = roles[agentName] || {};
-    const stats = agentStats[agentName] || {};
-
-    document.getElementById('configAgentName').textContent = agentName;
-    document.getElementById('configModel').value = info.model || 'claude-cli';
-
-    const statsEl = document.getElementById('configStats');
-    const tokens = formatTokens(stats.tokens || 0);
-    const taskCount = stats.tasks?.assigned || 0;
-    const uptime = formatUptime(stats.uptime_seconds || 0);
-    statsEl.innerHTML = `
-        <span class="config-stat"><span class="config-stat-value">${tokens}</span> tokens</span>
-        <span class="config-stat"><span class="config-stat-value">${taskCount}</span> tasks</span>
-        <span class="config-stat"><span class="config-stat-value">${uptime}</span> uptime</span>
-    `;
-
-    const skillsEl = document.getElementById('configSkills');
-    const skills = info.skills || [];
-    if (skills.length > 0) {
-        skillsEl.innerHTML = skills.map(s => `<span class="config-skill">${s}</span>`).join('');
-    } else {
-        skillsEl.innerHTML = '<span style="color: #666;">No skills configured</span>';
-    }
-
-    document.getElementById('configModal').classList.add('active');
-}
-
-function hideConfigModal() {
-    document.getElementById('configModal').classList.remove('active');
-    configAgent = null;
-}
-
-async function saveAgentConfig() {
-    if (!configAgent) return;
-    const model = document.getElementById('configModel').value;
-
-    try {
-        const res = await fetch(`${API_URL}/agents/${configAgent}/config`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model })
-        });
-        if (res.ok) {
-            hideConfigModal();
-            await fetchRoles();
-            log('agentLogs', `Updated ${configAgent} config`, 'success');
-        }
-    } catch (e) {
-        log('agentLogs', `Failed to save config: ${e}`, 'error');
-    }
+    // Session stats come via WebSocket now
+    // Just trigger initial render
+    renderSessionMonitor();
 }
 
 // Render task agent select
@@ -381,31 +330,6 @@ function renderTaskAgentSelect() {
     for (const name of Object.keys(roles)) {
         select.innerHTML += `<option value="${name}">${name}</option>`;
     }
-}
-
-// Prompt agent with specific action
-function handlePromptAction(name, action) {
-    if (!ws || !action) return;
-
-    let message = '';
-    switch (action) {
-        case 'checkin':
-            message = `@${name} Please give a brief status update on your current work.`;
-            break;
-        case 'resume':
-            message = `@${name} Please resume working on your assigned tasks.`;
-            break;
-        case 'custom':
-            const customMsg = prompt(`Enter message for ${name}:`);
-            if (!customMsg) return;
-            message = `@${name} ${customMsg}`;
-            break;
-        default:
-            return;
-    }
-
-    ws.send(JSON.stringify({ type: 'chat', content: message }));
-    log('agentLogs', `Prompted ${name}: ${action}`, 'info');
 }
 
 // Buffer for terminal output before terminals are initialized
@@ -426,3 +350,20 @@ function handleTerminalOutput(agent, line) {
         console.log('[Terminal] Buffered for', agent, '(terminal not ready)');
     }
 }
+
+// Legacy functions (kept for compatibility)
+function renderAgentCards() {
+    renderSessionMonitor();
+}
+
+function updateAgentStatsInPlace() {
+    // No-op - session stats come via WebSocket
+}
+
+function showConfigModal(agentName) {
+    // Simplified - just show info
+    alert(`Agent: ${agentName}\nBackend: ${roles[agentName]?.backend || 'unknown'}\nModel: ${roles[agentName]?.model || 'default'}`);
+}
+
+function hideConfigModal() {}
+function saveAgentConfig() {}

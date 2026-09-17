@@ -142,9 +142,33 @@ def get_agent_errors(agent: str = None) -> dict:
 
 # ============ TERMINAL OUTPUT ============
 
+# Terminal log directory
+from pathlib import Path
+TERMINAL_LOG_DIR = Path(__file__).parent.parent / "data" / "logs" / "terminals"
+TERMINAL_LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _archive_terminal_line(agent: str, line: str):
+    """Archive terminal line to daily log file."""
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        log_file = TERMINAL_LOG_DIR / f"{agent}_{today}.log"
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        with open(log_file, "a", encoding="utf-8") as f:
+            # Strip ANSI codes for clean logs
+            clean_line = line.replace("\x1b[90m", "").replace("\x1b[0m", "").replace("\x1b[32m", "").replace("\x1b[31m", "")
+            f.write(f"[{timestamp}] {clean_line}")
+            if not clean_line.endswith("\n"):
+                f.write("\n")
+    except Exception as e:
+        logger.debug("[TERM] Archive error: %s", e)
+
+
 def broadcast_terminal_line_sync(agent: str, line: str):
-    """Stream terminal output line to frontend (called from sync code)."""
-    logger.info("[TERM] %s: %s", agent, line[:50] if len(line) > 50 else line)
+    """Stream terminal output line to frontend and archive to disk."""
+    # Archive to disk first (non-blocking)
+    _archive_terminal_line(agent, line)
+
     with _terminal_lock:
         if agent not in terminal_buffers:
             terminal_buffers[agent] = []
@@ -504,6 +528,45 @@ async def _memory_compression_loop():
         await asyncio.sleep(60)  # Update every minute
 
 
+async def _session_stats_broadcast_loop():
+    """Broadcast CLI session stats (BOSS + Fleet) periodically."""
+    last_hash = ""
+    while True:
+        try:
+            if connections:
+                from backends.backends.boss_cli import BossCLI, SESSION_TOKEN_THRESHOLD as BOSS_THRESHOLD
+                from backends.backends.fleet_cli import FleetCLI, SESSION_TOKEN_THRESHOLD as FLEET_THRESHOLD
+
+                boss_stats = BossCLI.get_session_stats()
+                fleet_stats = FleetCLI.get_session_stats()
+
+                stats = {
+                    "boss": {
+                        "cumulative_tokens": boss_stats["cumulative_tokens"],
+                        "threshold": BOSS_THRESHOLD,
+                        "usage_pct": round((boss_stats["cumulative_tokens"] / BOSS_THRESHOLD) * 100, 1),
+                    },
+                    "fleet": {
+                        "cumulative_tokens": fleet_stats["cumulative_tokens"],
+                        "threshold": FLEET_THRESHOLD,
+                        "usage_pct": round((fleet_stats["cumulative_tokens"] / FLEET_THRESHOLD) * 100, 1),
+                    }
+                }
+
+                current_hash = str(stats)
+                if current_hash != last_hash:
+                    last_hash = current_hash
+                    data = json.dumps({
+                        "type": "session_stats_update",
+                        "data": stats
+                    })
+                    await broadcast_to_clients(data)
+        except Exception as e:
+            logger.debug("Session stats broadcast error: %s", e)
+
+        await asyncio.sleep(2)  # Update every 2 seconds
+
+
 def start_broadcast_loops(studio) -> list[asyncio.Task]:
     """Start all background broadcast loops. Returns list of tasks."""
     global main_loop, _broadcast_tasks
@@ -520,6 +583,7 @@ def start_broadcast_loops(studio) -> list[asyncio.Task]:
         asyncio.create_task(_suggestions_broadcast_loop()),
         asyncio.create_task(_projects_broadcast_loop()),
         asyncio.create_task(_memory_compression_loop()),
+        asyncio.create_task(_session_stats_broadcast_loop()),
     ]
     return _broadcast_tasks
 
