@@ -44,8 +44,11 @@ async def create_task(
     dependencies: Annotated[Optional[list[str]], Field(description="Depends on task IDs")] = None,
 ) -> str:
     """Create task: [X] constraints [>] goal. Workers discover files themselves."""
+    logger.info("[MCP] create_task: %s → %s", what[:50], assignee)
     from studio.agents.boss.tools import create_task as handler
-    return handler(what=what, constraints=constraints, assignee=assignee, dependencies=dependencies)
+    result = handler(what=what, constraints=constraints, assignee=assignee, dependencies=dependencies)
+    logger.info("[MCP] create_task result: %s", result[:80])
+    return result
 
 
 @mcp.tool()
@@ -56,6 +59,7 @@ async def create_routine(
     tasks: Annotated[list[dict], Field(description="Task sequence: [{description, assignee}, ...]")],
 ) -> str:
     """Create a scheduled routine (recurring workflow)."""
+    logger.info("[MCP] create_routine: %s (%ds, %d tasks)", name, interval_seconds, len(tasks))
     from studio.core.routine_tools import create_routine as handler
     return handler(name=name, description=description, interval_seconds=interval_seconds, tasks=tasks)
 
@@ -66,6 +70,7 @@ async def get_task_status(
     include_completed: Annotated[bool, Field(description="Include APPROVED/FAILED")] = False,
 ) -> str:
     """Get status of tasks."""
+    logger.info("[MCP] get_task_status: %s (include_completed=%s)", task_id or "all", include_completed)
     from studio.agents.boss.tools import get_task_status as handler
     return handler(task_id=task_id, include_completed=include_completed)
 
@@ -76,6 +81,7 @@ async def recall_memory(
     max_results: Annotated[int, Field(description="Max results", ge=1, le=20)] = 5,
 ) -> str:
     """Search memory tiers."""
+    logger.info("[MCP] recall_memory: '%s' (max=%d)", query[:50] if query else "", max_results)
     from studio.agents.boss.tools import recall_memory as handler
     return handler(query=query, max_results=max_results, search_logs=True)
 
@@ -91,6 +97,7 @@ async def create_suggestion(
     evidence: Annotated[Optional[str], Field(description="Supporting evidence")] = None,
 ) -> str:
     """Create a suggestion for human review in the Learning tab."""
+    logger.info("[MCP] create_suggestion: '%s' (%s) from %s", title[:40], category, source_agent)
     from studio.agents.boss.tools import create_suggestion as handler
     return handler(title=title, content=content, category=category, source_agent=source_agent, related_tasks=related_tasks, files_mentioned=files_mentioned, evidence=evidence)
 
@@ -106,6 +113,7 @@ async def search_code(
     context_lines: Annotated[int, Field(description="Context lines")] = 2,
 ) -> str:
     """Search code in path."""
+    logger.info("[MCP] search_code: '%s' in %s", pattern, path)
     import subprocess
     import os
 
@@ -167,6 +175,7 @@ async def read_lines(
     end_line: Annotated[int, Field(description="End line (max 200 range)")],
 ) -> str:
     """Read lines from file."""
+    logger.info("[MCP] read_lines: %s:%d-%d", path, start_line, end_line)
     file_path = PROJECT_ROOT / path
 
     if not file_path.exists():
@@ -199,6 +208,7 @@ async def edit_file(
     new_content: Annotated[str, Field(description="New content")],
 ) -> str:
     """Replace content in file."""
+    logger.info("[MCP] edit_file: %s (%d → %d chars)", path, len(old_content), len(new_content))
     file_path = PROJECT_ROOT / path
 
     if not file_path.exists():
@@ -240,6 +250,7 @@ async def write_report(
     format: Annotated[Literal["md", "txt", "json"], Field(description="Format")] = "md",
 ) -> str:
     """Save report to reports/ folder."""
+    logger.info("[MCP] write_report: %s.%s (%d chars)", filename, format, len(content))
     from studio.core.file_tools import write_report as handler
     return handler(filename=filename, content=content, format=format)
 
