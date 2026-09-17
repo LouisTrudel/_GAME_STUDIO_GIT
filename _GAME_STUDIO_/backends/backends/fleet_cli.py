@@ -463,10 +463,13 @@ class FleetCLI(Backend):
 
         elif event_type == "content_block_start":
             content_block = event.get("content_block", {})
-            if content_block.get("type") == "tool_use":
+            block_type = content_block.get("type", "")
+            logger.info("[%s] content_block_start: type=%s", self.agent_name, block_type)
+            if block_type == "tool_use":
                 self._tool_use_count += 1
-                # Broadcast tool use
                 tool_name = content_block.get("name", "unknown")
+                tool_input = content_block.get("input", {})
+                logger.info("[%s] TOOL CALL: %s %s", self.agent_name, tool_name, str(tool_input)[:100])
                 try:
                     from server_modules.broadcast import broadcast_terminal_line_sync
                     broadcast_terminal_line_sync(self.agent_name, f"[tool: {tool_name}]\n")

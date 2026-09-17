@@ -80,8 +80,9 @@ class BossCLI(Backend):
     - Auto-clears when tokens exceed threshold
     """
 
-    _cumulative_tokens: int = 0
-    _session_needs_create: bool = True
+    # Class variables (shared across all instances)
+    _cumulative_tokens = 0  # Remove type annotation, use direct assignment
+    _session_needs_create = True  # Remove type annotation, use direct assignment
     _lock = threading.Lock()
     _call_lock = threading.Lock()  # Serialize all BOSS CLI calls
 
@@ -355,8 +356,13 @@ class BossCLI(Backend):
                 text_content.append(delta.get("text", ""))
 
         elif event_type == "content_block_start":
-            if event.get("content_block", {}).get("type") == "tool_use":
+            content_block = event.get("content_block", {})
+            block_type = content_block.get("type", "")
+            logger.info("[BOSS] content_block_start: type=%s", block_type)
+            if block_type == "tool_use":
                 self._tool_use_count += 1
+                tool_name = content_block.get("name", "unknown")
+                logger.info("[BOSS] TOOL CALL: %s", tool_name)
 
         elif event_type == "system":
             if event.get("subtype") == "api_retry":
