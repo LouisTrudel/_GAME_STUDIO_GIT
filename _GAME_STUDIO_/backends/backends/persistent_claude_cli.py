@@ -223,7 +223,8 @@ class PersistentClaudeCLI(Backend):
 
         # MCP config
         # Tool scoping by agent type
-        VANILLA_AGENTS = {"Compression", "Text", "Routine", "Image", "Audio", "Video"}
+        # Vanilla = no tools, pure input/output (stateless compressors, formatters)
+        VANILLA_AGENTS = {"Compression", "Text", "Image", "Audio", "Video"}
 
         if self.agent_name in VANILLA_AGENTS:
             # Vanilla agents: NO tools, NO MCP - pure input/output
@@ -235,8 +236,11 @@ class PersistentClaudeCLI(Backend):
                 cmd.extend(["--mcp-config", str(mcp_config)])
 
             if self.agent_name == "BOSS":
-                # BOSS: delegation + awareness + report reading - NO file reading
-                allowed = "mcp__game-studio__create_task,mcp__game-studio__recall_memory,mcp__game-studio__get_task_status,mcp__game-studio__write_report"
+                # BOSS: delegation + routine creation + awareness - NO file reading
+                allowed = "mcp__game-studio__create_task,mcp__game-studio__create_routine,mcp__game-studio__recall_memory,mcp__game-studio__get_task_status,mcp__game-studio__write_report"
+            elif self.agent_name == "Routine":
+                # Routine agent: only routine management
+                allowed = "mcp__game-studio__create_routine,mcp__game-studio__get_task_status"
             else:
                 # Workers: file ops only
                 allowed = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__edit_file,mcp__game-studio__write_report"
