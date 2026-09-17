@@ -524,7 +524,8 @@ class FleetCLI(Backend):
             self.last_cache_creation_tokens = usage.get("cache_creation_input_tokens", 0)
             self.last_cache_read_tokens = usage.get("cache_read_input_tokens", 0)
 
-            cache_pct = (self.last_cache_read_tokens / max(self.last_input_tokens, 1)) * 100
+            total_input = self.last_cache_read_tokens + self.last_input_tokens
+            cache_pct = (self.last_cache_read_tokens / max(total_input, 1)) * 100
             logger.info("[%s] Fleet END | turns=%d | in=%dK out=%dK | cache=%.0f%% | $%.4f",
                         self.agent_name,
                         self.last_num_turns,

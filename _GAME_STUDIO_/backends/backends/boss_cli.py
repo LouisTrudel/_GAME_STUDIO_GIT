@@ -381,13 +381,24 @@ class BossCLI(Backend):
             self.last_cache_creation_tokens = usage.get("cache_creation_input_tokens", 0)
             self.last_cache_read_tokens = usage.get("cache_read_input_tokens", 0)
 
-            cache_pct = (self.last_cache_read_tokens / max(self.last_input_tokens, 1)) * 100
+            total_input = self.last_cache_read_tokens + self.last_input_tokens
+            cache_pct = (self.last_cache_read_tokens / max(total_input, 1)) * 100
             logger.info("[BOSS] Done | turns=%d | in=%dK out=%dK | cache=%.0f%% | $%.4f",
                         self.last_num_turns,
                         self.last_input_tokens // 1000,
                         self.last_output_tokens // 1000,
                         cache_pct,
                         self.last_cost_usd)
+
+            # Track tokens in studio metrics
+            from studio.core.studio_metrics import track_tokens
+            track_tokens(
+                agent=self.agent_name,
+                input_tokens=self.last_input_tokens,
+                output_tokens=self.last_output_tokens,
+                cache_read_tokens=self.last_cache_read_tokens,
+                cache_creation_tokens=self.last_cache_creation_tokens,
+            )
 
         if text_content:
             return "\n\n".join(text_content)
