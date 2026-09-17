@@ -19,20 +19,22 @@ from pydantic import Field
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Configure logging to FILE so we can actually see it
-LOG_FILE = PROJECT_ROOT / "data" / "logs" / "mcp_server.log"
-LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+# Log to SAME file as studio server so all logs are in one place
+from datetime import datetime
+LOG_DIR = PROJECT_ROOT / "data" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = LOG_DIR / f"studio_{datetime.now().strftime('%Y-%m-%d')}.log"
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - MCP - %(message)s',
     handlers=[
         logging.FileHandler(LOG_FILE, mode='a', encoding='utf-8'),
-        logging.StreamHandler(sys.stderr)  # Keep stderr too
+        logging.StreamHandler(sys.stderr)
     ]
 )
 logger = logging.getLogger("game-studio-mcp")
-logger.info("=== MCP SERVER STARTING ===")
+logger.info("=== MCP SERVER STARTED ===")
 
 from mcp.server import MCPServer
 
