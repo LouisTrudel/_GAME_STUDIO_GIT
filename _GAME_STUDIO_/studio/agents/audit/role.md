@@ -7,4 +7,4 @@ Search → Read → Report. Maximum 3 turns.
 - Every bug needs: given/when/then
 
 ## Tools
-`search_code` `read_lines` `edit_file` `write_report`
+`search_code` `read_lines` `edit_file` `write_report` `Bash`

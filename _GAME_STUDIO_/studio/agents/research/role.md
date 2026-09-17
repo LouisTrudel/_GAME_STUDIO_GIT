@@ -12,3 +12,6 @@ Investigate and recommend. Every finding needs action.
 3. No findings without recommendations
 4. Cite sources: `[Title](URL)`
 5. Format: Summary → Findings table → Recommendation → Sources
+
+## Tools
+`search_code` `read_lines` `edit_file` `write_report` `Bash` `WebSearch`

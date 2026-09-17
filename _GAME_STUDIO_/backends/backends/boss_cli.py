@@ -98,8 +98,8 @@ class BossCLI(Backend):
         messages: list[dict],
         system_prompt: str = "",
         max_tokens: int = 4096,
-        tools: list[dict] = None,
-        tool_handlers: dict = None,
+        tools: list[dict] = None,  # Deprecated - MCP tools via --allowedTools
+        tool_handlers: dict = None,  # Deprecated - MCP handles tools
     ) -> str:
         """Send message to BOSS CLI session."""
         self._reset_token_tracking()
@@ -114,11 +114,6 @@ class BossCLI(Backend):
 
         try:
             response = self._run_cli(prompt)
-
-            # Execute tool tags if present
-            if tool_handlers and "<tool>" in response:
-                response = self._execute_tool_tags(response, tool_handlers)
-
             return response
         except Exception as e:
             self.last_is_error = True
@@ -393,38 +388,6 @@ class BossCLI(Backend):
 
         BossCLI._cumulative_tokens = 0
         BossCLI._session_needs_create = True
-
-    def _execute_tool_tags(self, response: str, tool_handlers: dict) -> str:
-        """Parse and execute <tool> tags."""
-        import re
-
-        pattern = r'<tool>(\w+)</tool>\s*<params>(.*?)</params>'
-        matches = re.findall(pattern, response, re.DOTALL)
-
-        if not matches:
-            return response
-
-        results = []
-        for tool_name, params_str in matches:
-            handler = tool_handlers.get(tool_name)
-            if not handler:
-                results.append(f"[Tool '{tool_name}' not found]")
-                continue
-
-            try:
-                params = json.loads(params_str) if params_str.strip() else {}
-                result = handler(**params)
-                results.append(f"[{tool_name}]: {result}")
-                self._tool_use_count += 1
-            except Exception as e:
-                results.append(f"[{tool_name} error]: {e}")
-                self.last_tool_errors.append(f"{tool_name}: {e}")
-
-        cleaned = re.sub(pattern, '', response, flags=re.DOTALL).strip()
-        if results:
-            cleaned += "\n\n---\nTool Results:\n" + "\n".join(results)
-
-        return cleaned
 
     def get_quality_metrics(self) -> dict:
         """Return quality metrics."""

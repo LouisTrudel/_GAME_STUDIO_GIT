@@ -8,4 +8,4 @@ Search → Read → Edit → Done. Maximum 3 turns.
 - **No verification** - trust your edit worked
 
 ## Tools
-`search_code` `read_lines` `edit_file` `write_report`
+`search_code` `read_lines` `edit_file` `write_report` `Bash`

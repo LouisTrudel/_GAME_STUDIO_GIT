@@ -119,24 +119,9 @@ class StudioAgent:
             from studio.agents.boss.tools import TOOLS, HANDLERS
             tools.extend(TOOLS)
             handlers.update(HANDLERS)
-        else:
-            # All employees get base employee tools
-            from studio.core.employee_tools import TOOLS as EMP_TOOLS, make_handlers
-            tools.extend(EMP_TOOLS)
-            handlers.update(make_handlers(self.name))
 
-            # Check for agent-specific tools (dynamic import)
-            agent_tools_file = AGENTS_DIR / self.name_raw.lower() / "tools.py"
-            if agent_tools_file.exists():
-                import importlib
-                module_name = f"studio.agents.{self.name_raw.lower()}.tools"
-                try:
-                    agent_module = importlib.import_module(module_name)
-                    if hasattr(agent_module, "TOOLS") and hasattr(agent_module, "HANDLERS"):
-                        tools.extend(agent_module.TOOLS)
-                        handlers.update(agent_module.HANDLERS)
-                except ImportError:
-                    pass  # Agent has tools.py but no TOOLS/HANDLERS exports
+        # Tools are now enforced via MCP --allowedTools flag in CLI backends
+        # No need for legacy <tool> tag handlers
 
         return tools, handlers
 

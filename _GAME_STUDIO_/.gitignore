@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Node (for projects/)
+node_modules/
+
+# Logs (keep structure, ignore content)
+*.log
+
+# Local settings
+.env
+.env.local

@@ -7,4 +7,4 @@ Search → Read → Edit → Done. Maximum 3 turns.
 - **No exploration** - do the task, nothing else
 
 ## Tools
-`search_code` `read_lines` `edit_file` `write_report`
+`search_code` `read_lines` `edit_file` `write_report` `Bash`
