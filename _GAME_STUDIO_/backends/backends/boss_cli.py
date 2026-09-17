@@ -193,17 +193,8 @@ class BossCLI(Backend):
 
         cmd = [claude_cmd, "-p", "-", "--output-format", "stream-json", "--verbose"]
 
-        # Session management - resume if exists, create if new/cleared
-        session_exists = self._session_file_exists()
-
-        with BossCLI._lock:
-            if session_exists and not BossCLI._session_needs_create:
-                cmd.extend(["--resume", BOSS_SESSION_UUID])
-                logger.debug("[BOSS] Resuming session")
-            else:
-                cmd.extend(["--session-id", BOSS_SESSION_UUID])
-                BossCLI._session_needs_create = False
-                logger.info("[BOSS] Creating new session")
+        # Session management - always use session-id (creates or resumes automatically)
+        cmd.extend(["--session-id", BOSS_SESSION_UUID])
 
         # MCP config
         mcp_config = self.cwd / ".claude" / "settings.json"

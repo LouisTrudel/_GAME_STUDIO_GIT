@@ -214,17 +214,8 @@ class FleetCLI(Backend):
 
         cmd = [claude_cmd, "-p", "-", "--output-format", "stream-json", "--verbose"]
 
-        # Session management - all workers share FLEET_SESSION_UUID
-        session_exists = self._session_file_exists()
-
-        with FleetCLI._lock:
-            if session_exists and not FleetCLI._session_needs_create:
-                cmd.extend(["--resume", FLEET_SESSION_UUID])
-                logger.debug("[%s] Resuming fleet session", self.agent_name)
-            else:
-                cmd.extend(["--session-id", FLEET_SESSION_UUID])
-                FleetCLI._session_needs_create = False
-                logger.info("[%s] Creating new fleet session", self.agent_name)
+        # Session management - always use session-id (creates or resumes automatically)
+        cmd.extend(["--session-id", FLEET_SESSION_UUID])
 
         # MCP config
         mcp_config = self.cwd / ".claude" / "settings.json"
