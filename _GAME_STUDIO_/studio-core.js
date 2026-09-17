@@ -5,10 +5,15 @@ const WS_URL = 'ws://127.0.0.1:8000/ws';
 const API_URL = 'http://127.0.0.1:8000/api';
 
 // T327: URL-based project routing
-// Extract ?project= from URL for project context
+// T742: Falls back to localStorage if URL param missing (tab refresh resilience)
 function getUrlProjectId() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('project') || null;
+    const urlProject = params.get('project');
+    if (urlProject) {
+        return urlProject;
+    }
+    // Fall back to localStorage if URL doesn't have project
+    return localStorage.getItem('activeProject') || null;
 }
 
 // Build API URL with project context
@@ -296,6 +301,14 @@ function initApp() {
     const projectId = getUrlProjectId();
     console.log('[INIT] Project context:', projectId || 'default (no ?project= param)');
 
+    // T742: If project loaded from localStorage, sync URL
+    if (projectId && !new URLSearchParams(window.location.search).has('project')) {
+        console.log('[INIT] Restoring project from localStorage to URL:', projectId);
+        const url = new URL(window.location);
+        url.searchParams.set('project', projectId);
+        window.history.replaceState({}, '', url);
+    }
+
     // Event listeners
     sendBtn.onclick = sendMessage;
     inputEl.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
@@ -310,9 +323,8 @@ function initApp() {
         });
     });
 
-    // Fetch initial data
-    fetchRoles();
-    fetchHistory();
+    // Fetch initial data - roles MUST load before history (for colors)
+    fetchRoles().then(() => fetchHistory());
     fetchSuggestions();
     fetchSchedules();
     fetchProjects();

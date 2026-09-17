@@ -19,12 +19,15 @@ function syncProjectFromUrl() {
 }
 
 // T327: Update URL when project changes (without page reload)
+// T742: Also persist to localStorage for tab refresh resilience
 function updateUrlProject(projectId) {
     const url = new URL(window.location);
     if (projectId) {
         url.searchParams.set('project', projectId);
+        localStorage.setItem('activeProject', projectId);
     } else {
         url.searchParams.delete('project');
+        localStorage.removeItem('activeProject');
     }
     window.history.replaceState({}, '', url);
 }
