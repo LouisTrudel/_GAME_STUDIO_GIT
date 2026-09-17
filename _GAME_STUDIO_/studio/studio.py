@@ -138,20 +138,25 @@ class Studio:
 
 """
 
-        prompt = f"""Tier {tier_index} → Compress into bullets
+        prompt = f"""Compress this into tagged bullets. Output ONLY the three sections below.
 
 {friction_section}## Content ({len(content)} chars)
 {content_preview}
 
 ---
 
-| Tag | Destination |
-|-----|-------------|
-| [ACTIVE] | ===KEEP=== |
-| [DONE] | ===PUSH=== (include fixed friction) |
-| [FRICTION] | ===FRICTION=== (unresolved from above + new) |
+OUTPUT FORMAT (respond with ONLY this structure):
 
-Max 60% KEEP. When uncertain → DONE."""
+===KEEP===
+[ACTIVE] Recent context, open tasks, ongoing work
+
+===PUSH===
+[DONE] Completed work, resolved issues, archived context
+
+===FRICTION===
+[FRICTION] Unresolved blockers, bugs, problems
+
+Rules: Max 60% in KEEP. When uncertain → PUSH. Merge any existing sections."""
 
         try:
             self._notify_status("Compression", "working", f"Compacting tier {tier_index}...")
