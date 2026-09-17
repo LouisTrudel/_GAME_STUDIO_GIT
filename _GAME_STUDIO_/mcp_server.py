@@ -38,15 +38,14 @@ mcp = MCPServer("game-studio")
 
 @mcp.tool()
 async def create_task(
-    what: Annotated[str, Field(description="Task goal")],
-    files: Annotated[Optional[list[str]], Field(description="Files to touch")] = None,
+    what: Annotated[str, Field(description="Task goal - describe WHAT, not WHERE")],
     constraints: Annotated[Optional[list[str]], Field(description="What NOT to do")] = None,
     assignee: Annotated[Optional[str], Field(description="Agent name")] = None,
     dependencies: Annotated[Optional[list[str]], Field(description="Depends on task IDs")] = None,
 ) -> str:
-    """Create task: [F] files [X] constraints [>] goal"""
+    """Create task: [X] constraints [>] goal. Workers discover files themselves."""
     from studio.agents.boss.tools import create_task as handler
-    return handler(what=what, files=files, constraints=constraints, assignee=assignee, dependencies=dependencies)
+    return handler(what=what, constraints=constraints, assignee=assignee, dependencies=dependencies)
 
 
 @mcp.tool()

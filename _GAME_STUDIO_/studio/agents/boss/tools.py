@@ -180,18 +180,13 @@ def _get_active_project_context() -> str:
 
 CREATE_TASK_SCHEMA = {
     "name": "create_task",
-    "description": "Create a task. Include: files with :line ranges, constraints for scope, clear done-when.",
+    "description": "Create a task. Describe WHAT, not WHERE - workers discover files themselves.",
     "input_schema": {
         "type": "object",
         "properties": {
             "what": {
                 "type": "string",
                 "description": "Deliverable + success criteria. e.g., 'Fix overflow - done when card fits without scroll'"
-            },
-            "files": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Paths with :line ranges. e.g., ['studio-ui.js:17-50', 'studio.css:474']"
             },
             "constraints": {
                 "type": "array",
@@ -210,10 +205,6 @@ CREATE_TASK_SCHEMA = {
             "description": {
                 "type": "string",
                 "description": "(Legacy) Falls back if 'what' not provided"
-            },
-            "backend": {
-                "type": "string",
-                "description": "(deprecated) Claude only now"
             }
         },
         "required": ["what"]
@@ -223,25 +214,20 @@ CREATE_TASK_SCHEMA = {
 
 def create_task(
     what: str = None,
-    files: list = None,
     constraints: list = None,
     assignee: str = None,
     dependencies: list = None,
     description: str = None,
-    backend: str = None,
     # Legacy params
     title: str = None,
     agent: str = None,
+    files: list = None,  # Deprecated - ignored
+    backend: str = None,  # Deprecated - ignored
 ) -> str:
-    """Create task with structured format: [F] files [X] constraints [>] what"""
+    """Create task with structured format: [X] constraints [>] what. Workers discover files."""
 
     # Build structured description from fields
-    # Order: FILES → CONSTRAINTS → WHAT (10-80-10 rule)
     parts = []
-
-    # [F] Files - orient agent immediately
-    if files:
-        parts.append("[F] " + ", ".join(files))
 
     # [X] Constraints - guardrails
     if constraints:
