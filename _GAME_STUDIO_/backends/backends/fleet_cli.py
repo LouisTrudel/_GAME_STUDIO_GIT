@@ -214,8 +214,11 @@ class FleetCLI(Backend):
 
         cmd = [claude_cmd, "-p", "-", "--output-format", "stream-json", "--verbose"]
 
-        # Session management - always use session-id (creates or resumes automatically)
-        cmd.extend(["--session-id", FLEET_SESSION_UUID])
+        # Session management - resume if exists, create if not
+        if self._session_file_exists():
+            cmd.extend(["--resume", FLEET_SESSION_UUID])
+        else:
+            cmd.extend(["--session-id", FLEET_SESSION_UUID])
 
         # MCP config
         mcp_config = self.cwd / ".claude" / "settings.json"
