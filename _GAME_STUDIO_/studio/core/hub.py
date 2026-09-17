@@ -196,9 +196,9 @@ class Hub:
         msg = Message(sender=sender, content=content)
         self.messages.append(msg)
 
-        # Feed to History compression (Writer agent generates narrative)
-        # Note: AC-Memory tier0 = messages.json directly (no separate accumulation)
-        self._accumulate_to_history(msg, task_id)
+        # NOTE: Hub messages no longer go to history draft.
+        # Terminal output (actual agent work) goes to draft instead.
+        # Hub messages are kept in messages.json + tier0/tier1 memory.
 
         # Trim to max buffer size
         if len(self.messages) > MAX_MESSAGES:

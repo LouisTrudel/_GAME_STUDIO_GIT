@@ -147,6 +147,17 @@ from pathlib import Path
 TERMINAL_LOG_DIR = Path(__file__).parent.parent / "data" / "logs" / "terminals"
 TERMINAL_LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+# Buffer for history accumulation (collect lines before sending to draft)
+_history_buffer: dict[str, list[str]] = {}
+_history_buffer_lock = threading.Lock()
+HISTORY_FLUSH_LINES = 20  # Flush to history after N lines
+
+
+def _clean_ansi(text: str) -> str:
+    """Strip ANSI escape codes from text."""
+    import re
+    return re.sub(r'\x1b\[[0-9;]*m', '', text)
+
 
 def _archive_terminal_line(agent: str, line: str):
     """Archive terminal line to daily log file."""
@@ -155,8 +166,7 @@ def _archive_terminal_line(agent: str, line: str):
         log_file = TERMINAL_LOG_DIR / f"{agent}_{today}.log"
         timestamp = datetime.now().strftime("%H:%M:%S")
         with open(log_file, "a", encoding="utf-8") as f:
-            # Strip ANSI codes for clean logs
-            clean_line = line.replace("\x1b[90m", "").replace("\x1b[0m", "").replace("\x1b[32m", "").replace("\x1b[31m", "")
+            clean_line = _clean_ansi(line)
             f.write(f"[{timestamp}] {clean_line}")
             if not clean_line.endswith("\n"):
                 f.write("\n")
@@ -164,10 +174,69 @@ def _archive_terminal_line(agent: str, line: str):
         logger.debug("[TERM] Archive error: %s", e)
 
 
+def _accumulate_to_history(agent: str, line: str):
+    """Accumulate terminal output to history draft.
+
+    Buffers lines and flushes periodically to avoid too many small writes.
+    This replaces hub messages as the source for history narrative.
+    """
+    # Skip vanilla agents (no meaningful output for history)
+    if agent in ("Compression", "Text", "Image", "Audio", "Video"):
+        return
+
+    clean_line = _clean_ansi(line).strip()
+    if not clean_line or len(clean_line) < 5:
+        return  # Skip empty/tiny lines
+
+    with _history_buffer_lock:
+        if agent not in _history_buffer:
+            _history_buffer[agent] = []
+        _history_buffer[agent].append(clean_line)
+
+        # Flush when buffer is full
+        if len(_history_buffer[agent]) >= HISTORY_FLUSH_LINES:
+            _flush_history_buffer(agent)
+
+
+def _flush_history_buffer(agent: str):
+    """Flush accumulated terminal lines to history draft."""
+    with _history_buffer_lock:
+        if agent not in _history_buffer or not _history_buffer[agent]:
+            return
+
+        lines = _history_buffer[agent]
+        _history_buffer[agent] = []
+
+    try:
+        from studio.core.history import history_manager
+
+        timestamp = datetime.now().strftime("%H:%M")
+        # Combine lines into a single entry, truncate if too long
+        content = "\n".join(lines)
+        if len(content) > 1000:
+            content = content[:1000] + "..."
+
+        entry = f"[{timestamp}] {agent} (terminal):\n{content}"
+        history_manager.accumulate(entry)
+    except Exception as e:
+        logger.debug("[TERM] History accumulation error: %s", e)
+
+
+def flush_all_history_buffers():
+    """Flush all agent history buffers (call on shutdown or periodically)."""
+    with _history_buffer_lock:
+        agents = list(_history_buffer.keys())
+    for agent in agents:
+        _flush_history_buffer(agent)
+
+
 def broadcast_terminal_line_sync(agent: str, line: str):
-    """Stream terminal output line to frontend and archive to disk."""
-    # Archive to disk first (non-blocking)
+    """Stream terminal output line to frontend, archive to disk, and accumulate to history."""
+    # Archive to disk
     _archive_terminal_line(agent, line)
+
+    # Accumulate to history draft (replaces hub messages as history source)
+    _accumulate_to_history(agent, line)
 
     with _terminal_lock:
         if agent not in terminal_buffers:
@@ -528,6 +597,16 @@ async def _memory_compression_loop():
         await asyncio.sleep(60)  # Update every minute
 
 
+async def _history_flush_loop():
+    """Periodically flush terminal history buffers to draft."""
+    while True:
+        await asyncio.sleep(30)  # Flush every 30 seconds
+        try:
+            flush_all_history_buffers()
+        except Exception as e:
+            logger.debug("History flush error: %s", e)
+
+
 async def _session_stats_broadcast_loop():
     """Broadcast CLI session stats (BOSS + Fleet) periodically."""
     last_hash = ""
@@ -584,11 +663,15 @@ def start_broadcast_loops(studio) -> list[asyncio.Task]:
         asyncio.create_task(_projects_broadcast_loop()),
         asyncio.create_task(_memory_compression_loop()),
         asyncio.create_task(_session_stats_broadcast_loop()),
+        asyncio.create_task(_history_flush_loop()),
     ]
     return _broadcast_tasks
 
 
 def stop_broadcast_loops():
-    """Cancel all background broadcast loops."""
+    """Cancel all background broadcast loops and flush history buffers."""
+    # Flush any pending terminal output to history
+    flush_all_history_buffers()
+
     for task in _broadcast_tasks:
         task.cancel()
