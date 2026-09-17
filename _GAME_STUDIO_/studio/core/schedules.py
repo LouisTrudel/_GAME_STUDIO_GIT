@@ -221,6 +221,7 @@ class ScheduleManager:
 
         self.schedules[schedule_id] = schedule
         self._save_schedules()
+        # Broadcast happens via polling loop which reloads from disk
         return schedule
 
     def create_script(
@@ -434,6 +435,67 @@ class ScheduleManager:
     def get_all(self) -> list[Schedule]:
         """Get all schedules sorted by order."""
         return sorted(self.schedules.values(), key=lambda s: s.order)
+
+    def reload_from_disk(self) -> bool:
+        """Reload schedules from disk to catch changes from MCP server process."""
+        if not SCHEDULES_FILE.exists():
+            return False
+        try:
+            with open(SCHEDULES_FILE) as f:
+                data = json.load(f)
+
+            disk_ids = {s["id"] for s in data.get("schedules", [])}
+            mem_ids = set(self.schedules.keys())
+
+            # Only reload if different
+            if disk_ids != mem_ids or self._counter != data.get("counter", 0):
+                self.schedules.clear()
+                self._counter = data.get("counter", 0)
+                for s_data in data.get("schedules", []):
+                    sched_type = ScheduleType(s_data.get("schedule_type", "tasks"))
+                    task_templates = []
+                    if sched_type == ScheduleType.TASKS:
+                        for i, t in enumerate(s_data.get("tasks", [])):
+                            is_parallel = t.get("parallel", False)
+                            task_templates.append(TaskTemplate(
+                                description=t["description"],
+                                assignee=t["assignee"],
+                                depends_on_previous=(i > 0 and not is_parallel),
+                                context=t.get("context", ""),
+                                skills=t.get("skills", []),
+                                output=t.get("output", "hub"),
+                                parallel=is_parallel,
+                            ))
+
+                    last_run_status_str = s_data.get("last_run_status", "none")
+                    try:
+                        last_run_status = LastRunStatus(last_run_status_str)
+                    except ValueError:
+                        last_run_status = LastRunStatus.NONE
+
+                    schedule = Schedule(
+                        id=s_data["id"],
+                        name=s_data["name"],
+                        description=s_data["description"],
+                        interval_seconds=s_data["interval_seconds"],
+                        tasks=task_templates,
+                        status=ScheduleStatus(s_data["status"]),
+                        last_run=datetime.fromisoformat(s_data["last_run"]) if s_data.get("last_run") else None,
+                        next_run=datetime.fromisoformat(s_data["next_run"]) if s_data.get("next_run") else None,
+                        run_count=s_data.get("run_count", 0),
+                        created_task_ids=s_data.get("created_task_ids", []),
+                        schedule_type=sched_type,
+                        script_module=s_data.get("script_module"),
+                        last_run_status=last_run_status,
+                        last_run_error=s_data.get("last_run_error"),
+                        order=s_data.get("order", 0),
+                    )
+                    self.schedules[schedule.id] = schedule
+                return True
+            return False
+        except Exception as e:
+            logger.warning("reload_from_disk failed: %s", e)
+            return False
 
     def reorder(self, ordered_ids: list[str]) -> bool:
         """Reorder schedules based on list of IDs. Returns True if successful."""

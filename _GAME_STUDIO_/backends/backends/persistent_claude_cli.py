@@ -1,13 +1,12 @@
 """
-Claude CLI backend with persistent sessions.
+Claude CLI backend - stateless agents with controlled context.
 
-Session lifecycle:
-1. Server boot: Delete old session file (fresh start)
-2. First call: --session-id + full context (memTier1 + hub + trigger)
-3. Subsequent calls: --resume + just trigger (session has context)
+Each call is independent:
+- --no-session-persistence: No accumulation across calls
+- --max-turns: Limits context growth within a call
+- API-level prompt caching still works (5 min TTL on role.md prefix)
 
-Memory is managed server-side but injected on first call.
-Prompt caching works at Anthropic API level (5 min TTL).
+Simpler than persistent sessions, no token explosion risk.
 """
 
 import subprocess
@@ -15,82 +14,36 @@ import json
 import os
 import time
 import threading
-import hashlib
-import uuid
 from pathlib import Path
-from typing import Optional
 
 from .base import Backend, INITIAL_DELAY, BACKOFF_MULTIPLIER, MAX_RETRIES
-import logging
+from studio.core.logging_config import get_logger
 
-logger = logging.getLogger("PersistentCLI")
+logger = get_logger("ClaudeCLI")
 
 STALE_TIMEOUT_SECONDS = 1200  # 20 minutes
-
-
-def get_session_uuid(agent_name: str) -> str:
-    """Generate deterministic session UUID for an agent."""
-    hash_bytes = hashlib.sha256(f"game-studio-persistent-{agent_name}".encode()).digest()
-    return str(uuid.UUID(bytes=hash_bytes[:16]))
-
-
-def _get_session_file_path(cwd: Path, session_uuid: str) -> Optional[Path]:
-    """Get path to session file if it exists."""
-    home = Path.home()
-    claude_projects = home / ".claude" / "projects"
-    if not claude_projects.exists():
-        return None
-
-    cwd_str = str(cwd.resolve())
-    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
-    session_file = claude_projects / encoded / f"{session_uuid}.jsonl"
-    return session_file if session_file.exists() else None
-
-
-def _delete_session_file(cwd: Path, session_uuid: str) -> bool:
-    """Delete session file if it exists. Returns True if deleted."""
-    session_file = _get_session_file_path(cwd, session_uuid)
-    if session_file:
-        try:
-            session_file.unlink()
-            logger.info("Deleted session file: %s", session_file.name)
-            return True
-        except Exception as e:
-            logger.warning("Failed to delete session file: %s", e)
-    return False
+DEFAULT_MAX_TURNS = 25  # High limit - let agents complete complex tasks
 
 
 class PersistentClaudeCLI(Backend):
-    """Claude CLI backend with persistent sessions (cleared on boot)."""
+    """Claude CLI backend - stateless with controlled max-turns.
 
-    # Class-level: tracks which agents are initialized THIS boot
-    # Resets when module reloads (server restart)
-    _initialized: dict[str, bool] = {}
-    _initialized_sessions: dict[str, bool] = {}
-    _task_counts: dict[str, int] = {}
-    _session_tokens: dict[str, int] = {}  # Cumulative tokens per session
+    Despite the legacy name, this is now stateless:
+    - Each call starts fresh (--no-session-persistence)
+    - Context only grows within a single call (--max-turns limits this)
+    - API-level caching still provides ~66% cache hits on role.md
+    """
+
     _running_processes: dict[str, subprocess.Popen] = {}  # agent_name -> process
     _lock = threading.Lock()
-
-    # Reinitialize session after N tasks to refresh role.md context
-    REINIT_AFTER_TASKS = 20
-    # Clear session when cumulative tokens exceed this threshold
-    SESSION_TOKEN_THRESHOLD = 100_000  # 100k tokens
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()
         self.model = model
         self.agent_name = agent_name or "default"
         self.cwd = Path(__file__).parent.parent.parent
-        self._session_uuid = get_session_uuid(self.agent_name)
         self._reset_metrics()
-
-        # Delete old session file on boot (fresh start)
-        if self.agent_name not in PersistentClaudeCLI._initialized:
-            _delete_session_file(self.cwd, self._session_uuid)
-            PersistentClaudeCLI._initialized[self.agent_name] = False
-
-        logger.info("[%s] Session %s", self.agent_name, self._session_uuid[:8])
+        logger.info("[%s] Stateless agent initialized", self.agent_name)
 
     def _reset_metrics(self):
         """Reset metrics for new call."""
@@ -121,7 +74,6 @@ class PersistentClaudeCLI(Backend):
         """Broadcast live token count during streaming."""
         self._streaming_input_tokens += input_tokens
         self._streaming_output_tokens += output_tokens
-        print(f"[TERM-DEBUG] {self.agent_name}: tokens in={self._streaming_input_tokens} out={self._streaming_output_tokens}")
         try:
             from server_modules.broadcast import broadcast_live_tokens_sync, broadcast_terminal_line_sync
             broadcast_live_tokens_sync(
@@ -129,22 +81,12 @@ class PersistentClaudeCLI(Backend):
                 self._streaming_input_tokens,
                 self._streaming_output_tokens
             )
-            # Also send token info to terminal (we know this path works)
             broadcast_terminal_line_sync(
                 self.agent_name,
                 f"[tokens: in={self._streaming_input_tokens}, out={self._streaming_output_tokens}]\n"
             )
-            print(f"[TERM-DEBUG] {self.agent_name}: broadcast_terminal_line_sync called")
         except Exception as e:
-            print(f"[TERM-DEBUG] {self.agent_name}: ERROR {e}")
-
-    def is_initialized(self) -> bool:
-        """Check if this agent has been initialized this boot (public API)."""
-        return PersistentClaudeCLI._initialized.get(self.agent_name, False)
-
-    def _mark_initialized(self):
-        """Mark agent as initialized."""
-        PersistentClaudeCLI._initialized[self.agent_name] = True
+            logger.debug("[%s] Token broadcast failed: %s", self.agent_name, e)
 
     def chat(
         self,
@@ -154,30 +96,19 @@ class PersistentClaudeCLI(Backend):
         tools: list[dict] = None,
         tool_handlers: dict = None,
     ) -> str:
-        """Send message to Claude CLI with session persistence."""
+        """Send message to Claude CLI (stateless - each call is fresh)."""
         self._reset_token_tracking()
         self._reset_metrics()
 
-        # First call: full context + --session-id
-        # Subsequent: just message + --resume
-        if self.is_initialized():
-            # Incremental: just the user message
-            prompt = messages[-1].get("content", "") if messages else ""
-            is_init = False
-            logger.info("[%s] Incremental (%d chars)", self.agent_name, len(prompt))
-        else:
-            # Init: full context (system + message)
-            prompt = self._build_full_prompt(messages, system_prompt)
-            is_init = True
-            logger.info("[%s] Init (%d chars)", self.agent_name, len(prompt))
+        # Always send full context (stateless)
+        prompt = self._build_full_prompt(messages, system_prompt)
+        prompt_kb = len(prompt.encode('utf-8')) / 1024
+        logger.info("[%s] STATELESS START | prompt=%.1fKB | max_turns=%d",
+                    self.agent_name, prompt_kb,
+                    getattr(self, 'max_turns', None) or DEFAULT_MAX_TURNS)
 
-        # Run CLI
         try:
-            response = self._run_cli(prompt, is_init=is_init)
-
-            # Mark as initialized after successful first call
-            if is_init:
-                self._mark_initialized()
+            response = self._run_cli(prompt)
 
             # Execute tool tags if present
             if tool_handlers and "<tool>" in response:
@@ -190,12 +121,11 @@ class PersistentClaudeCLI(Backend):
             self.last_is_error = True
             self.last_error_message = str(e)
             logger.error("[%s] CLI error: %s\n%s", self.agent_name, e, traceback.format_exc())
-            # Broadcast error to UI
             try:
                 from server_modules.broadcast import broadcast_error_sync
                 broadcast_error_sync(self.agent_name, f"{type(e).__name__}: {e}")
             except ImportError:
-                pass  # Server modules not available
+                pass
             return f"Error: {type(e).__name__}: {e}"
 
     def _build_full_prompt(self, messages: list[dict], system_prompt: str) -> str:
@@ -212,7 +142,7 @@ class PersistentClaudeCLI(Backend):
         parts.append("\nRespond concisely:")
         return "\n".join(parts)
 
-    def _run_cli(self, prompt: str, is_init: bool = False) -> str:
+    def _run_cli(self, prompt: str) -> str:
         """Run Claude CLI subprocess."""
         import tempfile
 
@@ -222,21 +152,21 @@ class PersistentClaudeCLI(Backend):
             temp_path = f.name
 
         try:
-            return self._run_with_retry(temp_path, prompt, is_init)
+            return self._run_with_retry(temp_path, prompt)
         finally:
             try:
                 os.unlink(temp_path)
             except Exception:
                 pass
 
-    def _run_with_retry(self, temp_path: str, prompt: str, is_init: bool) -> str:
+    def _run_with_retry(self, temp_path: str, prompt: str) -> str:
         """Run with exponential backoff retry for transient errors."""
         delay = INITIAL_DELAY
         last_error = None
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                result = self._run_subprocess(temp_path, prompt, is_init)
+                result = self._run_subprocess(temp_path, prompt)
 
                 # Check for empty response that might indicate MCP failure
                 if result == "No response from Claude CLI" and attempt < MAX_RETRIES:
@@ -255,7 +185,6 @@ class PersistentClaudeCLI(Backend):
                     time.sleep(delay)
                     delay *= BACKOFF_MULTIPLIER
                 else:
-                    # Final attempt failed - broadcast error
                     try:
                         from server_modules.broadcast import broadcast_error_sync
                         broadcast_error_sync(self.agent_name, f"{error_type}: {e}")
@@ -266,8 +195,8 @@ class PersistentClaudeCLI(Backend):
             raise last_error
         return "No response from Claude CLI (retries exhausted)"
 
-    def _run_subprocess(self, temp_path: str, prompt: str, is_init: bool) -> str:
-        """Run single Claude CLI subprocess."""
+    def _run_subprocess(self, temp_path: str, prompt: str) -> str:
+        """Run single Claude CLI subprocess (stateless)."""
         # Kill any stale process for this agent first
         with PersistentClaudeCLI._lock:
             old_process = PersistentClaudeCLI._running_processes.get(self.agent_name)
@@ -289,41 +218,46 @@ class PersistentClaudeCLI(Backend):
 
         cmd = [claude_cmd, "-p", "-", "--output-format", "stream-json", "--verbose"]
 
-        # Session handling: init creates new, subsequent resumes
-        if is_init:
-            cmd.extend(["--session-id", self._session_uuid])
-        else:
-            cmd.extend(["--resume", self._session_uuid])
+        # Stateless: no session persistence, fresh context each call
+        cmd.append("--no-session-persistence")
 
         # MCP config
-        mcp_config = self.cwd / ".claude" / "settings.json"
-        if mcp_config.exists():
-            cmd.extend(["--mcp-config", str(mcp_config)])
+        # Tool scoping by agent type
+        VANILLA_AGENTS = {"Compression", "Text", "Routine", "Image", "Audio", "Video"}
+
+        if self.agent_name in VANILLA_AGENTS:
+            # Vanilla agents: NO tools, NO MCP - pure input/output
+            pass  # Skip MCP config and allowedTools entirely
+        else:
+            # Non-vanilla: connect to MCP
+            mcp_config = self.cwd / ".claude" / "settings.json"
+            if mcp_config.exists():
+                cmd.extend(["--mcp-config", str(mcp_config)])
+
+            if self.agent_name == "BOSS":
+                # BOSS: delegation + awareness + report reading - NO file reading
+                allowed = "mcp__game-studio__create_task,mcp__game-studio__recall_memory,mcp__game-studio__get_task_status,mcp__game-studio__write_report"
+            else:
+                # Workers: file ops only
+                allowed = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__edit_file,mcp__game-studio__write_report"
+            cmd.extend(["--allowedTools", allowed])
 
         cmd.append("--dangerously-skip-permissions")
 
-        # Auto-approve tools (no permission prompts)
-        if self.agent_name == "BOSS":
-            # BOSS: MCP tools + Bash (for git) - no Read/Write/Edit (delegates instead)
-            allowed = "mcp__game-studio__*,Bash,Task"
-        else:
-            # Employees: Full tool access
-            allowed = "mcp__game-studio__*,Read,Write,Edit,Glob,Grep,Bash"
-        cmd.extend(["--allowedTools", allowed])
-
-        # Limit exploration to prevent token explosion
-        # Reserve 2 turns for formatting (work gets max_turns - 2)
+        # Limit context growth within call (default 8 turns)
         if hasattr(self, 'max_turns') and self.max_turns:
-            max_turns = max(self.max_turns - 2, 3)  # Reserve 2, min 3
+            max_turns = self.max_turns
         else:
-            max_turns = 5 if self.agent_name == "BOSS" else 28  # 30-2 for employees
+            max_turns = 5 if self.agent_name == "BOSS" else DEFAULT_MAX_TURNS
         cmd.extend(["--max-turns", str(max_turns)])
 
-        # Model selection - use haiku for cheaper exploration
+        # Model selection
         if hasattr(self, 'model') and self.model and self.model != "claude":
             cmd.extend(["--model", self.model])
 
-        logger.debug("[%s] CMD: %s", self.agent_name, " ".join(cmd[:5]))
+        # Log command with key flags for verification
+        flags = [f for f in cmd if f.startswith('--')]
+        logger.debug("[%s] CMD flags: %s", self.agent_name, " ".join(flags))
 
         # Read prompt
         with open(temp_path, 'r', encoding='utf-8') as f:
@@ -516,6 +450,18 @@ class PersistentClaudeCLI(Backend):
             self.last_input_tokens = total_input + self.last_cache_read_tokens
             self.last_output_tokens = total_output
 
+            # Log final stats for verification
+            cache_pct = (self.last_cache_read_tokens / max(self.last_input_tokens, 1)) * 100
+            logger.info(
+                "[%s] STATELESS END | turns=%d | in=%dK out=%dK | cache=%.0f%% | cost=$%.4f",
+                self.agent_name,
+                self.last_num_turns,
+                self.last_input_tokens // 1000,
+                self.last_output_tokens // 1000,
+                cache_pct,
+                self.last_cost_usd
+            )
+
         # T631 FIX: Prefer accumulated text (all turns) over result (last turn only)
         # Claude CLI's result field only contains the last text block, missing earlier messages
         # text_content accumulates all text blocks from all assistant events
@@ -592,82 +538,9 @@ class PersistentClaudeCLI(Backend):
             "friction_events": self._friction_events.copy(),
         }
 
-    def reset_session(self):
-        """Force session reset - next call will reinitialize with full context."""
-        with self._lock:
-            self._initialized_sessions[self.agent_name] = False
-        logger.info("[%s] Session marked for reinitialization", self.agent_name)
-
     def compact_session(self) -> bool:
-        """Clear session after task if token threshold exceeded.
-
-        Only clears when accumulated tokens > 50K to balance:
-        - Cache efficiency (keeping session alive)
-        - Context bloat prevention (clearing when too large)
-
-        Returns True if session was cleared.
-        """
-        if not self.is_initialized():
-            logger.debug("[%s] Not initialized, skipping clear", self.agent_name)
-            return False
-
-        # Accumulate session tokens
-        with self._lock:
-            current = self._session_tokens.get(self.agent_name, 0)
-            task_tokens = getattr(self, 'last_input_tokens', 0) + getattr(self, 'last_output_tokens', 0)
-            current += task_tokens
-            self._session_tokens[self.agent_name] = current
-
-        # Only clear if threshold exceeded
-        if current < self.SESSION_TOKEN_THRESHOLD:
-            logger.debug("[%s] Session tokens %d < %d threshold, keeping session",
-                        self.agent_name, current, self.SESSION_TOKEN_THRESHOLD)
-            return False
-
-        try:
-            if clear_session(self.agent_name):
-                logger.info("[%s] Session cleared (tokens: %d exceeded %d)",
-                           self.agent_name, current, self.SESSION_TOKEN_THRESHOLD)
-                with self._lock:
-                    self._initialized_sessions[self.agent_name] = False
-                    self._session_tokens[self.agent_name] = 0
-                return True
-            return False
-        except Exception as e:
-            logger.warning("[%s] Clear failed: %s", self.agent_name, e)
-            return False
-
-    def _full_reinit(self) -> bool:
-        """Clear session entirely for fresh role.md injection.
-
-        Deletes session file and resets state. Next call will:
-        1. Create new session
-        2. Inject fresh role.md (primacy position)
-        3. Start with clean conversation history
-        """
-        try:
-            # Clear the session file
-            if clear_session(self.agent_name):
-                logger.info("[%s] Session cleared", self.agent_name)
-
-            # Reset task counter
-            with self._lock:
-                self._task_counts[self.agent_name] = 0
-                self._initialized_sessions[self.agent_name] = False
-
-            logger.info("[%s] Full reinit complete - next call injects fresh role.md", self.agent_name)
-            return True
-        except Exception as e:
-            logger.warning("[%s] Full reinit failed: %s", self.agent_name, e)
-            return False
-
-    @classmethod
-    def reset_all_sessions(cls):
-        """Reset all session states - all agents will reinitialize."""
-        with cls._lock:
-            cls._initialized_sessions.clear()
-            cls._task_counts.clear()
-        logger.info("All sessions marked for reinitialization")
+        """No-op for backwards compatibility. Stateless agents don't need compaction."""
+        return False
 
     @classmethod
     def terminate_agent(cls, agent_name: str, timeout: int = 5) -> dict:
@@ -761,166 +634,51 @@ MCP_ERROR_PATTERNS = [
 
 
 # =============================================================================
-# SESSION MANAGEMENT UTILITIES (not auto-enabled)
+# UTILITIES
 # =============================================================================
 
-def list_sessions() -> dict[str, dict]:
-    """List all agent sessions with metadata.
-
-    Returns dict of agent_name -> {uuid, file_path, size_kb, exists}
-    """
-    from pathlib import Path
-
-    cwd = Path(__file__).parent.parent.parent
-    home = Path.home()
-    claude_projects = home / ".claude" / "projects"
-
-    # Encode cwd path like Claude does
-    cwd_str = str(cwd.resolve())
-    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
-    project_dir = claude_projects / encoded
-
-    sessions = {}
-
-    # Known agents (includes all agents that might have sessions)
-    agents = ["BOSS", "Code", "Design", "ArtSpec", "Text", "Audit",
-              "Prompt", "Research", "Routine", "Structure", "Image", "Audio", "Video",
-              "Compression", "Frontend", "Backend", "Network", "Data"]
-
-    for agent in agents:
-        uuid = get_session_uuid(agent)
-        session_file = project_dir / f"{uuid}.jsonl"
-
-        sessions[agent] = {
-            "uuid": uuid[:8],
-            "file_path": str(session_file),
-            "exists": session_file.exists(),
-            "size_kb": round(session_file.stat().st_size / 1024, 1) if session_file.exists() else 0
-        }
-
-    return sessions
-
-
-def clear_session(agent_name: str) -> bool:
-    """Clear a specific agent's session files from all locations.
-
-    The agent will reinitialize with full context on next call.
-    """
-    from pathlib import Path
-
-    cwd = Path(__file__).parent.parent.parent
-    home = Path.home()
-    claude_dir = home / ".claude"
-
-    cwd_str = str(cwd.resolve())
-    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
-
-    uuid = get_session_uuid(agent_name)
-    cleared = False
-
-    # All locations where Claude stores session data
-    files_to_delete = [
-        claude_dir / "projects" / encoded / f"{uuid}.jsonl",
-        claude_dir / "debug" / f"{uuid}.txt",
-        claude_dir / "todos" / f"{uuid}-agent-{uuid}.json",
-    ]
-
-    for file_path in files_to_delete:
-        try:
-            if file_path.exists():
-                file_path.unlink()
-                cleared = True
-                logger.debug("[%s] Deleted %s", agent_name, file_path.name)
-        except Exception as e:
-            logger.warning("[%s] Failed to delete %s: %s", agent_name, file_path, e)
-
-    # Clear in-memory state
-    if cleared:
-        with PersistentClaudeCLI._lock:
-            PersistentClaudeCLI._initialized_sessions.pop(agent_name, None)
-        logger.info("[%s] Session cleared", agent_name)
-
-    return cleared
-
-
-def _get_cli_session_uuid(agent_name: str) -> str:
-    """UUID for ClaudeCLIBackend (non-persistent backend)."""
-    hash_bytes = hashlib.sha256(f"game-studio-{agent_name}".encode()).digest()
-    return str(uuid.UUID(bytes=hash_bytes[:16]))
-
-
-def clear_all_sessions() -> int:
-    """Clear all agent session files and kill stale processes.
-
-    Clears both persistent and non-persistent backend sessions.
-    Returns number of sessions cleared.
-    """
-    import subprocess
-    import os
-
-    # First, kill any stale Claude CLI processes on Windows
-    if os.name == 'nt':
-        try:
-            # Kill all node processes running claude (aggressive but effective)
-            subprocess.run(
-                ['taskkill', '/F', '/IM', 'node.exe', '/FI', 'WINDOWTITLE eq claude*'],
-                capture_output=True,
-                timeout=5
-            )
-        except Exception:
-            pass
-
-    # Clear tracked running processes
+def terminate_all_agents() -> int:
+    """Kill all running agent processes. Returns count terminated."""
+    terminated = 0
     with PersistentClaudeCLI._lock:
         for agent, process in list(PersistentClaudeCLI._running_processes.items()):
             try:
                 if process.poll() is None:
                     process.kill()
                     process.wait(timeout=2)
-            except Exception:
-                pass
-        PersistentClaudeCLI._running_processes.clear()
-        PersistentClaudeCLI._initialized.clear()
-
-    # Clear session files (both UUID schemes)
-    sessions = list_sessions()
-    cleared = 0
-
-    cwd = Path(__file__).parent.parent.parent
-    home = Path.home()
-    cwd_str = str(cwd.resolve())
-    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
-    project_dir = home / ".claude" / "projects" / encoded
-
-    for agent, info in sessions.items():
-        # Clear persistent-claude sessions (game-studio-persistent-{name})
-        if info["exists"]:
-            if clear_session(agent):
-                cleared += 1
-
-        # Also clear non-persistent claude sessions (game-studio-{name})
-        cli_uuid = _get_cli_session_uuid(agent)
-        cli_session_file = project_dir / f"{cli_uuid}.jsonl"
-        if cli_session_file.exists():
-            try:
-                cli_session_file.unlink()
-                logger.info("[%s] Cleared CLI session %s", agent, cli_uuid[:8])
-                cleared += 1
+                    terminated += 1
+                    logger.info("[%s] Terminated", agent)
             except Exception as e:
-                logger.warning("[%s] Failed to clear CLI session: %s", agent, e)
+                logger.warning("[%s] Failed to terminate: %s", agent, e)
+        PersistentClaudeCLI._running_processes.clear()
+    return terminated
 
-    return cleared
+
+# =============================================================================
+# BACKWARDS COMPATIBILITY STUBS (sessions no longer used)
+# =============================================================================
+
+def clear_session(agent_name: str) -> bool:
+    """No-op stub. Sessions no longer persist across calls."""
+    logger.debug("[%s] clear_session called (no-op, stateless mode)", agent_name)
+    return False
+
+
+def clear_all_sessions() -> int:
+    """Kill running agents. Sessions no longer persist across calls."""
+    return terminate_all_agents()
+
+
+def list_sessions() -> dict[str, dict]:
+    """Return empty session list. Sessions no longer persist."""
+    return {}
 
 
 def get_session_stats() -> dict:
-    """Get aggregate session statistics."""
-    sessions = list_sessions()
-
-    total_size = sum(s["size_kb"] for s in sessions.values())
-    active_count = sum(1 for s in sessions.values() if s["exists"])
-
+    """Return empty stats. Sessions no longer persist."""
     return {
-        "total_sessions": active_count,
-        "total_size_kb": round(total_size, 1),
-        "sessions": sessions
+        "total_sessions": 0,
+        "total_size_kb": 0,
+        "sessions": {},
+        "note": "Stateless mode - no session persistence"
     }

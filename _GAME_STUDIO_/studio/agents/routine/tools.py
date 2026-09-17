@@ -68,6 +68,7 @@ def create_routine(name: str, description: str, interval_seconds: int, tasks: li
         interval_seconds=interval_seconds,
         tasks=tasks,
     )
+    # Broadcast happens via polling loop which reloads from disk
 
     interval_human = schedule._format_interval()
     task_count = len(schedule.tasks)

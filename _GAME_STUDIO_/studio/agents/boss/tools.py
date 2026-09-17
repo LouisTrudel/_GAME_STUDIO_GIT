@@ -13,6 +13,10 @@ from studio.core.memory import memory_manager
 from studio.core.history import history_manager
 from studio.core.projects import project_manager
 from studio.routines.git_commit_routine import run_routine as git_commit_routine
+from studio.agents.routine.tools import (
+    TOOLS as ROUTINE_TOOLS,
+    HANDLERS as ROUTINE_HANDLERS,
+)
 
 # Logs directory (for raw log search fallback)
 LOGS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "logs"
@@ -180,29 +184,27 @@ def _get_active_project_context() -> str:
 
 CREATE_TASK_SCHEMA = {
     "name": "create_task",
-    "description": """Create a task with structured fields (optimal for agent execution).
-
-Order: FILES → CONSTRAINTS → WHAT (matches 10-80-10 attention rule)""",
+    "description": "Create a task. Include: files with :line ranges, constraints for scope, clear done-when.",
     "input_schema": {
         "type": "object",
         "properties": {
             "what": {
                 "type": "string",
-                "description": "Deliverable in imperative form. Single sentence. e.g., 'Check overflow before showing expand hint'"
+                "description": "Deliverable + success criteria. e.g., 'Fix overflow - done when card fits without scroll'"
             },
             "files": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "File paths with optional line hints. e.g., ['studio-ui.js:17-50', 'studio.css:474']"
+                "description": "Paths with :line ranges. e.g., ['studio-ui.js:17-50', 'studio.css:474']"
             },
             "constraints": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "What NOT to do. Guards/limits. e.g., ['No CSS changes', 'Keep existing API']"
+                "description": "Scope limits, don't-touch areas. e.g., ['Only touch CSS', 'Keep existing API']"
             },
             "assignee": {
                 "type": "string",
-                "description": "Agent: Design, Code, ArtSpec, Text, Structure, Prompt, Audit, Research, or Raw"
+                "description": "Agent to assign the task to"
             },
             "dependencies": {
                 "type": "array",
@@ -273,6 +275,7 @@ def create_task(
         desc = f"{desc}\n{project_ctx}"
 
     task = task_manager.create_task(desc, assignee, dependencies, backend=backend)
+    # Broadcast happens via polling loop which reloads from disk
 
     # Post to hub (compact format)
     if assignee:
@@ -332,35 +335,11 @@ def get_task_status(task_id: str = None, include_completed: bool = False) -> str
             return task_manager.to_active_context_string()
 
 
-# ============ ACKNOWLEDGE TOOL ============
-
-ACKNOWLEDGE_SCHEMA = {
-    "name": "acknowledge",
-    "description": "Acknowledge a message when no action is needed. Use this instead of prose-only responses.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "message": {
-                "type": "string",
-                "description": "Brief acknowledgment message"
-            }
-        },
-        "required": []
-    }
-}
-
-
-def acknowledge(message: str = "Acknowledged") -> str:
-    """Simple acknowledgment - ensures BOSS always uses a tool."""
-    hub.post("BOSS", message)
-    return f"✓ {message}"
-
-
 # ============ CLARIFY TOOL ============
 
 CLARIFY_SCHEMA = {
     "name": "clarify",
-    "description": "Ask the user for clarification when a request is ambiguous or missing details. Use before creating tasks if requirements are unclear.",
+    "description": "Ask user for clarification when request is ambiguous.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -401,7 +380,7 @@ def clarify(question: str, options: list = None, context: str = None) -> str:
 
 CANCEL_TASK_SCHEMA = {
     "name": "cancel_task",
-    "description": "Stop a task mid-execution. Gracefully terminates the agent, preserves partial results, marks task as CANCELLED.",
+    "description": "Cancel a task. Preserves partial results.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -474,7 +453,7 @@ REASSIGN_TASK_SCHEMA = {
             },
             "new_assignee": {
                 "type": "string",
-                "description": "New agent: Design, Code, ArtSpec, Text, Structure, Prompt, Audit, Research"
+                "description": "New agent name"
             },
             "reason": {
                 "type": "string",
@@ -719,12 +698,7 @@ def git_commit(auto_push: bool = True, message: str = None) -> str:
 
 RECALL_MEMORY_SCHEMA = {
     "name": "recall_memory",
-    "description": """Search memory tiers for relevant context:
-- Tier 0: Raw session buffer
-- Tier 1-2: Injected into prompts (Recent/Archive)
-- Tier 3-10: Reference only (searchable, not auto-injected)
-
-Falls back to raw logs if no tier matches. Call with no query to see recent memories.""",
+    "description": "Search memory tiers and history for context. Empty query returns recent memories.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -874,7 +848,6 @@ TOOLS = [
     REASSIGN_TASK_SCHEMA,
     DELEGATE_CHAIN_SCHEMA,
     # Communication
-    ACKNOWLEDGE_SCHEMA,
     CLARIFY_SCHEMA,
     # Memory & suggestions
     RECALL_MEMORY_SCHEMA,
@@ -882,6 +855,8 @@ TOOLS = [
     ADD_DISCUSSION_SCHEMA,
     # Git
     GIT_COMMIT_SCHEMA,
+    # Routines
+    *ROUTINE_TOOLS,
 ]
 
 HANDLERS = {
@@ -890,7 +865,6 @@ HANDLERS = {
     "read_lines": read_lines,
     "create_task": create_task,
     "get_task_status": get_task_status,
-    "acknowledge": acknowledge,
     "clarify": clarify,
     "cancel_task": cancel_task,
     "reassign_task": reassign_task,
@@ -899,4 +873,5 @@ HANDLERS = {
     "add_discussion": add_discussion,
     "recall_memory": recall_memory,
     "git_commit": git_commit,
+    **ROUTINE_HANDLERS,
 }

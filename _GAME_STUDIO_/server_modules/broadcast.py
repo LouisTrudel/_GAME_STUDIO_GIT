@@ -60,6 +60,18 @@ async def broadcast_to_clients(data: str):
         connections.remove(ws)
 
 
+async def broadcast_schedule_update():
+    """Immediately broadcast current schedule state to all clients."""
+    from studio.core.schedules import schedule_manager
+    
+    schedules = schedule_manager.get_all()
+    data = json.dumps({
+        "type": "schedules_update",
+        "data": [s.to_dict() for s in schedules]
+    })
+    await broadcast_to_clients(data)
+
+
 def update_agent_status_sync(agent: str, status: str, activity: str = ""):
     """Update an agent's status (called from sync code)."""
     with _agent_statuses_lock:
@@ -132,6 +144,7 @@ def get_agent_errors(agent: str = None) -> dict:
 
 def broadcast_terminal_line_sync(agent: str, line: str):
     """Stream terminal output line to frontend (called from sync code)."""
+    logger.info("[TERM] %s: %s", agent, line[:50] if len(line) > 50 else line)
     with _terminal_lock:
         if agent not in terminal_buffers:
             terminal_buffers[agent] = []
@@ -144,6 +157,8 @@ def broadcast_terminal_line_sync(agent: str, line: str):
         asyncio.run_coroutine_threadsafe(
             _do_broadcast_terminal(agent, line), main_loop
         )
+    else:
+        logger.warning("[TERM] main_loop is None, cannot broadcast")
 
 
 async def _do_broadcast_terminal(agent: str, line: str):
@@ -177,6 +192,15 @@ def broadcast_tasks_sync():
     """
     if main_loop is not None:
         asyncio.run_coroutine_threadsafe(_do_broadcast_tasks(), main_loop)
+
+
+def broadcast_schedules_sync():
+    """Trigger immediate schedule broadcast (called from sync code).
+
+    Use this after creating/modifying schedules to ensure UI updates immediately.
+    """
+    if main_loop is not None:
+        asyncio.run_coroutine_threadsafe(broadcast_schedule_update(), main_loop)
 
 
 async def _do_broadcast_tasks():
@@ -283,11 +307,17 @@ async def _agent_status_broadcast_loop():
 
 
 async def _schedule_broadcast_loop():
-    """Broadcast schedule updates periodically."""
+    """Broadcast schedule updates periodically.
+
+    Reloads from disk to sync with changes from MCP server (separate process).
+    """
     from studio.core.schedules import schedule_manager
 
     last_hash = ""
     while True:
+        # Reload from disk to catch changes from MCP server
+        schedule_manager.reload_from_disk()
+
         schedules = schedule_manager.get_all()
         current_hash = str([(s.id, s.status.value, s.next_run) for s in schedules])
         if current_hash != last_hash:
