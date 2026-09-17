@@ -182,6 +182,46 @@ def register_routes(app: FastAPI):
         except Exception as e:
             return {"error": str(e)}
 
+    @app.post("/api/sessions/checkpoint")
+    async def post_session_checkpoint():
+        """Post a session progress checkpoint message to the hub.
+
+        This message captures current session state and will be compacted
+        into hub history for future context.
+        """
+        from datetime import datetime
+        try:
+            from backends.backends.boss_cli import BossCLI, SESSION_TOKEN_THRESHOLD as BOSS_THRESHOLD
+            from backends.backends.fleet_cli import FleetCLI, SESSION_TOKEN_THRESHOLD as FLEET_THRESHOLD
+
+            boss_stats = BossCLI.get_session_stats()
+            fleet_stats = FleetCLI.get_session_stats()
+
+            boss_pct = round((boss_stats["cumulative_tokens"] / BOSS_THRESHOLD) * 100, 1)
+            fleet_pct = round((fleet_stats["cumulative_tokens"] / FLEET_THRESHOLD) * 100, 1)
+
+            # Build checkpoint message
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            message = f"""## Session Checkpoint ({timestamp})
+
+**CLI Sessions:**
+- BOSS (Haiku): {boss_stats['cumulative_tokens']:,} / {BOSS_THRESHOLD:,} tokens ({boss_pct}%)
+- Fleet (Sonnet): {fleet_stats['cumulative_tokens']:,} / {FLEET_THRESHOLD:,} tokens ({fleet_pct}%)
+
+**Architecture:**
+- BossCLI: Dedicated BOSS session with Haiku model
+- FleetCLI: Shared worker session for all agents
+- VanillaCLI: Stateless for Compression/Text/Image/Audio/Video
+- Sessions auto-clear at 150K token threshold
+- Terminal output archived to data/logs/terminals/"""
+
+            # Post to hub
+            hub.post(sender="System", content=message)
+
+            return {"status": "posted", "message": message}
+        except Exception as e:
+            return {"error": str(e)}
+
     # ============ HUB ============
 
     @app.get("/api/history")
