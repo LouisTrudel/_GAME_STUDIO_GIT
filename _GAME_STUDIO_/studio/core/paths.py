@@ -111,7 +111,11 @@ def atomic_json_write(filepath: Path, data: Any, indent: int = 2) -> bool:
     Returns:
         True on success, False on failure
     """
-    temp_file = filepath.with_suffix('.json.tmp')
+    import time
+    import random
+
+    # Use unique temp file to avoid conflicts
+    temp_file = filepath.parent / f".{filepath.stem}.{random.randint(1000,9999)}.tmp"
 
     try:
         filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -122,11 +126,23 @@ def atomic_json_write(filepath: Path, data: Any, indent: int = 2) -> bool:
             f.flush()
             os.fsync(f.fileno())  # Force write to disk
 
-        # Atomic rename
-        os.replace(temp_file, filepath)
-        return True
+        # Atomic rename with retry (Windows file locking)
+        for attempt in range(3):
+            try:
+                os.replace(temp_file, filepath)
+                return True
+            except PermissionError:
+                if attempt < 2:
+                    time.sleep(0.1 * (attempt + 1))  # 100ms, 200ms
+                else:
+                    raise
 
     except Exception as e:
         # Log error but don't raise - let caller handle
         print(f"[atomic_json_write] Failed to save {filepath}: {e}")
+        # Clean up temp file if it exists
+        try:
+            temp_file.unlink(missing_ok=True)
+        except:
+            pass
         return False
