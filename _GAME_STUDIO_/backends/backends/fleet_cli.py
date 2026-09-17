@@ -342,14 +342,22 @@ class FleetCLI(Backend):
         stdout_thread.start()
         stderr_thread.start()
 
+        wait_count = 0
         while process.poll() is None:
             time.sleep(1)
+            wait_count += 1
+            if wait_count % 10 == 0:  # Log every 10 seconds
+                logger.info("[%s] Waiting... (%ds, last_output=%ds ago)",
+                           self.agent_name, wait_count, int(time.time() - last_output_time))
             if time.time() - last_output_time > STALE_TIMEOUT_SECONDS:
+                logger.error("[%s] STALE - no output for %ds, killing", self.agent_name, STALE_TIMEOUT_SECONDS)
                 process.kill()
                 raise TimeoutError(f"No output for {STALE_TIMEOUT_SECONDS}s")
 
         stdout_thread.join(timeout=5)
         stderr_thread.join(timeout=5)
+        logger.info("[%s] Process done | code=%d | wait=%ds | stderr_lines=%d",
+                   self.agent_name, process.returncode, wait_count, len(stderr_lines))
 
         if process.returncode != 0:
             error = "\n".join(stderr_lines)
