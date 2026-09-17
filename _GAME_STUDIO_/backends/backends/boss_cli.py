@@ -393,10 +393,11 @@ class BossCLI(Backend):
 
     def _update_cumulative_tokens(self):
         """Track cumulative tokens and auto-clear if threshold exceeded."""
-        call_tokens = self.last_input_tokens + self.last_cache_read_tokens
+        # Only count NEW tokens (input + cache_creation), not cache reads
+        new_tokens = self.last_input_tokens + self.last_cache_creation_tokens
 
         with BossCLI._lock:
-            BossCLI._cumulative_tokens += call_tokens
+            BossCLI._cumulative_tokens += new_tokens
 
             if BossCLI._cumulative_tokens > SESSION_TOKEN_THRESHOLD:
                 logger.warning("[BOSS] Threshold exceeded (%dK > %dK), clearing session",

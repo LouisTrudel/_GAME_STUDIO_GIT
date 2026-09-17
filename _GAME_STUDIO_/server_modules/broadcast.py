@@ -484,6 +484,22 @@ def _compute_agent_stats(include_task_details: bool = False) -> dict:
     session_tokens = get_session_tokens()
     tokens_by_agent = session_tokens.get("by_agent", {})
 
+    # Get BOSS and Fleet session stats
+    from backends.backends.boss_cli import BossCLI
+    from backends.backends.fleet_cli import FleetCLI
+    boss_session = BossCLI.get_session_stats()
+    fleet_session = FleetCLI.get_session_stats()
+
+    # Calculate costs (Haiku for BOSS, Sonnet for Fleet)
+    # Pricing: Haiku input=$0.80/M, output=$4/M; Sonnet input=$3/M, output=$15/M
+    # Cache read is 10% of input price, cache creation is 25% more than input
+    boss_cost = (
+        (boss_session["cumulative_tokens"] * 0.80 / 1_000_000)  # Simplified estimation
+    )
+    fleet_cost = (
+        (fleet_session["cumulative_tokens"] * 3.0 / 1_000_000)  # Simplified estimation
+    )
+
     # Calculate uptime
     try:
         session_start = datetime.fromisoformat(session_tokens.get("session_start", datetime.now().isoformat()))
@@ -512,6 +528,22 @@ def _compute_agent_stats(include_task_details: bool = False) -> dict:
             "tokens_cache_creation": cache_creation,
             "uptime_seconds": uptime_seconds
         }
+
+    # Add session stats to result
+    result["_sessions"] = {
+        "boss": {
+            "cumulative_tokens": boss_session["cumulative_tokens"],
+            "threshold": boss_session["threshold"],
+            "headroom": boss_session["headroom"],
+            "cost_usd": round(boss_cost, 4)
+        },
+        "fleet": {
+            "cumulative_tokens": fleet_session["cumulative_tokens"],
+            "threshold": fleet_session["threshold"],
+            "headroom": fleet_session["headroom"],
+            "cost_usd": round(fleet_cost, 4)
+        }
+    }
 
     return result
 

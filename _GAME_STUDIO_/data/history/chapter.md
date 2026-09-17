@@ -390,3 +390,10 @@ Then it cascaded. Routine triggered Audit. Audit spawned T689, T695, T696, T698,
 We started with routine creation. BOSS pushed back. We built T688 ourselves—automated system health checks every 30 minutes. 
 It cascaded. Thirteen tasks fired in parallel: T689–T711 scanning token usage, task queues, agent status, race conditions, broadcast sync, token limits. Each success reinforced the pattern. At 00:35, T702 declared green: **no race conditions, no broadcast friction, token thresholds stable at 150K**. Infrastructure sound.
 Code went deep. Traced the entire task lifecycle en...
+
+---
+
+[2026-09-17] Draft #104:
+# Episode: Infrastructure Hardening & UI Unification
+
+We diagnosed the cascade: T688 spawned thirteen parallel health checks (T689–T711) scanning tokens, queues, agents, race conditions, broadcast sync—all green at 00:35, threshold stable at 150K. Traced the task lifecycle end-to-end (T719–T720), proved flow works. Then T726 surfaced the real friction: routines fired immediately on creation instead of waiting—root cause `studio/core/schedules.py:73-74` set `next_run = datetime.now()`, fixed it. Frontend hit absence (T728, phantom UI files), pivoted, built T729: unified terminal from history logs showing all agent chatter in single view. Code added session token/cost tracking to agent stats (turns 1–52), wired WebSocket handlers to display live BOSS and Fleet cumulative spend. System operational: health surveillance running, task machinery verified, routine scheduling corrected, terminal unified, cost visibility live. Two noise tasks (T724–T725, random line counts) dropped.

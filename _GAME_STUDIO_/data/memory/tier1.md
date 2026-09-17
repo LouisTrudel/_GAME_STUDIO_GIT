@@ -461,3 +461,13 @@ I'll deliver the compressed output.
 - Tag mapping: [ACTIVE]→KEEP, [DONE]→PUSH, [FRICTION]→FRICTION
 
 Send the content and I'll deliver exactly as requested.
+
+---
+
+[2026-09-17 12:39] From tier0:
+- **History Compression Flow**: Fixed (draft→chapter→book→collection); full narrative appends correctly; tier-specific prompts working
+- **Commits**: `a2b08f6` (MCP debugging), `2834b86` (history tier compression)
+- **Infrastructure Verified**: Task lifecycle (ready→in_progress→approved) spins true; broadcast sync stable
+- **Session Runtime**: Server healthy at 11:36+; pong responding
+
+##

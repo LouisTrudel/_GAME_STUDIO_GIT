@@ -84,6 +84,10 @@ function renderSessionMonitor() {
                         <span class="session-threshold">${formatTokensK(boss.threshold || 150000)}</span>
                         <span class="session-pct">(${boss.usage_pct || 0}%)</span>
                     </div>
+                    <div class="session-cost">
+                        <span class="session-cost-label">Cost:</span>
+                        <span class="session-cost-value">$${(boss.cost_usd || 0).toFixed(4)}</span>
+                    </div>
                 </div>
             </div>
 
@@ -102,6 +106,10 @@ function renderSessionMonitor() {
                         <span class="session-sep">/</span>
                         <span class="session-threshold">${formatTokensK(fleet.threshold || 150000)}</span>
                         <span class="session-pct">(${fleet.usage_pct || 0}%)</span>
+                    </div>
+                    <div class="session-cost">
+                        <span class="session-cost-label">Cost:</span>
+                        <span class="session-cost-value">$${(fleet.cost_usd || 0).toFixed(4)}</span>
                     </div>
                 </div>
             </div>
