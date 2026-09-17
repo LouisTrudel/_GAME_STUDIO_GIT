@@ -27,12 +27,13 @@ _cleanup_done = False
 
 
 def cleanup_old_sessions():
-    """Delete ALL session files on startup. We inject context each call, no need to restore."""
+    """Delete ALL session files and old conversation dirs on startup."""
     global _cleanup_done
     if _cleanup_done:
         return
     _cleanup_done = True
 
+    import shutil
     cwd = Path(__file__).parent.parent.parent
     home = Path.home()
     cwd_str = str(cwd.resolve())
@@ -42,16 +43,28 @@ def cleanup_old_sessions():
     if not project_dir.exists():
         return
 
-    deleted = 0
+    deleted_files = 0
+    deleted_dirs = 0
+
+    # Delete .jsonl session files
     for session_file in project_dir.glob("*.jsonl"):
         try:
             session_file.unlink()
-            deleted += 1
+            deleted_files += 1
         except Exception:
             pass
 
-    if deleted > 0:
-        logger.info("[Cleanup] Deleted %d session files (fresh start)", deleted)
+    # Delete old conversation directories (UUID folders)
+    for item in project_dir.iterdir():
+        if item.is_dir():
+            try:
+                shutil.rmtree(item)
+                deleted_dirs += 1
+            except Exception:
+                pass
+
+    if deleted_files > 0 or deleted_dirs > 0:
+        logger.info("[Cleanup] Deleted %d session files, %d old dirs (fresh start)", deleted_files, deleted_dirs)
 
 
 # Run cleanup on module import
