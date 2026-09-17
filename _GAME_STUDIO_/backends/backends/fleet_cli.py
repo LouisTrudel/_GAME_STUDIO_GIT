@@ -4,7 +4,8 @@ Fleet CLI Backend - Shared cached session for all worker agents.
 - Single session shared by ALL workers (Code, Frontend, Backend, etc.)
 - Agents are just role.md context prefix + task
 - Auto-clears at token threshold
-- MCP tools: search_code, read_lines, edit_file, write_report
+- MCP tools: search_code, read_lines, edit_file, write_report + Bash
+- Research: +WebSearch
 """
 
 import subprocess
@@ -222,8 +223,15 @@ class FleetCLI(Backend):
         if mcp_config.exists():
             cmd.extend(["--mcp-config", str(mcp_config)])
 
-        # Worker tools: file operations
-        allowed = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__edit_file,mcp__game-studio__write_report"
+        # Worker tools: MCP + Bash (all workers)
+        base_tools = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__edit_file,mcp__game-studio__write_report,Bash"
+
+        # Research also gets WebSearch
+        if self.agent_name == "Research":
+            allowed = f"{base_tools},WebSearch"
+        else:
+            allowed = base_tools
+
         cmd.extend(["--allowedTools", allowed])
         cmd.append("--dangerously-skip-permissions")
 
