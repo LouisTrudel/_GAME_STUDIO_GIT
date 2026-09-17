@@ -4,7 +4,7 @@ Fleet CLI Backend - Shared cached session for all worker agents.
 - Single session shared by ALL workers (Code, Frontend, Backend, etc.)
 - Agents are just role.md context prefix + task
 - Auto-clears at token threshold
-- MCP tools: search_code, read_lines, edit_file, write_report + Bash
+- MCP tools: search_code, read_lines, edit_file, write_report, create_suggestion + Bash
 - Research: +WebSearch
 """
 
@@ -226,7 +226,7 @@ class FleetCLI(Backend):
             cmd.extend(["--mcp-config", str(mcp_config)])
 
         # Worker tools: MCP + Bash (all workers)
-        base_tools = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__edit_file,mcp__game-studio__write_report,Bash"
+        base_tools = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__edit_file,mcp__game-studio__write_report,mcp__game-studio__create_suggestion,Bash"
 
         # Research also gets WebSearch
         if self.agent_name == "Research":
@@ -307,6 +307,7 @@ class FleetCLI(Backend):
         result_data = [None]
         last_output_time = time.time()
         stderr_lines = []
+        non_json_stdout = []  # Capture non-JSON stdout for error reporting
 
         def read_stdout():
             nonlocal last_output_time
@@ -321,7 +322,7 @@ class FleetCLI(Backend):
                     if event.get("type") == "result":
                         result_data[0] = event
                 except json.JSONDecodeError:
-                    pass
+                    non_json_stdout.append(line)  # Keep for error context
 
         def read_stderr():
             nonlocal last_output_time
@@ -345,6 +346,9 @@ class FleetCLI(Backend):
 
         if process.returncode != 0:
             error = "\n".join(stderr_lines)
+            # Use non-JSON stdout as fallback if stderr is empty
+            if not error.strip() and non_json_stdout:
+                error = "\n".join(non_json_stdout)
             error_lower = error.lower()
 
             if "rate limit" in error_lower or "overloaded" in error_lower:
@@ -360,9 +364,41 @@ class FleetCLI(Backend):
                 self._clear_session()
                 raise RetryableError("Session locked, cleared")
 
+            # Session not found - clear and retry
+            if "no conversation found" in error_lower or "session" in error_lower:
+                logger.warning("[%s] Session error: %s", self.agent_name, error[:100])
+                self._clear_session()
+                raise RetryableError(f"Session error, cleared: {error[:50]}")
+
+            # Unknown code 1 with empty/vague error - likely session issue, clear and retry
+            if process.returncode == 1 and len(error.strip()) < 20:
+                logger.warning("[%s] Unknown code 1 error (likely session), clearing: %s", self.agent_name, error[:50])
+                self._clear_session()
+                raise RetryableError(f"Unknown error, session cleared: {error[:30]}")
+
             raise RuntimeError(f"CLI error (code {process.returncode}): {error[:200]}")
 
         return self._extract_result(result_data[0], text_content)
+
+    def _truncate_for_terminal(self, text: str) -> str:
+        """Truncate completion blocks for terminal - keep COMPLETED line, skip Summary/Friction."""
+        if "COMPLETED:" not in text:
+            return text
+
+        lines = text.split('\n')
+        result = []
+        skip_rest = False
+
+        for line in lines:
+            # Skip Summary/Friction sections
+            if line.strip().startswith("## Summary") or line.strip().startswith("## Friction"):
+                skip_rest = True
+                continue
+            if skip_rest:
+                continue
+            result.append(line)
+
+        return '\n'.join(result).strip()
 
     def _process_event(self, event: dict, text_content: list):
         """Process stream event."""
@@ -374,32 +410,47 @@ class FleetCLI(Backend):
                 if block.get("type") == "text":
                     text = block.get("text", "")
                     text_content.append(text)
-                    # Broadcast to terminal
+                    # Broadcast to terminal (truncate completion blocks)
                     if text:
                         try:
                             from server_modules.broadcast import broadcast_terminal_line_sync
-                            broadcast_terminal_line_sync(self.agent_name, text + "\n")
+                            terminal_text = self._truncate_for_terminal(text)
+                            if terminal_text:
+                                broadcast_terminal_line_sync(self.agent_name, terminal_text + "\n")
                         except Exception:
                             pass
             usage = message.get("usage", {})
             if usage.get("input_tokens"):
-                self._log_step("reasoning", usage.get("input_tokens", 0), usage.get("output_tokens", 0))
+                in_tok = usage.get("input_tokens", 0)
+                out_tok = usage.get("output_tokens", 0)
+                self._log_step("reasoning", in_tok, out_tok)
+                # Broadcast turn token counts
+                try:
+                    from server_modules.broadcast import broadcast_terminal_line_sync
+                    turn_num = len(self.token_log)
+                    broadcast_terminal_line_sync(self.agent_name, f"[turn {turn_num} | in:{in_tok} out:{out_tok}]\n")
+                except Exception:
+                    pass
 
         elif event_type == "content_block_delta":
             delta = event.get("delta", {})
             if delta.get("type") == "text_delta":
                 text = delta.get("text", "")
                 text_content.append(text)
-                if text:
-                    try:
-                        from server_modules.broadcast import broadcast_terminal_line_sync
-                        broadcast_terminal_line_sync(self.agent_name, text)
-                    except Exception:
-                        pass
+                # Don't broadcast deltas - they're partial and hard to filter
+                # Full text is broadcast via "assistant" event
 
         elif event_type == "content_block_start":
-            if event.get("content_block", {}).get("type") == "tool_use":
+            content_block = event.get("content_block", {})
+            if content_block.get("type") == "tool_use":
                 self._tool_use_count += 1
+                # Broadcast tool use
+                tool_name = content_block.get("name", "unknown")
+                try:
+                    from server_modules.broadcast import broadcast_terminal_line_sync
+                    broadcast_terminal_line_sync(self.agent_name, f"[tool: {tool_name}]\n")
+                except Exception:
+                    pass
 
         elif event_type == "system":
             if event.get("subtype") == "api_retry":

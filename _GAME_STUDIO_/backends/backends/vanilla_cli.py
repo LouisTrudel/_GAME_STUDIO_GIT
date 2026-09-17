@@ -226,6 +226,25 @@ class VanillaCLI(Backend):
 
         return self._extract_result(result_data[0], text_content)
 
+    def _truncate_for_terminal(self, text: str) -> str:
+        """Truncate completion blocks for terminal - keep COMPLETED line, skip Summary/Friction."""
+        if "COMPLETED:" not in text:
+            return text
+
+        lines = text.split('\n')
+        result = []
+        skip_rest = False
+
+        for line in lines:
+            if line.strip().startswith("## Summary") or line.strip().startswith("## Friction"):
+                skip_rest = True
+                continue
+            if skip_rest:
+                continue
+            result.append(line)
+
+        return '\n'.join(result).strip()
+
     def _process_event(self, event: dict, text_content: list):
         """Process stream event."""
         event_type = event.get("type", "")
@@ -234,15 +253,36 @@ class VanillaCLI(Backend):
             message = event.get("message", {})
             for block in message.get("content", []):
                 if block.get("type") == "text":
-                    text_content.append(block.get("text", ""))
+                    text = block.get("text", "")
+                    text_content.append(text)
+                    # Broadcast to terminal (truncate completion blocks)
+                    if text:
+                        try:
+                            from server_modules.broadcast import broadcast_terminal_line_sync
+                            terminal_text = self._truncate_for_terminal(text)
+                            if terminal_text:
+                                broadcast_terminal_line_sync(self.agent_name, terminal_text + "\n")
+                        except Exception:
+                            pass
             usage = message.get("usage", {})
             if usage.get("input_tokens"):
-                self._log_step("processing", usage.get("input_tokens", 0), usage.get("output_tokens", 0))
+                in_tok = usage.get("input_tokens", 0)
+                out_tok = usage.get("output_tokens", 0)
+                self._log_step("processing", in_tok, out_tok)
+                # Broadcast turn token counts
+                try:
+                    from server_modules.broadcast import broadcast_terminal_line_sync
+                    turn_num = len(self.token_log)
+                    broadcast_terminal_line_sync(self.agent_name, f"[turn {turn_num} | in:{in_tok} out:{out_tok}]\n")
+                except Exception:
+                    pass
 
         elif event_type == "content_block_delta":
             delta = event.get("delta", {})
             if delta.get("type") == "text_delta":
-                text_content.append(delta.get("text", ""))
+                text = delta.get("text", "")
+                text_content.append(text)
+                # Don't broadcast deltas - full text comes via "assistant" event
 
         elif event_type == "system":
             if event.get("subtype") == "api_retry":
