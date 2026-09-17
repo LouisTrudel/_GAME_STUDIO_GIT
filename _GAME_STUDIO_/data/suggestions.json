@@ -1,5 +1,5 @@
 {
-  "counter": 40,
+  "counter": 43,
   "suggestions": [
     {
       "id": "S001",
@@ -522,6 +522,81 @@
       "decided_at": "2026-09-11T13:59:15.347034",
       "decided_by": "human",
       "decision_notes": "was just a test run old stuff prob fixed already",
+      "implementation_tasks": [],
+      "rating": null,
+      "kept_for_later": false,
+      "deferred_at": null,
+      "discussion_history": []
+    },
+    {
+      "id": "S041",
+      "source_agent": "BOSS",
+      "title": "Game Design: <5min loop + social triggers",
+      "content": "T731 research confirms core success pattern across top Roblox games: <5 minute core loop with visible progression + social triggers. Mandatory for new game designs. Evidence: across all profitable genres (simulators, fighting, tycoons). Recommend creating standardized game structure template with this pattern baked in.",
+      "category": "architecture",
+      "status": "pending",
+      "created_at": "2026-09-17T11:44:17.102131",
+      "related_tasks": [
+        "T731"
+      ],
+      "files_mentioned": [
+        "reports/T731_roblox_trends_2026_20260917_113901.md"
+      ],
+      "evidence": "T731: Table row 5 \"Core Success Pattern\" - proven across top games",
+      "decision": null,
+      "decided_at": null,
+      "decided_by": null,
+      "decision_notes": null,
+      "implementation_tasks": [],
+      "rating": null,
+      "kept_for_later": false,
+      "deferred_at": null,
+      "discussion_history": []
+    },
+    {
+      "id": "S042",
+      "source_agent": "BOSS",
+      "title": "Platform Shift: 2D games + async multiplayer",
+      "content": "Roblox is launching 2D game support and turn-based async multiplayer (notification system incoming). T731 identifies this as a key platform evolution opening new genres (strategy, puzzle games). Fighting and simulator genres are trending, but turn-based async strategy is underserved. Opportunity for differentiation.",
+      "category": "feature",
+      "status": "pending",
+      "created_at": "2026-09-17T11:44:19.491256",
+      "related_tasks": [
+        "T731"
+      ],
+      "files_mentioned": [
+        "reports/T731_roblox_trends_2026_20260917_113901.md"
+      ],
+      "evidence": "T731: Platform Evolution row + Strategic Opportunities section mentioning async multiplayer niche",
+      "decision": null,
+      "decided_at": null,
+      "decided_by": null,
+      "decision_notes": null,
+      "implementation_tasks": [],
+      "rating": null,
+      "kept_for_later": false,
+      "deferred_at": null,
+      "discussion_history": []
+    },
+    {
+      "id": "S043",
+      "source_agent": "BOSS",
+      "title": "Playtesting Protocol: 70% bug reduction",
+      "content": "T731 research shows regular playtesting reduces post-launch issues by 70%. Studio currently lacks formalized playtesting protocol. Recommend implementing structured playtesting sessions (frequency TBD) for all new game projects before launch to validate core loop, social triggers, and progression visibility.",
+      "category": "process",
+      "status": "rejected",
+      "created_at": "2026-09-17T11:44:21.644183",
+      "related_tasks": [
+        "T731"
+      ],
+      "files_mentioned": [
+        "reports/T731_roblox_trends_2026_20260917_113901.md"
+      ],
+      "evidence": "T731: \"Playtesting Protocol: Implement regular sessions (70% fewer post-launch issues per research)\"",
+      "decision": "rejected",
+      "decided_at": "2026-09-17T12:03:35.851529",
+      "decided_by": "human",
+      "decision_notes": "not there yet",
       "implementation_tasks": [],
       "rating": null,
       "kept_for_later": false,

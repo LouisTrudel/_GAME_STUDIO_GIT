@@ -202,6 +202,11 @@ function connect() {
         } else if (data.type === 'agent_stats_update') {
             agentStats = data.data;
             renderAgentCards();
+        } else if (data.type === 'session_stats_update') {
+            // Session monitor stats (BOSS + Fleet)
+            if (typeof updateSessionStats === 'function') {
+                updateSessionStats(data.data);
+            }
         } else if (data.type === 'suggestions_update') {
             console.log('[WS] suggestions_update - received', data.data.length, 'suggestions');
             suggestions = data.data;

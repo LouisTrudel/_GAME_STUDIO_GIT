@@ -1875,7 +1875,7 @@ button.secondary:hover {
     background: #1a1a2e;
 }
 
-/* Terminal dock (VS Code style) */
+/* Terminal dock (unified single terminal) */
 .terminal-dock {
     height: 250px;
     min-height: 150px;
@@ -1885,34 +1885,21 @@ button.secondary:hover {
     flex-direction: column;
 }
 
-.terminal-tabs {
+.terminal-header {
     display: flex;
-    gap: 0;
+    align-items: center;
+    padding: 8px 12px;
     background: #161b22;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    overflow-x: auto;
     flex-shrink: 0;
 }
 
-.terminal-tab {
-    padding: 8px 16px;
+.terminal-title {
     font-size: 11px;
     color: #8b949e;
-    cursor: pointer;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-    white-space: nowrap;
-    transition: all 0.15s;
-}
-
-.terminal-tab:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: #c9d1d9;
-}
-
-.terminal-tab.active {
-    background: #0d1117;
-    color: #f0f0f0;
-    border-bottom: 2px solid #58a6ff;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .terminal-content {
@@ -1921,24 +1908,11 @@ button.secondary:hover {
     overflow: hidden;
 }
 
-.terminal-pane {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: none;
-}
-
-.terminal-pane.active {
-    display: block;
-}
-
-.terminal-pane .xterm {
+.terminal-content .xterm {
     height: 100%;
 }
 
-.terminal-pane .xterm-viewport {
+.terminal-content .xterm-viewport {
     overflow-y: auto !important;
 }
 

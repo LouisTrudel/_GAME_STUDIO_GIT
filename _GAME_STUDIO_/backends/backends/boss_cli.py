@@ -4,7 +4,7 @@ BOSS CLI Backend - Dedicated cached session for BOSS agent.
 - Haiku model (fast, cheap delegation)
 - Own session UUID (separate from fleet)
 - Auto-clears at token threshold
-- MCP tools: create_task, create_routine, get_task_status, recall_memory
+- MCP tools: create_task, create_routine, get_task_status, recall_memory, create_suggestion
 """
 
 import subprocess
@@ -83,6 +83,7 @@ class BossCLI(Backend):
     _cumulative_tokens: int = 0
     _session_needs_create: bool = True
     _lock = threading.Lock()
+    _call_lock = threading.Lock()  # Serialize all BOSS CLI calls
 
     def __init__(self, model: str = "haiku", agent_name: str = "BOSS"):
         super().__init__()
@@ -115,26 +116,28 @@ class BossCLI(Backend):
         tool_handlers: dict = None,  # Deprecated - MCP handles tools
     ) -> str:
         """Send message to BOSS CLI session."""
-        self._reset_token_tracking()
-        self._reset_metrics()
+        # Serialize ALL BOSS calls to prevent session race conditions
+        with BossCLI._call_lock:
+            self._reset_token_tracking()
+            self._reset_metrics()
 
-        prompt = self._build_prompt(messages, system_prompt)
+            prompt = self._build_prompt(messages, system_prompt)
 
-        logger.info("[BOSS] Starting | prompt=%.1fKB | cumulative=%dK/%dK",
-                    len(prompt) / 1024,
-                    BossCLI._cumulative_tokens // 1000,
-                    SESSION_TOKEN_THRESHOLD // 1000)
+            logger.info("[BOSS] Starting | prompt=%.1fKB | cumulative=%dK/%dK",
+                        len(prompt) / 1024,
+                        BossCLI._cumulative_tokens // 1000,
+                        SESSION_TOKEN_THRESHOLD // 1000)
 
-        try:
-            response = self._run_cli(prompt)
-            return response
-        except Exception as e:
-            self.last_is_error = True
-            self.last_error_message = str(e)
-            logger.error("[BOSS] Error: %s", e)
-            return f"Error: {type(e).__name__}: {e}"
-        finally:
-            self._update_cumulative_tokens()
+            try:
+                response = self._run_cli(prompt)
+                return response
+            except Exception as e:
+                self.last_is_error = True
+                self.last_error_message = str(e)
+                logger.error("[BOSS] Error: %s", e)
+                return f"Error: {type(e).__name__}: {e}"
+            finally:
+                self._update_cumulative_tokens()
 
     def _build_prompt(self, messages: list[dict], system_prompt: str) -> str:
         """Build prompt with system context."""
@@ -205,7 +208,7 @@ class BossCLI(Backend):
             cmd.extend(["--mcp-config", str(mcp_config)])
 
         # BOSS tools: delegation only (NO file ops)
-        allowed = "mcp__game-studio__create_task,mcp__game-studio__create_routine,mcp__game-studio__get_task_status,mcp__game-studio__recall_memory"
+        allowed = "mcp__game-studio__create_task,mcp__game-studio__create_routine,mcp__game-studio__get_task_status,mcp__game-studio__recall_memory,mcp__game-studio__create_suggestion"
         cmd.extend(["--allowedTools", allowed])
         cmd.append("--dangerously-skip-permissions")
 
@@ -267,6 +270,7 @@ class BossCLI(Backend):
         result_data = [None]
         last_output_time = time.time()
         stderr_lines = []
+        non_json_stdout = []  # Capture non-JSON stdout for error reporting
 
         def read_stdout():
             nonlocal last_output_time
@@ -281,7 +285,7 @@ class BossCLI(Backend):
                     if event.get("type") == "result":
                         result_data[0] = event
                 except json.JSONDecodeError:
-                    pass
+                    non_json_stdout.append(line)  # Keep for error context
 
         def read_stderr():
             nonlocal last_output_time
@@ -305,6 +309,9 @@ class BossCLI(Backend):
 
         if process.returncode != 0:
             error = "\n".join(stderr_lines)
+            # Use non-JSON stdout as fallback if stderr is empty
+            if not error.strip() and non_json_stdout:
+                error = "\n".join(non_json_stdout)
             error_lower = error.lower()
             if "rate limit" in error_lower or "overloaded" in error_lower:
                 raise RetryableError(f"Rate limited: {error[:100]}")
@@ -313,6 +320,18 @@ class BossCLI(Backend):
                 logger.warning("[BOSS] Session locked, clearing and retrying")
                 self._clear_session()
                 raise RetryableError("Session locked, cleared")
+            if "no conversation found" in error_lower or "session" in error_lower:
+                # Session issue - clear and retry
+                logger.warning("[BOSS] Session error: %s", error[:100])
+                self._clear_session()
+                raise RetryableError(f"Session error, cleared: {error[:50]}")
+
+            # Unknown code 1 with empty/vague error - likely session issue, clear and retry
+            if process.returncode == 1 and len(error.strip()) < 20:
+                logger.warning("[BOSS] Unknown code 1 error (likely session), clearing: %s", error[:50])
+                self._clear_session()
+                raise RetryableError(f"Unknown error, session cleared: {error[:30]}")
+
             raise RuntimeError(f"CLI error (code {process.returncode}): {error[:200]}")
 
         return self._extract_result(result_data[0], text_content)

@@ -100,7 +100,7 @@ class StudioAgent:
 
     def _build_system_prompt(self, role_md: str) -> str:
         """Build system prompt from role + MCP awareness."""
-        mcp_line = "You are a Game-Studio MCP agent. Use mcp__game-studio__* tools: search_code, read_lines (max 200 lines), file_outline."
+        mcp_line = "You are a Game-Studio MCP agent. Use mcp__game-studio__* tools: search_code, read_lines (max 200 lines), edit_file, write_report."
         if role_md:
             return mcp_line + "\n\n## ROLE\n\n" + role_md
         return mcp_line

@@ -138,7 +138,16 @@ class VanillaCLI(Backend):
         # STATELESS: no session persistence
         cmd.append("--no-session-persistence")
 
-        # NO MCP, NO tools - pure input/output
+        # Research gets WebSearch + MCP tools (moved from Fleet for cost savings)
+        if self.agent_name == "Research":
+            mcp_config = self.cwd / ".claude" / "settings.json"
+            if mcp_config.exists():
+                cmd.extend(["--mcp-config", str(mcp_config)])
+            # Research tools: search_code, read_lines, write_report + WebSearch
+            allowed = "mcp__game-studio__search_code,mcp__game-studio__read_lines,mcp__game-studio__write_report,WebSearch"
+            cmd.extend(["--allowedTools", allowed])
+
+        # All agents skip permissions
         cmd.append("--dangerously-skip-permissions")
 
         # Model and turns
@@ -148,8 +157,7 @@ class VanillaCLI(Backend):
         max_turns = getattr(self, 'max_turns', None) or DEFAULT_MAX_TURNS
         cmd.extend(["--max-turns", str(max_turns)])
 
-        logger.debug("[%s] CMD flags: %s", self.agent_name,
-                    " ".join(f for f in cmd if f.startswith('--')))
+        logger.debug("[%s] CMD: %s", self.agent_name, " ".join(cmd))
 
         # Read prompt
         with open(temp_path, 'r', encoding='utf-8') as f:

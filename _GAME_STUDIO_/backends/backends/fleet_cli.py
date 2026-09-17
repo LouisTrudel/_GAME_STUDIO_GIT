@@ -244,8 +244,7 @@ class FleetCLI(Backend):
         max_turns = getattr(self, 'max_turns', None) or DEFAULT_MAX_TURNS
         cmd.extend(["--max-turns", str(max_turns)])
 
-        logger.debug("[%s] CMD flags: %s", self.agent_name,
-                    " ".join(f for f in cmd if f.startswith('--')))
+        logger.debug("[%s] CMD: %s", self.agent_name, " ".join(cmd))
 
         # Read prompt
         with open(temp_path, 'r', encoding='utf-8') as f:
@@ -377,6 +376,16 @@ class FleetCLI(Backend):
                 raise RetryableError(f"Unknown error, session cleared: {error[:30]}")
 
             raise RuntimeError(f"CLI error (code {process.returncode}): {error[:200]}")
+
+        # Log MCP-related stderr even on success (for debugging)
+        if stderr_lines:
+            mcp_errors = [l for l in stderr_lines if 'mcp' in l.lower() or 'tool' in l.lower()]
+            if mcp_errors:
+                logger.warning("[%s] MCP stderr: %s", self.agent_name, "; ".join(mcp_errors[:3]))
+
+        # Log if no tools were used (suspicious for most tasks)
+        if self._tool_use_count == 0:
+            logger.warning("[%s] No tool calls detected in this run", self.agent_name)
 
         return self._extract_result(result_data[0], text_content)
 

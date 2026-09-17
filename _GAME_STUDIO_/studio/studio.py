@@ -10,6 +10,7 @@ Structure:
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, Future
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from studio.core import task_manager, TaskStatus, hub

@@ -74,9 +74,9 @@ def register_routes(app: FastAPI):
 
             # Determine tools for this agent
             if role.get("is_boss"):
-                tools = ["create_task", "create_routine", "get_task_status", "recall_memory"]
+                tools = ["create_task", "create_routine", "get_task_status", "recall_memory", "create_suggestion"]
             else:
-                tools = ["search_code", "read_lines", "edit_file", "write_report"]
+                tools = ["search_code", "read_lines", "edit_file", "write_report", "create_suggestion"]
 
             result[name] = {
                 "color": config.get("color", role.get("color", "#888")),

@@ -271,7 +271,27 @@ function renderHubTasks() {
     }).join('');
 }
 
-function showTaskDetailModal(taskId) {
+async function checkDeliverableExists(taskId) {
+    try {
+        const res = await fetch(apiUrl(`/tasks/${taskId}/deliverable/exists`));
+        const data = await res.json();
+        return data.exists;
+    } catch {
+        return false;
+    }
+}
+
+async function fetchDeliverable(taskId) {
+    try {
+        const res = await fetch(apiUrl(`/tasks/${taskId}/deliverable`));
+        const data = await res.json();
+        return data.exists ? data.content : null;
+    } catch {
+        return null;
+    }
+}
+
+async function showTaskDetailModal(taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
@@ -280,6 +300,9 @@ function showTaskDetailModal(taskId) {
     const hasCacheTokens = (task.cost?.cache_creation_tokens || 0) + (task.cost?.cache_read_tokens || 0) > 0;
     const hasQualityMetrics = (task.api_retries || 0) > 0 || (task.tool_errors?.length || 0) > 0 || (task.cost?.usd || 0) > 0;
     const hasExecutionMetrics = (task.num_turns || 0) > 0 || (task.num_tool_uses || 0) > 0;
+    
+    // Check for deliverable
+    const hasDeliverable = await checkDeliverableExists(taskId);
 
     // Build token stats
     let tokenStats = '';
@@ -422,6 +445,7 @@ function showTaskDetailModal(taskId) {
             ${tokenStats}
             ${qualityMetrics}
             <div class="modal-buttons" style="margin-top: 1.5rem;">
+                ${hasDeliverable ? `<button onclick="showDeliverableModal('${task.id}'); this.closest('.modal-overlay').remove();">View Deliverable</button>` : ''}
                 ${canCancel ? `<button class="secondary" onclick="cancelTask('${task.id}'); this.closest('.modal-overlay').remove();">Cancel</button>` : ''}
                 ${canRetry ? `<button onclick="retryTask('${task.id}'); this.closest('.modal-overlay').remove();">Retry</button>` : ''}
                 <button class="secondary" onclick="deleteTask('${task.id}'); this.closest('.modal-overlay').remove();">Delete</button>
@@ -431,4 +455,70 @@ function showTaskDetailModal(taskId) {
     `;
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);
+}
+
+async function showDeliverableModal(taskId) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const content = await fetchDeliverable(taskId);
+    if (!content) {
+        alert('Failed to load deliverable');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal" style="max-width: 800px; max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.1rem; font-weight: 600; color: #e94560;">${taskId} Deliverable</span>
+                    <span style="padding: 0.2rem 0.6rem; border-radius: 0.3rem; background: #333; color: #888; font-size: 0.75rem;">${task.assignee}</span>
+                </div>
+            </div>
+            <div style="background: #1a1a2e; padding: 1rem; border-radius: 0.4rem; margin-bottom: 1rem; max-height: 50vh; overflow-y: auto;">
+                <pre style="white-space: pre-wrap; color: #ccc; margin: 0; font-size: 0.85rem; line-height: 1.6;">${escapeHtml(content)}</pre>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: #888; font-size: 0.85rem;">BOSS Response:</label>
+                <textarea id="bossResponseInput" placeholder="Enter feedback or follow-up for BOSS..." style="width: 100%; min-height: 80px; padding: 0.6rem; background: #1a1a2e; border: 1px solid #333; border-radius: 0.4rem; color: #ccc; font-family: monospace; font-size: 0.9rem; resize: vertical;"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="sendBossResponse('${taskId}'); this.closest('.modal-overlay').remove();">Send to BOSS</button>
+                <button class="secondary" onclick="this.closest('.modal-overlay').remove();">Close</button>
+            </div>
+        </div>
+    `;
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+}
+
+function sendBossResponse(taskId) {
+    const input = document.getElementById('bossResponseInput');
+    if (!input) return;
+    
+    const response = input.value.trim();
+    if (!response) {
+        alert('Please enter a response');
+        return;
+    }
+
+    const message = `Re: ${taskId} - ${response}`;
+    
+    // Send via WebSocket
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        const payload = { content: message };
+        const projectId = getCurrentProjectId();
+        if (projectId) payload.project = projectId;
+        ws.send(JSON.stringify(payload));
+        
+        // Clear input and switch to Hub tab
+        if (inputEl) inputEl.value = '';
+        const hubTab = document.querySelector('.tab[data-tab="hub"]');
+        if (hubTab) hubTab.click();
+    } else {
+        alert('Not connected to server');
+    }
 }

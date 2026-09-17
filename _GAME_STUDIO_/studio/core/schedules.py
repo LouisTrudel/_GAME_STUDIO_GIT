@@ -71,7 +71,7 @@ class Schedule:
 
     def __post_init__(self):
         if self.next_run is None:
-            self.next_run = datetime.now()
+            self.next_run = datetime.now() + timedelta(seconds=self.interval_seconds)
 
     def to_dict(self) -> dict:
         result = {

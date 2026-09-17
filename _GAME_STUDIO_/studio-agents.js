@@ -4,15 +4,15 @@
 // Track expanded agent cards (legacy - now just active agent)
 let activeAgent = null;
 
-// Terminal dock state
-const agentTerminals = {};  // {name: {term, fitAddon}}
-let activeTerminalAgent = null;
+// Terminal dock state (unified single terminal)
+let unifiedTerminal = null;
+let unifiedFitAddon = null;
 let terminalDockInitialized = false;
 
 // Session stats cache
 let sessionStats = { boss: {}, fleet: {} };
 
-// Fetch roles (still needed for terminal tabs)
+// Fetch roles
 async function fetchRoles() {
     try {
         const res = await fetch(`${API_URL}/roles`);
@@ -188,85 +188,12 @@ async function clearAllSessions() {
     }
 }
 
-// Initialize terminal dock with tabs for each agent
+// Initialize unified terminal dock
 function initTerminalDock() {
-    const tabsContainer = document.getElementById('terminal-tabs');
     const contentContainer = document.getElementById('terminal-content');
-    if (!tabsContainer || !contentContainer) return;
+    if (!contentContainer || unifiedTerminal) return;
 
-    tabsContainer.innerHTML = '';
     contentContainer.innerHTML = '';
-
-    const agentNames = Object.keys(roles);
-    if (agentNames.length === 0) return;
-
-    // Put BOSS first, then others
-    const sortedNames = agentNames.sort((a, b) => {
-        if (a === 'BOSS') return -1;
-        if (b === 'BOSS') return 1;
-        return a.localeCompare(b);
-    });
-
-    sortedNames.forEach((name, idx) => {
-        // Create tab
-        const tab = document.createElement('div');
-        tab.className = 'terminal-tab' + (idx === 0 ? ' active' : '');
-        tab.dataset.agent = name;
-        tab.textContent = name;
-        tab.onclick = () => switchTerminalTab(name);
-        tabsContainer.appendChild(tab);
-
-        // Create pane
-        const pane = document.createElement('div');
-        pane.className = 'terminal-pane' + (idx === 0 ? ' active' : '');
-        pane.id = `terminal-pane-${name}`;
-        contentContainer.appendChild(pane);
-
-        // Set first as active
-        if (idx === 0) {
-            activeTerminalAgent = name;
-        }
-    });
-
-    // Initialize ALL terminals (staggered to avoid blocking)
-    sortedNames.forEach((name, idx) => {
-        setTimeout(() => initTerminalForAgent(name), 100 + idx * 50);
-    });
-
-    terminalDockInitialized = true;
-}
-
-// Switch terminal tab
-function switchTerminalTab(name) {
-    if (activeTerminalAgent === name) return;
-
-    // Update tabs
-    document.querySelectorAll('.terminal-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.agent === name);
-    });
-
-    // Update panes
-    document.querySelectorAll('.terminal-pane').forEach(pane => {
-        pane.classList.toggle('active', pane.id === `terminal-pane-${name}`);
-    });
-
-    activeTerminalAgent = name;
-
-    // Init terminal if not already
-    if (!agentTerminals[name]) {
-        initTerminalForAgent(name);
-    } else {
-        // Refit terminal when switching
-        agentTerminals[name].fitAddon?.fit();
-    }
-}
-
-// Initialize xterm for a specific agent
-async function initTerminalForAgent(name) {
-    if (agentTerminals[name]) return;
-
-    const pane = document.getElementById(`terminal-pane-${name}`);
-    if (!pane) return;
 
     const term = new Terminal({
         fontSize: 12,
@@ -277,43 +204,84 @@ async function initTerminalForAgent(name) {
             cursor: '#58a6ff',
             selection: 'rgba(56, 139, 253, 0.4)'
         },
-        scrollback: 1000,
+        scrollback: 5000,
         convertEol: true
     });
 
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
-    term.open(pane);
+    term.open(contentContainer);
     fitAddon.fit();
 
-    agentTerminals[name] = { term, fitAddon };
+    unifiedTerminal = term;
+    unifiedFitAddon = fitAddon;
 
-    // Load history from server
-    try {
-        const res = await fetch(`${API_URL}/agents/${name}/terminal`);
-        const data = await res.json();
-        if (data.lines && data.lines.length > 0) {
-            data.lines.forEach(line => term.write(line));
-        } else {
-            term.writeln(`\x1b[90m[${name} terminal ready]\x1b[0m`);
-        }
-    } catch (e) {
-        term.writeln(`\x1b[90m[${name} terminal ready]\x1b[0m`);
-    }
-
-    // Flush any buffered messages that arrived before terminal was ready
-    if (terminalBuffers[name] && terminalBuffers[name].length > 0) {
-        console.log('[Terminal] Flushing', terminalBuffers[name].length, 'buffered messages for', name);
-        terminalBuffers[name].forEach(line => term.write(line));
-        terminalBuffers[name] = [];
-    }
+    // Load history chatter
+    loadHistoryChatter(term);
 
     // Handle resize
     window.addEventListener('resize', () => {
-        if (activeTerminalAgent === name) {
-            fitAddon.fit();
+        if (unifiedFitAddon) {
+            unifiedFitAddon.fit();
         }
     });
+
+    terminalDockInitialized = true;
+}
+
+// Load chatter from history logs
+async function loadHistoryChatter(term) {
+    try {
+        term.writeln('\x1b[90m[Loading agent chatter from history...]\x1b[0m');
+        
+        // Load history files (draft and chapter)
+        const [draftRes, chapterRes] = await Promise.all([
+            fetch(`${API_URL}/files/read?path=data/history/draft.md`),
+            fetch(`${API_URL}/files/read?path=data/history/chapter.md`)
+        ]);
+
+        const draftData = draftRes.ok ? await draftRes.json() : {};
+        const chapterData = chapterRes.ok ? await chapterRes.json() : {};
+
+        const draftText = draftData.content || '';
+        const chapterText = chapterData.content || '';
+
+        // Extract chatter lines (terminal output entries)
+        const chatterLines = extractChatterFromHistory(draftText, chapterText);
+
+        if (chatterLines.length > 0) {
+            term.writeln(`\x1b[90m[Found ${chatterLines.length} chatter entries]\x1b[0m\r\n`);
+            chatterLines.forEach(entry => {
+                term.writeln(entry);
+            });
+        } else {
+            term.writeln('\x1b[90m[No chatter found in history]\x1b[0m');
+        }
+    } catch (e) {
+        term.writeln(`\x1b[31m[Error loading history: ${e.message}]\x1b[0m`);
+    }
+}
+
+// Extract chatter from history markdown
+function extractChatterFromHistory(draftText, chapterText) {
+    const lines = [];
+    const combined = chapterText + '\n' + draftText;
+    
+    // Match terminal output pattern: [timestamp] AgentName (terminal): content
+    const terminalRegex = /\[([^\]]+)\]\s+(\w+)\s+\(terminal\):\s*\n([\s\S]*?)(?=\n\[|$)/g;
+    
+    let match;
+    while ((match = terminalRegex.exec(combined)) !== null) {
+        const timestamp = match[1];
+        const agent = match[2];
+        const content = match[3].trim();
+        
+        // Format for terminal display
+        const timestampFormatted = new Date(timestamp).toLocaleTimeString();
+        lines.push(`\x1b[36m[${timestampFormatted}]\x1b[0m \x1b[33m${agent}\x1b[0m: ${content}`);
+    }
+    
+    return lines;
 }
 
 // Fetch agent stats (legacy - now just for task counts)
@@ -332,22 +300,12 @@ function renderTaskAgentSelect() {
     }
 }
 
-// Buffer for terminal output before terminals are initialized
-const terminalBuffers = {};
-
-// Handle terminal output from WebSocket
+// Handle terminal output from WebSocket (real-time updates)
 function handleTerminalOutput(agent, line) {
-    console.log('[Terminal]', agent, ':', line.substring(0, 50));
-    const termData = agentTerminals[agent];
-    if (termData && termData.term) {
-        termData.term.write(line);
-    } else {
-        // Buffer until terminal is ready
-        if (!terminalBuffers[agent]) {
-            terminalBuffers[agent] = [];
-        }
-        terminalBuffers[agent].push(line);
-        console.log('[Terminal] Buffered for', agent, '(terminal not ready)');
+    if (unifiedTerminal) {
+        const timestamp = new Date().toLocaleTimeString();
+        const formatted = `\x1b[36m[${timestamp}]\x1b[0m \x1b[33m${agent}\x1b[0m: ${line}`;
+        unifiedTerminal.write(formatted);
     }
 }
 
