@@ -4,7 +4,7 @@ BOSS CLI Backend - Dedicated cached session for BOSS agent.
 - Haiku model (fast, cheap delegation)
 - Own session UUID (separate from fleet)
 - Auto-clears at token threshold
-- MCP tools: create_task, create_routine, recall_memory, get_task_status, write_report
+- MCP tools: create_task, create_routine, get_task_status, recall_memory
 """
 
 import subprocess
@@ -202,8 +202,8 @@ class BossCLI(Backend):
         if mcp_config.exists():
             cmd.extend(["--mcp-config", str(mcp_config)])
 
-        # BOSS tools: delegation + awareness (NO file reading)
-        allowed = "mcp__game-studio__create_task,mcp__game-studio__create_routine,mcp__game-studio__recall_memory,mcp__game-studio__get_task_status,mcp__game-studio__write_report"
+        # BOSS tools: delegation only (NO file ops)
+        allowed = "mcp__game-studio__create_task,mcp__game-studio__create_routine,mcp__game-studio__get_task_status,mcp__game-studio__recall_memory"
         cmd.extend(["--allowedTools", allowed])
         cmd.append("--dangerously-skip-permissions")
 
