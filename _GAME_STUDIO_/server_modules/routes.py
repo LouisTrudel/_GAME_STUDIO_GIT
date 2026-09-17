@@ -510,10 +510,11 @@ Be specific in task descriptions. Reference suggestion {suggestion.id} for conte
         """Initiate discussion on a suggestion via normal task delegation.
 
         T300: Refactored to use normal task flow instead of parallel execution.
+        T738: Removed BOSS analysis task - only Research posts findings to hub.
         Flow:
         1. Boss creates a Research task for the suggestion
         2. Research task goes through normal queue and shows in hub
-        3. When Research completes, Boss synthesizes opinion (via dependency)
+        3. Research completes and posts findings via add_discussion
 
         T285: 60-second cooldown per suggestion to prevent spam.
         """

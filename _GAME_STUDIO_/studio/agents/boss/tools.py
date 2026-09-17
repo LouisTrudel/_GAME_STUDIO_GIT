@@ -224,20 +224,20 @@ def create_task(
     files: list = None,  # Deprecated - ignored
     backend: str = None,  # Deprecated - ignored
 ) -> str:
-    """Create task with structured format: [X] constraints [>] what. Workers discover files."""
+    """Create task with plain English format. Workers discover files."""
 
-    # Build structured description from fields
+    # Build task description in plain English
     parts = []
 
-    # [X] Constraints - guardrails
-    if constraints:
-        parts.append("[X] " + "; ".join(constraints))
-
-    # [>] What - deliverable (required)
+    # Goal first (required)
     deliverable = what or description or title
     if not deliverable:
         return "Error: 'what' is required"
-    parts.append("[>] " + deliverable)
+    parts.append(deliverable)
+
+    # Constraints after goal
+    if constraints:
+        parts.append("Constraints: " + "; ".join(constraints))
 
     desc = "\n".join(parts)
 
