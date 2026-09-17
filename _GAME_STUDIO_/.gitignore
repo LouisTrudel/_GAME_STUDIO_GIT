@@ -21,9 +21,17 @@ nul
 # Node (for projects/)
 node_modules/
 
-# Logs (keep structure, ignore content)
+# Logs
 *.log
+data/logs/
+
+# Runtime data (changes constantly)
+data/.server.lock
+data/messages.json
+data/tasks.json
+data/metrics/
 
 # Local settings
 .env
 .env.local
+.claude/settings.local.json

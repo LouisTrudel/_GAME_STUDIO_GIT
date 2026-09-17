@@ -288,3 +288,90 @@ Token/cost display had drift. Tokens would reset while cost stayed cached. The p
 Instruction footer got trimmed. It was injecting "Imperative = DELEGATE" on every prompt—forcing useless task creation. User wanted it replaced with compact MCP tool references (recall_memory, create_task args).
 Code hit studio/studio.py:558-564, replaced verbose footer with tighter MCP reference. Then tried adding `--max-tokens 8192` to persistent_claude_cli.py:253 to fix deliverable truncation. CLI rejected it—unknown option. Server restarted twice cleaning up the break.
 Dependenc...
+
+---
+
+[2026-09-11] Draft #92:
+*2026-09-11*
+Task prompt bloat fixed. External session trimmed verbose TASK header injection—new format keeps bare task ID and context. Less noise per prompt.
+Turn budget crisis hit hard at max_turns=8. Code burned through limits on T611 (cancel tool), T614 (token display), T616 (finish T614). Audit and Research also maxed out—T615 (profile Code turns) and T617 (cross-agent analysis) both incomplete.
+Code traced cancel flow for T612/T613: studio-tasks.js:425 (button) → routes.py:157 (cancel endp...
+
+---
+
+[2026-09-11] Draft #93:
+*2026-09-11*
+Session ID collision cascade hit production. Multiple restarts triggered by persistent session lock on `1b8fffa1-46bc-200f-97d8-da094829bfa9`. Error pattern: session conflict → RuntimeError → OSError(22) → forced restart. Repeated 5+ times 19:58-20:08.
+T619/T620/T621 all hit token limits before completing agent tab fix. Code started investigating 50%-50% split → standalone tab migration but couldn't finish implementation. All three attempts incomplete, no actual changes merged.
+T622...
+
+---
+
+[2026-09-14] Draft #94:
+I'll compress this session into a narrative episode focusing on the key developments and outcomes.
+---
+**2026-09-11, 19:58-21:26**
+We hit a cascade of session conflicts. Multiple restarts triggered by a persistent lock on session `1b8fffa1-46bc-200f-97d8-da094829bfa9`—RuntimeError → OSError(22) → forced restart loop. Five cycles in ten minutes (19:58-20:08).
+Three tasks burned out before finishing: **T619/T620/T621** all hit token limits mid-investigation. Code was exploring a 50%-50% tab split ...
+
+---
+
+[2026-09-16] Draft #95:
+**2026-09-16, 15:33-15:38**
+Lou returns. Switched agent fleet to stateless mode to fix token bloat. BOSS checks state—no blocked tasks.
+Issue surfaces: Hub chat messages getting trimmed to `[maxCharLeng] + "....."` Impossible to read full BOSS responses. Lou wants complete messages in hub.
+**T645** delegated to Code: Investigate and fix message truncation in CLI. Code starts search for truncation logic, CSS checks pending.
+**Status:** Investigating front-end rendering limits. Stateless setup in ...
+
+---
+
+[2026-09-16] Draft #96:
+**2026-09-16, 15:33-16:07**
+Lou returns to stateless fleet. Hub messages truncated—impossible to read BOSS responses. Code investigates.
+Initial fix (T646): Removed 60-char limit from studio.js. Didn't help. Problem persisted in frontend.
+Deeper dig reveals the real culprit: **Task.to_dict() wasn't serializing output_response**. Messages stored truncated in tasks.json from the start.
+**T649** delegated to Code: Add output_response to Task serialization while preserving T199 optimization. **[SUCC...
+
+---
+
+[2026-09-16] Draft #97:
+**2026-09-16, 15:33-16:48**
+Hub messages were truncated—impossible to read. Investigation traced the culprit: **Task.to_dict() wasn't serializing output_response**, so messages stored truncated in tasks.json from the start.
+**T649** (Code): Added output_response to Task serialization. **[SUCCESS]** Messages now persist fully.
+Frontend fix confirmed (**T650**): Removed CSS overflow limits in studio.js/studio.css.
+Testing verified (**T651**): Long messages render without truncation.
+**Separate win...
+
+---
+
+[2026-09-16] Draft #98:
+I'll compress this into a concise episode format, preserving the key story and task IDs.
+---
+**2026-09-16, 17:05-17:33**
+Routines feature worked but had UX lag—new routines didn't show until server restart. **T658** (Frontend): Added immediate broadcast of schedule updates. Routines now display instantly. ✓
+Then a new problem surfaced: token cost display in the taskbar shows random values instead of real aggregate metrics. Users see "47.9k tokens | $0.15" but the number doesn't match completed t...
+
+---
+
+[2026-09-16] Draft #99:
+**2026-09-16, 17:05-18:44**
+Routines instant display fixed (**T658**). Then token metrics showed wrong values—displaying aggregate counts on all task views instead of only when viewing completed tasks.
+**Investigation revealed:** `renderHubMetricsBar()` was unconditionally displaying aggregate token sums across all views. Per-task token displays worked correctly.
+**Fixes applied:**
+- **T660**: Token metrics bar now displays only on completed tasks list ✓
+- **T661**: Quick health check—all core s...
+
+---
+
+[2026-09-16] Draft #100:
+**2026-09-16, 18:47-22:16**
+User deployed a full backend rework. We ran comprehensive testing (**T666**) to catch breakages, then tackled a persistent sync bug: new tasks and routines existed on the backend but didn't appear in the frontend until server restart.
+**Root cause:** Websocket broadcasts weren't firing on task/routine creation.
+**Fixes applied:**
+- **T665**: Added websocket broadcast after schedule creation in routes.py ✓
+- **T671**: Wired up broadcasts in boss/tools.py so tasks sync ...
+
+---
+
+[2026-09-16] Draft #101:
+Error: RuntimeError: CLI error (code 1):...

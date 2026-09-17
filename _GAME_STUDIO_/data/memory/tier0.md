@@ -211,3 +211,42 @@
 ---
 
 [09:14] Research: Now I see the issue. Let me check where the broadcast happens and when tokens are extracted:I see the problem. Let me check what the "result" event type looks like:Now I understand the issue. The live
+
+---
+
+## CLI Backend Architecture Checkpoint (2026-09-16)
+
+**Refactored CLI backends to 3 types:**
+- `BossCLI` (boss_cli.py): Dedicated Haiku session for BOSS, 150K threshold, auto-clear
+- `FleetCLI` (fleet_cli.py): Shared Sonnet session for all workers, 150K threshold, auto-clear
+- `VanillaCLI` (vanilla_cli.py): Stateless for Compression/Text/Image/Audio/Video
+
+**Agent configs updated:**
+- BOSS → "boss" backend
+- Workers (Code, Frontend, etc.) → "fleet" backend
+- Vanilla (Compression, Text, Image, Audio, Video) → "vanilla" backend
+
+**Session management:**
+- All old sessions cleared on startup (cleanup_old_sessions)
+- Sessions auto-clear at 150K token threshold
+- Terminal output archived to data/logs/terminals/{Agent}_{date}.log
+
+**Frontend changes:**
+- Agent tab → Session Monitor (shows BOSS/Fleet usage bars)
+- /api/sessions endpoint for session stats
+- /api/sessions/clear to force clear
+- WebSocket broadcasts session_stats_update every 2s
+
+**Deprecated files (kept for backwards compat):**
+- claude_cli.py
+- persistent_claude_cli.py
+
+---
+## MCP Tools Audit (2026-09-17)
+
+**34 tools → 8 core tools:**
+- BOSS: create_task, create_routine, get_task_status, recall_memory
+- Workers: search_code, read_lines, edit_file, write_report
+- Agents = MCP-only (no Bash/Read/Write/Glob/Grep)
+
+---

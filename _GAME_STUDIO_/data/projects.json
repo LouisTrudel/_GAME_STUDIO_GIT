@@ -1,5 +1,5 @@
 {
-  "counter": 4,
+  "counter": 6,
   "active_project_id": null,
   "projects": [
     {
@@ -29,6 +29,23 @@
       "metadata": {
         "project_type": "game",
         "subtype": "ADHD / accuracy",
+        "engine": "babylon.js"
+      }
+    },
+    {
+      "id": "P006",
+      "name": "Test2",
+      "path": "C:\\Users\\lou\\__MY_WORK__\\STUDIO_TEST_ROOM\\test2\\test2",
+      "description": "",
+      "status": "active",
+      "type": "external",
+      "created_at": "2026-09-12T17:23:38.579887",
+      "updated_at": "2026-09-12T17:23:38.579887",
+      "pipeline_state": "setup",
+      "whitepaper_rating": 0,
+      "metadata": {
+        "project_type": "game",
+        "subtype": "platformer",
         "engine": "babylon.js"
       }
     }
