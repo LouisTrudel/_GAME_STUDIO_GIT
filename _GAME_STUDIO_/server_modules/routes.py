@@ -642,26 +642,15 @@ IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggest
 
     # ============ SESSION MANAGEMENT ============
 
-    @app.post("/api/sessions/clear/{agent_name}")
-    async def clear_agent_session_route(agent_name: str):
-        """Clear a specific agent's persistent session."""
-        from backends.backends.persistent_claude_cli import clear_session
-        if clear_session(agent_name):
-            return {"status": "ok", "message": f"Session cleared for {agent_name}"}
-        return {"status": "ok", "message": f"No session found for {agent_name}"}
-
-    @app.post("/api/sessions/clear-all")
-    async def clear_all_sessions_route():
-        """Clear all agent persistent sessions."""
-        from backends.backends.persistent_claude_cli import clear_all_sessions
-        count = clear_all_sessions()
-        return {"status": "ok", "cleared": count}
-
     @app.get("/api/sessions")
     async def list_sessions_route():
-        """List all agent sessions with stats."""
-        from backends.backends.persistent_claude_cli import list_sessions
-        return list_sessions()
+        """List BOSS and Fleet session stats."""
+        from backends.backends.boss_cli import BossCLI
+        from backends.backends.fleet_cli import FleetCLI
+        return {
+            "boss": BossCLI.get_session_stats(),
+            "fleet": FleetCLI.get_session_stats(),
+        }
 
     # ============ FILE EXPLORER ============
 

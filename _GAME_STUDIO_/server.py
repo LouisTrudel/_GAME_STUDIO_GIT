@@ -41,11 +41,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Start broadcast loops on startup."""
-    # Kill any stale Claude CLI sessions from previous runs
-    from backends.backends.persistent_claude_cli import clear_all_sessions
-    cleared = clear_all_sessions()
-    if cleared:
-        logger.info("Cleared %d stale Claude sessions on startup", cleared)
+    # Sessions are auto-cleared on backend import (boss_cli.py, fleet_cli.py)
+    # No manual cleanup needed here
 
     # Reset any stale IN_PROGRESS tasks from previous crash (web server owns task dispatch)
     reset_ids = task_manager.reset_in_progress_tasks(force_all=True)
