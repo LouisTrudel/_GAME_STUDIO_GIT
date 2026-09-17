@@ -154,7 +154,14 @@ OUTPUT FORMAT (respond with ONLY this structure):
 [DONE] Completed work, resolved issues, archived context
 
 ===FRICTION===
-[FRICTION] Unresolved blockers, bugs, problems
+[FRICTION] Extract these friction events:
+- Failed approaches: tried X, didn't work because Y
+- Recurring bugs: same issue keeps coming back
+- User corrections: user said "NO, I meant X not Y"
+- Wasted effort: work that had to be undone
+- Confusion patterns: agent misunderstood task/format
+- Anti-patterns: looked right but broke stuff
+- Context gaps: agent didn't have info it needed
 
 Rules: Max 60% in KEEP. When uncertain → PUSH. Merge any existing sections."""
 
