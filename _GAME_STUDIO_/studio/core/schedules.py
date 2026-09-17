@@ -592,23 +592,6 @@ def create_taxonomy_review_schedule(interval_hours: int = 24) -> Schedule:
     )
 
 
-def create_gemini_research_schedule(interval_minutes: int = 30) -> Schedule:
-    """Create automated Gemini research routine.
-
-    Runs on a loop:
-    1. Tests Gemini backend health
-    2. Picks a rotating game dev topic
-    3. Runs web research with grounding
-    4. Saves report to reports/research/
-    """
-    return schedule_manager.create_script(
-        name="Gemini Research",
-        description="Automated game dev research - health check, web search, save report",
-        interval_seconds=interval_minutes * 60,
-        script_module="studio.routines.gemini_research_routine",
-    )
-
-
 def create_git_commit_schedule(interval_hours: int = 24) -> Schedule:
     """Create automated git commit/push routine.
 
