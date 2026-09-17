@@ -68,7 +68,7 @@ class Studio:
         # AC-Memory: bullet points, infinite tiers, for agent recall
         memory_manager.set_compress_callback(self._compress_with_context_agent)
 
-        # Wire up History narrative callback - Writer compacts tiers
+        # Wire up History narrative callback - Compression agent compacts tiers
         # History: narrative prose, caps at Collection, for human reading
         # History runs INDEPENDENTLY from AC-Memory (both consume raw hub chat)
         history_manager.set_narrative_callback(self._generate_tier_narrative)
@@ -245,46 +245,59 @@ Max 60% KEEP. When uncertain → DONE."""
             )
 
     def _generate_tier_narrative(self, content: str, tier_name: str, compression_count: int) -> Optional[str]:
-        """Generate narrative for history tier via Writer.
+        """Generate narrative for history tier via Compression agent.
 
-        Called by HistoryManager during tier compression. Writer transforms
+        Called by HistoryManager during tier compression. Transforms
         accumulated tier content into narrative prose.
 
         Args:
-            content: The tier content to narrate
+            content: The tier content to compress (full content, no truncation)
             tier_name: Name of tier being compressed (draft, chapter, book, collection)
             compression_count: How many times this tier has been compressed
 
         Returns:
             Narrative markdown string, or None on failure
         """
-        writer_agent = self.agents.get("Compression")
-        if not writer_agent:
+        compression_agent = self.agents.get("Compression")
+        if not compression_agent:
             logger.debug("Compression agent not found for tier narrative")
             return None
 
-        # Truncate content for Writer
-        content_preview = content[:6000] if len(content) > 6000 else content
+        # Tier-specific compression instructions (source → destination)
+        tier_prompts = {
+            "draft": f"""# Session Chatter → Chapter Entry
 
-        tier_style = {
-            "draft": "episode - one session's adventure",
-            "chapter": "chapter - weave episodes into story arc",
-            "book": "volume - major phase narrative",
-            "collection": "series entry - era summary",
-        }
-        style = tier_style.get(tier_name, tier_style["draft"])
-
-        prompt = f"""# {tier_name.title()} {compression_count}
-
-{content_preview}
+{content}
 
 ---
 
-Compress into {style}. Dev thriller. "We" voice. Preserve task IDs, outcomes."""
+Compress into single narrative episode. Dev thriller. "We" voice. Preserve task IDs, outcomes, friction. One paragraph.""",
+
+            "chapter": f"""# Chapter → Book Entry
+
+{content}
+
+---
+
+Compress episodes into story arc. Dev thriller. 3-5 paragraphs with theme. Preserve major milestones.""",
+
+            "book": f"""# Book → Collection Entry
+
+{content}
+
+---
+
+Polish into final archive entry. Dev thriller. Key achievements, architecture changes, lessons learned. Make it shine.""",
+        }
+
+        prompt = tier_prompts.get(tier_name)
+        if not prompt:
+            logger.debug("No compression prompt for tier: %s", tier_name)
+            return None
 
         try:
-            self._notify_status("Compression", "working", f"Writing {tier_name} narrative...")
-            narrative = writer_agent.respond(prompt)
+            self._notify_status("Compression", "working", f"Compressing {tier_name}...")
+            narrative = compression_agent.respond(prompt)
             self._notify_status("Compression", "idle", "")
 
             # Compact session to prevent token bloat

@@ -5,14 +5,14 @@ Simple markdown-based tiered history with Writer-generated narratives.
 
 Structure:
   history/
-  ├── draft.md      ← Current session (raw accumulation)
-  ├── chapter.md    ← Compressed drafts (epoch narrative)
-  ├── book.md       ← Compressed chapters (phase narrative)
+  ├── draft.md      ← Raw agent chatter (cleared after compression)
+  ├── chapter.md    ← Compressed drafts (full narratives)
+  ├── book.md       ← Compressed chapters (full narratives)
   └── collection.md ← Final archive (grows indefinitely)
 
 Flow:
-  Hub chat → draft grows → threshold → Writer narrates →
-  narrative replaces draft, summary appends to chapter → ...
+  Agent chatter → draft grows → threshold (8K) → Writer compresses →
+  full narrative appends to chapter, draft cleared → cascade if needed
 """
 
 from datetime import datetime
@@ -274,16 +274,14 @@ class HistoryManager:
             self._is_compressing = False
             return False
 
-        # Replace current tier with narrative
-        self._write_tier(tier, narrative)
-        logger.info("%s compressed: %d chars (entry #%d)", tier, len(narrative), count)
+        # Clear current tier (raw content moves to next tier as narrative)
+        self._write_tier(tier, "")
+        logger.info("%s compressed and cleared: %d chars → %s (entry #%d)", tier, len(narrative), next_tier or "none", count)
 
-        # Append summary to next tier
+        # Append FULL narrative to next tier
         if next_tier:
             timestamp = datetime.now().strftime("%Y-%m-%d")
-            # Extract first paragraph as summary for next tier
-            summary = self._extract_summary(narrative)
-            entry = f"[{timestamp}] {tier.title()} #{count}:\n{summary}"
+            entry = f"[{timestamp}] {tier.title()} #{count}:\n{narrative}"
             self._append_tier(next_tier, entry)
 
             # Check if next tier needs compression (cascade)
@@ -294,24 +292,6 @@ class HistoryManager:
         # Release compression lock
         self._is_compressing = False
         return True
-
-    def _extract_summary(self, narrative: str) -> str:
-        """Extract first ~500 chars as summary for next tier."""
-        # Skip header lines
-        lines = narrative.strip().split('\n')
-        content_lines = []
-        for line in lines:
-            if line.startswith('#'):
-                continue
-            if line.strip():
-                content_lines.append(line)
-            if len('\n'.join(content_lines)) > 500:
-                break
-
-        summary = '\n'.join(content_lines)[:500]
-        if len(narrative) > len(summary):
-            summary += "..."
-        return summary
 
     # ============ QUERIES ============
 
