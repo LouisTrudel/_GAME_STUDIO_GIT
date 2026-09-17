@@ -678,6 +678,18 @@ async def _session_stats_broadcast_loop():
         await asyncio.sleep(2)  # Update every 2 seconds
 
 
+async def _websocket_heartbeat_loop():
+    """Send periodic ping to keep WebSocket connections alive.
+
+    Prevents browser disconnection during long-running agent operations.
+    """
+    while True:
+        if connections:
+            data = json.dumps({"type": "ping", "ts": datetime.now().isoformat()})
+            await broadcast_to_clients(data)
+        await asyncio.sleep(15)  # Ping every 15 seconds
+
+
 def start_broadcast_loops(studio) -> list[asyncio.Task]:
     """Start all background broadcast loops. Returns list of tasks."""
     global main_loop, _broadcast_tasks
@@ -696,6 +708,7 @@ def start_broadcast_loops(studio) -> list[asyncio.Task]:
         asyncio.create_task(_memory_compression_loop()),
         asyncio.create_task(_session_stats_broadcast_loop()),
         asyncio.create_task(_history_flush_loop()),
+        asyncio.create_task(_websocket_heartbeat_loop()),  # Keep WS alive
     ]
     return _broadcast_tasks
 

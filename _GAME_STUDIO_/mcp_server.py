@@ -42,6 +42,22 @@ mcp = MCPServer("game-studio")
 
 
 # =============================================================================
+# SAFE WRAPPER - All MCP tools must use this to prevent hangs
+# =============================================================================
+
+def safe_call(func, tool_name: str, **kwargs) -> str:
+    """Wrap tool handler calls with exception handling to prevent MCP hangs."""
+    try:
+        result = func(**kwargs)
+        logger.info("[MCP] %s completed OK", tool_name)
+        return result
+    except Exception as e:
+        error_msg = f"ERROR in {tool_name}: {type(e).__name__}: {e}"
+        logger.error("[MCP] %s", error_msg)
+        return error_msg
+
+
+# =============================================================================
 # BOSS TOOLS
 # =============================================================================
 
@@ -55,7 +71,7 @@ async def create_task(
     """Create task: [X] constraints [>] goal. Workers discover files themselves."""
     logger.info("[MCP] create_task: %s → %s", what[:50], assignee)
     from studio.agents.boss.tools import create_task as handler
-    result = handler(what=what, constraints=constraints, assignee=assignee, dependencies=dependencies)
+    result = safe_call(handler, "create_task", what=what, constraints=constraints, assignee=assignee, dependencies=dependencies)
     logger.info("[MCP] create_task result: %s", result[:80])
     return result
 
@@ -70,7 +86,7 @@ async def create_routine(
     """Create a scheduled routine (recurring workflow)."""
     logger.info("[MCP] create_routine: %s (%ds, %d tasks)", name, interval_seconds, len(tasks))
     from studio.core.routine_tools import create_routine as handler
-    return handler(name=name, description=description, interval_seconds=interval_seconds, tasks=tasks)
+    return safe_call(handler, "create_routine", name=name, description=description, interval_seconds=interval_seconds, tasks=tasks)
 
 
 @mcp.tool()
@@ -81,7 +97,7 @@ async def get_task_status(
     """Get status of tasks."""
     logger.info("[MCP] get_task_status: %s (include_completed=%s)", task_id or "all", include_completed)
     from studio.agents.boss.tools import get_task_status as handler
-    return handler(task_id=task_id, include_completed=include_completed)
+    return safe_call(handler, "get_task_status", task_id=task_id, include_completed=include_completed)
 
 
 @mcp.tool()
@@ -92,7 +108,7 @@ async def recall_memory(
     """Search memory tiers."""
     logger.info("[MCP] recall_memory: '%s' (max=%d)", query[:50] if query else "", max_results)
     from studio.agents.boss.tools import recall_memory as handler
-    return handler(query=query, max_results=max_results, search_logs=True)
+    return safe_call(handler, "recall_memory", query=query, max_results=max_results, search_logs=True)
 
 
 @mcp.tool()
@@ -108,7 +124,7 @@ async def create_suggestion(
     """Create a suggestion for human review in the Learning tab."""
     logger.info("[MCP] create_suggestion: '%s' (%s) from %s", title[:40], category, source_agent)
     from studio.agents.boss.tools import create_suggestion as handler
-    return handler(title=title, content=content, category=category, source_agent=source_agent, related_tasks=related_tasks, files_mentioned=files_mentioned, evidence=evidence)
+    return safe_call(handler, "create_suggestion", title=title, content=content, category=category, source_agent=source_agent, related_tasks=related_tasks, files_mentioned=files_mentioned, evidence=evidence)
 
 
 # =============================================================================
@@ -261,7 +277,7 @@ async def write_report(
     """Save report to reports/ folder."""
     logger.info("[MCP] write_report: %s.%s (%d chars)", filename, format, len(content))
     from studio.core.file_tools import write_report as handler
-    return handler(filename=filename, content=content, format=format)
+    return safe_call(handler, "write_report", filename=filename, content=content, format=format)
 
 
 # =============================================================================

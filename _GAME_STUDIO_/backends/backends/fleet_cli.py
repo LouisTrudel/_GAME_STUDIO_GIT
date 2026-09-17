@@ -79,12 +79,16 @@ class FleetCLI(Backend):
 
     Workers share ONE session for maximum cache reuse.
     The "agent" is just the role.md context prefix.
+
+    IMPORTANT: Only ONE Fleet agent can use the session at a time.
+    _session_semaphore ensures serialized access to prevent "session in use" errors.
     """
 
     _cumulative_tokens: int = 0
     _session_needs_create: bool = True
     _running_processes: dict[str, subprocess.Popen] = {}
     _lock = threading.Lock()
+    _session_semaphore = threading.Semaphore(1)  # Only one agent at a time
 
     def __init__(self, model: str = "sonnet", agent_name: str = "Worker"):
         super().__init__()
@@ -123,36 +127,50 @@ class FleetCLI(Backend):
         tools: list[dict] = None,  # Deprecated - MCP tools via --allowedTools
         tool_handlers: dict = None,  # Deprecated - MCP handles tools
     ) -> str:
-        """Send message to Fleet CLI session."""
-        self._reset_token_tracking()
-        self._reset_metrics()
+        """Send message to Fleet CLI session.
 
-        # Pre-check: clear session if already over threshold
-        with FleetCLI._lock:
-            if FleetCLI._cumulative_tokens > SESSION_TOKEN_THRESHOLD:
-                logger.warning("[Fleet] Pre-run threshold exceeded (%dK > %dK), clearing session",
-                              FleetCLI._cumulative_tokens // 1000,
-                              SESSION_TOKEN_THRESHOLD // 1000)
-                self._clear_session()
-
-        prompt = self._build_prompt(messages, system_prompt)
-
-        logger.info("[%s] Fleet START | prompt=%.1fKB | cumulative=%dK/%dK",
-                    self.agent_name,
-                    len(prompt) / 1024,
-                    FleetCLI._cumulative_tokens // 1000,
-                    SESSION_TOKEN_THRESHOLD // 1000)
+        SERIALIZED ACCESS: Only one Fleet agent can use the shared session at a time.
+        Other agents wait in queue via _session_semaphore.
+        """
+        # Acquire session lock - wait for other Fleet agents to finish
+        logger.debug("[%s] Waiting for session semaphore...", self.agent_name)
+        FleetCLI._session_semaphore.acquire()
+        logger.debug("[%s] Acquired session semaphore", self.agent_name)
 
         try:
-            response = self._run_cli(prompt)
-            return response
-        except Exception as e:
-            self.last_is_error = True
-            self.last_error_message = str(e)
-            logger.error("[%s] Error: %s", self.agent_name, e)
-            return f"Error: {type(e).__name__}: {e}"
+            self._reset_token_tracking()
+            self._reset_metrics()
+
+            # Pre-check: clear session if already over threshold
+            with FleetCLI._lock:
+                if FleetCLI._cumulative_tokens > SESSION_TOKEN_THRESHOLD:
+                    logger.warning("[Fleet] Pre-run threshold exceeded (%dK > %dK), clearing session",
+                                  FleetCLI._cumulative_tokens // 1000,
+                                  SESSION_TOKEN_THRESHOLD // 1000)
+                    self._clear_session()
+
+            prompt = self._build_prompt(messages, system_prompt)
+
+            logger.info("[%s] Fleet START | prompt=%.1fKB | cumulative=%dK/%dK",
+                        self.agent_name,
+                        len(prompt) / 1024,
+                        FleetCLI._cumulative_tokens // 1000,
+                        SESSION_TOKEN_THRESHOLD // 1000)
+
+            try:
+                response = self._run_cli(prompt)
+                return response
+            except Exception as e:
+                self.last_is_error = True
+                self.last_error_message = str(e)
+                logger.error("[%s] Error: %s", self.agent_name, e)
+                return f"Error: {type(e).__name__}: {e}"
+            finally:
+                self._update_cumulative_tokens()
         finally:
-            self._update_cumulative_tokens()
+            # Always release semaphore
+            FleetCLI._session_semaphore.release()
+            logger.debug("[%s] Released session semaphore", self.agent_name)
 
     def _build_prompt(self, messages: list[dict], system_prompt: str) -> str:
         """Build prompt with system context (agent role.md prefix)."""
