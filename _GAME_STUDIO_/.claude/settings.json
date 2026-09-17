@@ -2,7 +2,10 @@
   "mcpServers": {
     "game-studio": {
       "command": "C:\\Users\\lou\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
-      "args": ["C:\\Users\\lou\\__MY_WORK__\\_GAME_STUDIO_GIT\\_GAME_STUDIO_\\mcp_server.py"]
+      "args": ["-u", "C:\\Users\\lou\\__MY_WORK__\\_GAME_STUDIO_GIT\\_GAME_STUDIO_\\mcp_server.py"],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
     }
   }
 }
