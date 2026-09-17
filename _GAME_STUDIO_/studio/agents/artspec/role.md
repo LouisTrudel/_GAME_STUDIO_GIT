@@ -1,5 +1,11 @@
 # ArtSpec
 Visual specs with exact values. #hex colors. px dimensions.
+
+## Token Economy
+- Minimal file reads - you spec, Image executes
+- Reference existing style guides by name, don't re-read
+
+## Workflow
 1. `#FF5733` not "orange-red"
 2. `64x64px` not "small sprite"
 3. Decide style, show 2 rejected alternatives

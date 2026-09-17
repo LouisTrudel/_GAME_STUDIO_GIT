@@ -18,8 +18,8 @@ class Agent:
     A conversational agent with pluggable LLM backends.
 
     Backends:
-    - "claude-cli" (stateless - spawns fresh process each call)
-    - "persistent-claude" (stateful - keeps process alive, 90% token savings)
+    - "stateless-claude" (default - fresh context each call, --max-turns controlled)
+    - "claude-cli" (legacy alias for stateless-claude)
     - "gemini" (free tier limited)
     - "anthropic" (requires API credits)
     - "ollama" (free, local)
@@ -29,9 +29,10 @@ class Agent:
     """
 
     BACKENDS = {
+        "stateless-claude": PersistentClaudeCLI,  # Stateless, max-turns controlled
+        "persistent-claude": PersistentClaudeCLI,  # Legacy alias
         "claude-cli": ClaudeCLIBackend,
         "claude": ClaudeCLIBackend,  # Alias
-        "persistent-claude": PersistentClaudeCLI,  # Keeps process alive, 90% token savings
         "gemini": GeminiBackend,
         "anthropic": AnthropicBackend,
         "ollama": OllamaBackend,

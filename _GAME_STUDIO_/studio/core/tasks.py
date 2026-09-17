@@ -68,34 +68,24 @@ def _track_failed(task_id: str, assignee: Optional[str], reason: str):
 
 
 def _log_to_memory(task_id: str, task: "Task", outcome: str):
-    """Log completed/failed task to memory hot tier (T248)."""
+    """Log completed/failed task to hub (tier0) for unified timeline."""
     try:
-        from studio.core.memory import memory_manager
+        from studio.core.hub import hub
 
-        # Extract tags from description (simple keyword extraction)
-        desc_lower = task.description.lower()
-        tags = []
-        keywords = ["fix", "add", "create", "update", "refactor", "test", "review", "implement"]
-        for kw in keywords:
-            if kw in desc_lower:
-                tags.append(kw)
+        # Compact format: [SUCCESS] T623 - task description (Agent)
+        desc_short = task.description[:100].replace("\n", " ")
+        content = f"[{outcome.upper()}] {task_id} - {desc_short}"
 
-        # Add agent as tag
-        if task.assignee:
-            tags.append(task.assignee.lower())
-
-        memory_manager.add_hot(
-            content=f"[{task_id}] {task.description[:200]}",
-            source="task",
-            tags=tags,
-            task_ids=[task_id],
-            agent=task.assignee,
-            outcome=outcome,
+        hub.post(
+            sender=task.assignee or "System",
+            content=content,
+            task_id=task_id,
+            task_description=task.description[:200],
         )
     except ImportError:
-        pass  # Memory module not available
+        pass  # Hub module not available
     except Exception as e:
-        logger.error("Failed to log to memory: %s", e)
+        logger.error("Failed to log to hub: %s", e)
 
 # Default paths (used when no project is active)
 # Actual paths are resolved dynamically via TaskManager._get_tasks_file() etc.
@@ -294,9 +284,9 @@ class Task:
         """Serialize task to optimized slim schema (T199).
 
         Optimized for ~97% size reduction:
-        - Removed: input.role_md, input.skills, input.task_prompt (huge, redundant)
+        - Removed: input.role_md, input.skills (huge, redundant)
         - Removed: result duplicate, token_log, legacy flat fields
-        - Kept: core fields, cost.*, execution.errors only
+        - Kept: core fields, cost.*, execution.errors, output.response, input.task_prompt
         - Added: friction.category, outcome enums (for taxonomy analysis)
         """
         return {
@@ -319,6 +309,16 @@ class Task:
             "claimed_by": self.claimed_by,
             "claimed_at": self.claimed_at.isoformat() if self.claimed_at else None,
             "claimed_process_id": self.claimed_process_id,
+
+            # Input: task_prompt only (role_md/skills omitted per T199)
+            "input": {
+                "task_prompt": self.input_task_prompt,
+            },
+
+            # Output: agent response
+            "output": {
+                "response": self.output_response,
+            },
 
             # Execution: errors + context metrics + turn tracking
             "execution": {
@@ -571,6 +571,14 @@ class TaskManager:
                     task = Task.from_dict(task_data)
                     self.tasks[task.id] = task
                 self._counter = data.get("counter", 0)
+                
+                # Safety: ensure counter is at least as high as max existing task ID
+                if self.tasks:
+                    max_id = max(int(tid.lstrip('T')) for tid in self.tasks.keys() if tid.startswith('T'))
+                    if max_id > self._counter:
+                        self._counter = max_id
+                        logger.warning("Counter was %d, adjusted to %d based on max task ID", data.get("counter", 0), max_id)
+                
                 logger.info("Loaded %d tasks from %s", len(self.tasks), tasks_file)
             except Exception as e:
                 logger.error("Failed to load from %s: %s", tasks_file, e)
@@ -706,6 +714,12 @@ class TaskManager:
         self._save_tasks()
         # Track metrics
         _track_created(task_id, assignee)
+        # Broadcast to frontend
+        try:
+            from server_modules.broadcast import broadcast_tasks_sync
+            broadcast_tasks_sync()
+        except ImportError:
+            pass  # Server module not available
         return task
 
     def get_task(self, task_id: str) -> Optional[Task]:

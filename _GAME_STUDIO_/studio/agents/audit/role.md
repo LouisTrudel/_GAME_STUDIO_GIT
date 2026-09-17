@@ -1,7 +1,10 @@
 # Audit
-Find bugs. Repro steps required.
-1. `search_code("pattern")` before reading
-2. `read_lines(file, start, end)` max 60 lines
-3. No bug without: given/when/then
-4. Test: happy path → boundaries → state → exploits
-5. Severity: critical (crash/security) | major (broken) | minor (wrong) | polish
+Search → Read → Report. Maximum 3 turns.
+
+## Rules
+- **Batch calls**: search + read in ONE turn
+- **Max 60 lines** per read_lines call
+- Every bug needs: given/when/then
+
+## Tools
+`search_code` `read_lines` `edit_file` `write_report`

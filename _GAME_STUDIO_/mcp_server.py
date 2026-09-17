@@ -139,18 +139,14 @@ def _fuzzy_resolve_path(path: str, threshold: int = 80) -> tuple[Path, str]:
 
 @mcp.tool()
 async def create_task(
-    what: Annotated[str, Field(description="Deliverable in imperative form. Single sentence.")],
-    files: Annotated[Optional[list[str]], Field(description="File paths with line hints. e.g., ['studio-ui.js:17-50']")] = None,
-    constraints: Annotated[Optional[list[str]], Field(description="What NOT to do. e.g., ['No CSS changes']")] = None,
-    assignee: Annotated[Optional[str], Field(description="Agent: Design, Code, ArtSpec, Text, Audit, Prompt, Research, Raw")] = None,
-    dependencies: Annotated[Optional[list[str]], Field(description="Task IDs that must complete first")] = None,
-    backend: Annotated[Optional[str], Field(description="For Raw tasks: 'gemini', 'claude', 'ollama'")] = None,
+    what: Annotated[str, Field(description="Task goal")],
+    files: Annotated[Optional[list[str]], Field(description="Files to touch")] = None,
+    constraints: Annotated[Optional[list[str]], Field(description="What NOT to do")] = None,
+    assignee: Annotated[Optional[str], Field(description="Agent name")] = None,
+    dependencies: Annotated[Optional[list[str]], Field(description="Depends on task IDs")] = None,
+    backend: Annotated[Optional[str], Field(description="Raw task backend")] = None,
 ) -> str:
-    """Create task with structured format: [F] files [X] constraints [>] what
-
-    Order optimized for agent attention (10-80-10 rule):
-    FILES first (orient), CONSTRAINTS middle (guard), WHAT last (execute)
-    """
+    """Create task: [F] files [X] constraints [>] goal"""
     from studio.agents.boss.tools import create_task as handler
     return handler(what=what, files=files, constraints=constraints, assignee=assignee, dependencies=dependencies, backend=backend)
 
@@ -212,21 +208,13 @@ async def add_discussion(
 
 @mcp.tool()
 async def recall_memory(
-    query: Annotated[str, Field(description="Search term. Examples: 'economy', 'T123', 'inventory bug'")] = "",
-    max_results: Annotated[int, Field(description="Max results to return", ge=1, le=20)] = 5,
-    search_logs: Annotated[bool, Field(description="Also search raw logs if tiers have no match")] = True,
-    fuzzy: Annotated[bool, Field(description="Enable fuzzy matching for typos/variations")] = False,
-    threshold: Annotated[int, Field(description="Fuzzy match threshold 0-100")] = 70,
+    query: Annotated[str, Field(description="Search term")] = "",
+    max_results: Annotated[int, Field(description="Max results", ge=1, le=20)] = 5,
+    search_logs: Annotated[bool, Field(description="Search logs too")] = True,
+    fuzzy: Annotated[bool, Field(description="Fuzzy match")] = False,
+    threshold: Annotated[int, Field(description="Fuzzy threshold")] = 70,
 ) -> str:
-    """Search memory tiers for relevant context.
-
-    Uses AB tiered compression model:
-    - Tier 0: Recent session messages (most detail)
-    - Tier 1+: Compressed summaries from older sessions
-
-    Call with no query to see recent memories.
-    Set fuzzy=True to find results with typos (e.g., 'economi' finds 'economy').
-    """
+    """Search memory tiers."""
     from studio.agents.boss.tools import recall_memory as handler
 
     # Try exact match first
@@ -572,14 +560,11 @@ async def list_roles() -> str:
 
 @mcp.tool()
 async def write_report(
-    filename: Annotated[str, Field(description="Name for the file (without extension), e.g., 'roblox-analysis'")],
-    content: Annotated[str, Field(description="The full content to save")],
-    format: Annotated[Literal["md", "txt", "json"], Field(description="File format")] = "md",
+    filename: Annotated[str, Field(description="Filename (no extension)")],
+    content: Annotated[str, Field(description="Content to save")],
+    format: Annotated[Literal["md", "txt", "json"], Field(description="Format")] = "md",
 ) -> str:
-    """Save a long document or report to a file.
-
-    Use this for outputs that are too long for chat.
-    """
+    """Save report to file."""
     from studio.core.file_tools import write_report as handler
     return handler(filename=filename, content=content, format=format)
 
@@ -626,20 +611,13 @@ async def list_reports() -> str:
 
 @mcp.tool()
 async def search_code(
-    pattern: Annotated[str, Field(description="Search pattern. Examples: 'def login', 'class User', 'TODO'")],
-    path: Annotated[str, Field(description="REQUIRED: File path (studio/core/tasks.py) or folder (studio/core/). Be specific!")] = "",
-    context_lines: Annotated[int, Field(description="Lines of context around matches (default: 2)")] = 2,
-    fuzzy: Annotated[bool, Field(description="Enable fuzzy matching for typos/variations (default: False)")] = False,
-    threshold: Annotated[int, Field(description="Fuzzy match threshold 0-100 (default: 70). Higher = stricter.")] = 70,
+    pattern: Annotated[str, Field(description="Search pattern")],
+    path: Annotated[str, Field(description="File or folder path")] = "",
+    context_lines: Annotated[int, Field(description="Context lines")] = 2,
+    fuzzy: Annotated[bool, Field(description="Fuzzy match")] = False,
+    threshold: Annotated[int, Field(description="Fuzzy threshold 0-100")] = 70,
 ) -> str:
-    """Search for code patterns in a SPECIFIC file or folder.
-
-    ALWAYS provide path parameter to avoid searching entire project.
-    - File: path="studio/core/tasks.py" (searches one file)
-    - Folder: path="studio/core/" (searches folder)
-
-    Returns matching lines with line numbers. Use read_lines() after to get full context.
-    """
+    """Search code. Provide path to avoid full project scan."""
     import subprocess
     import os
 
@@ -765,16 +743,11 @@ async def _fuzzy_search(pattern: str, search_path: Path, threshold: int = 70) ->
 
 @mcp.tool()
 async def read_lines(
-    path: Annotated[str, Field(description="File path relative to project root")],
-    start_line: Annotated[int, Field(description="First line to read (1-indexed)")],
-    end_line: Annotated[int, Field(description="Last line to read (inclusive). Max 200 lines per call.")],
+    path: Annotated[str, Field(description="File path")],
+    start_line: Annotated[int, Field(description="Start line (1-indexed)")],
+    end_line: Annotated[int, Field(description="End line (max 200)")],
 ) -> str:
-    """Read specific lines from a file - use search_code first to find what you need.
-
-    Max 200 lines per call - covers most functions/classes with context.
-    For larger sections, make multiple calls or reconsider your approach.
-    Auto-corrects path typos using fuzzy matching.
-    """
+    """Read lines from file. Max 200 lines."""
     file_path, correction_note = _fuzzy_resolve_path(path)
 
     if not file_path.exists():
@@ -858,24 +831,13 @@ async def file_outline(
 
 @mcp.tool()
 async def edit_file(
-    path: Annotated[str, Field(description="File path relative to project root")],
-    old_content: Annotated[str, Field(description="Exact content to find and replace (must match exactly, or use fuzzy=True)")],
-    new_content: Annotated[str, Field(description="New content to replace it with")],
-    fuzzy: Annotated[bool, Field(description="Enable fuzzy matching for whitespace/minor differences (default: False)")] = False,
-    threshold: Annotated[int, Field(description="Fuzzy match threshold 0-100 (default: 90). Higher = stricter.")] = 90,
+    path: Annotated[str, Field(description="File path")],
+    old_content: Annotated[str, Field(description="Content to replace")],
+    new_content: Annotated[str, Field(description="New content")],
+    fuzzy: Annotated[bool, Field(description="Fuzzy match")] = False,
+    threshold: Annotated[int, Field(description="Fuzzy threshold")] = 90,
 ) -> str:
-    """Replace content in a file - safe string-based editing.
-
-    SAFER than line-based edits because:
-    - Fails if old_content not found (no silent corruption)
-    - Fails if multiple matches (forces you to be specific)
-    - Works correctly across multiple edits (no line number shift issues)
-
-    Use search_code + read_lines first to find the exact content to replace.
-    Include enough context (surrounding lines) to make old_content unique.
-
-    Fuzzy mode: Set fuzzy=True to handle whitespace/minor differences.
-    """
+    """Replace content in file. Fails if not found or multiple matches."""
     file_path = PROJECT_ROOT / path
 
     if not file_path.exists():

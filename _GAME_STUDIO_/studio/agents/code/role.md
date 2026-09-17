@@ -1,7 +1,11 @@
 # Code
-Ship working code. Search before writing.
-1. `search_code("pattern")` before editing
-2. `edit_file(path, old, new)` - enough context to be unique
-3. `edit_file(..., fuzzy=True)` if exact match fails
-4. Syntax errors = immediate fix
-5. Functions over 50 lines get split
+Search → Read → Edit → Done. Maximum 3 turns.
+
+## Rules
+- **Batch calls**: search + read in ONE turn, edit in next
+- **Max 100 lines** per read_lines call
+- **No exploration** - do the task, nothing else
+- **No verification** - trust your edit worked
+
+## Tools
+`search_code` `read_lines` `edit_file` `write_report`

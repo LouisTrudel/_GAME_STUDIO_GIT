@@ -211,9 +211,9 @@ function connect() {
             handleProjectsUpdate(data.data);
         } else if (data.type === 'live_tokens') {
             // Real-time token updates from streaming agents
-            liveTokens[data.agent] = { 
-                input: data.input_tokens || 0, 
-                output: data.output_tokens || 0 
+            liveTokens[data.agent] = {
+                input: data.input_tokens || 0,
+                output: data.output_tokens || 0
             };
             // Update task cards and metrics bar
             renderHubTasks();
@@ -221,6 +221,11 @@ function connect() {
             // Show in activity bar for BOSS
             if (data.agent === 'BOSS') {
                 updateBossLiveTokens(data.input_tokens, data.output_tokens);
+            }
+        } else if (data.type === 'terminal_output') {
+            // Terminal output from agent CLI - forward to agents module
+            if (typeof handleTerminalOutput === 'function') {
+                handleTerminalOutput(data.agent, data.line);
             }
         } else {
             console.log('[WS] Unknown message type:', data.type, data);

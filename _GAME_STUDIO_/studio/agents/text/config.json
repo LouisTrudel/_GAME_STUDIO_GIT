@@ -1,8 +1,8 @@
 {
   "name": "Text",
   "title": "Narrative Designer",
-  "backend": "persistent-claude",
+  "backend": "stateless-claude",
   "model": "sonnet",
-  "max_turns": 8,
+  "max_turns": 25,
   "color": "#f39c12"
 }

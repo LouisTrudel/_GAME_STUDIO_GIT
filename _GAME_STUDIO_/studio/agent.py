@@ -26,63 +26,32 @@ from studio.loader import (
 logger = get_logger("Agent")
 
 
-def _truncate_for_hub(response: str, max_chars: int = 300) -> str:
-    """Extract hub summary from agent response.
+def _truncate_for_hub(response: str, max_chars: int = 5000) -> str:
+    """Format agent response for hub display.
 
-    Format expected:
-        T### VERB: summary
-        - file:line context
-        - +added -removed
-        ---
-        [full deliverable]
+    For task deliverables with '---' separator:
+        Extracts summary (before ---), full deliverable saved separately.
+    For conversational responses:
+        Returns full response (no truncation).
 
-    Extracts everything before first '---' separator.
-    Falls back to first paragraph or truncation.
+    Args:
+        response: Full agent response
+        max_chars: Safety limit for very long responses (default 5000)
     """
-    if len(response) <= max_chars:
-        return response
+    # No separator = conversational response, return as-is
+    if "\n---" not in response:
+        if len(response) <= max_chars:
+            return response
+        return response[:max_chars] + "..."
 
-    # Try to extract summary block (everything before ---)
+    # Has separator = task deliverable, extract summary
     separator_pos = response.find("\n---")
-    if separator_pos > 0:
-        summary = response[:separator_pos].strip()
-        if len(summary) <= max_chars:
-            return summary
-
-    # Fallback: T### VERB line + bullets
-    lines = response.split('\n')
-    summary_lines = []
-    for line in lines:
-        stripped = line.strip()
-        # Stop at separator
-        if stripped.startswith('---'):
-            break
-        # Capture T### lines and bullets
-        if stripped.startswith('T') or stripped.startswith('- '):
-            summary_lines.append(stripped)
-        # Also capture FIXED/ADDED/etc lines (legacy or variations)
-        elif any(stripped.startswith(v) for v in ('FIXED', 'ADDED', 'UPDATED', 'FOUND', 'TRACED', 'BLOCKED')):
-            summary_lines.append(stripped)
-
-    if summary_lines:
-        result = '\n'.join(summary_lines)
-        if len(result) <= max_chars:
-            return result
-
-    # Last resort: truncate at max_chars
-    return response[:max_chars].rsplit(" ", 1)[0] + "..."
+    summary = response[:separator_pos].strip()
+    return summary if summary else response[:max_chars]
 
 
 class StudioAgent:
     """An agent that reads/writes to the shared hub and uses task tools."""
-
-    # Class-level tracking for BOSS initialization (persists across calls)
-    _boss_initialized: bool = False
-
-    @classmethod
-    def reset_boss_initialized(cls):
-        """Reset BOSS init flag when session is cleared."""
-        cls._boss_initialized = False
 
     def __init__(self, name: str, backend: str = "claude-cli"):
         self.name_raw = name
@@ -179,12 +148,20 @@ class StudioAgent:
         # Non-BOSS agents get no extra context - they work on one task at a time
         return ""
 
+    # Class-level flag for BOSS persistent session initialization
+    _boss_initialized = False
+
+    @classmethod
+    def reset_boss_initialized(cls):
+        """Reset BOSS init flag (called when session is cleared)."""
+        cls._boss_initialized = False
+
     def _build_context(self, trigger_message: str = None) -> str:
         """Build scoped context for agents.
 
         T356: Vanilla agents get raw trigger only.
-        BOSS incremental: trigger only (session has history via --resume).
-        BOSS init: purpose + memory + trimmed hub + trigger.
+        BOSS: Persistent session - full context on first call, just request after.
+        Employees: Just the trigger (task details in description).
         """
         trigger = trigger_message or "Respond appropriately."
 
@@ -193,14 +170,15 @@ class StudioAgent:
             logger.debug("[%s] VANILLA MODE", self.name)
             return trigger
 
-        # BOSS INCREMENTAL: Session already has history, just send trigger
-        if self.is_boss and StudioAgent._boss_initialized:
-            logger.debug("[%s] INCREMENTAL - trigger only", self.name)
-            return trigger
-
-        # BOSS INIT: First call - project + hub + friction + trigger
-        # Subsequent calls just append trigger (session remembers via --resume)
+        # BOSS: Persistent session mode
         if self.is_boss:
+            # Subsequent calls: just the request (context already in session)
+            if StudioAgent._boss_initialized:
+                logger.debug("[%s] BOSS persistent: request only", self.name)
+                return f"Client: {trigger}"
+
+            # First call: inject full context block (gets cached)
+            StudioAgent._boss_initialized = True
             sections = []
 
             # Active project context
@@ -233,11 +211,10 @@ class StudioAgent:
                 except Exception:
                     pass
 
-            # User message
+            # First request
             sections.append(f"## Request\n{trigger}")
 
-            StudioAgent._boss_initialized = True
-            logger.info("[%s] BOSS initialized", self.name)
+            logger.debug("[%s] BOSS init: %d sections (will be cached)", self.name, len(sections))
             return "\n\n".join(sections)
 
         # Non-BOSS employees: just the trigger (task details in description)

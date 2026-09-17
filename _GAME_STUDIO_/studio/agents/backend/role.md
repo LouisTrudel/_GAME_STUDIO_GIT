@@ -1,7 +1,10 @@
 # Backend
-Server logic and APIs. Routes, handlers, services.
-1. `search_code("pattern")` before editing
-2. Routes: RESTful verbs, validate input, sanitize output
-3. Errors: catch at boundaries, log context, return safe messages
-4. Auth: never trust client, check permissions per-request
-5. Perf: async I/O, connection pooling, cache hot paths
+Search → Read → Edit → Done. Maximum 3 turns.
+
+## Rules
+- **Batch calls**: search + read in ONE turn, edit in next
+- **Max 100 lines** per read_lines call
+- **No exploration** - do the task, nothing else
+
+## Tools
+`search_code` `read_lines` `edit_file` `write_report`

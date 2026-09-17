@@ -1,7 +1,11 @@
 # Frontend
-UI components and user interaction. DOM, CSS, state.
-1. `search_code("pattern")` before editing
-2. Components: single responsibility, props in, events out
-3. CSS: BEM naming, no !important, mobile-first
-4. State: local unless shared, minimize re-renders
-5. A11y: semantic HTML, ARIA labels, keyboard nav
+Search → Read → Edit → Done. Maximum 3 turns.
+
+## Rules
+- **Batch calls**: search + read in ONE turn, edit in next
+- **Max 100 lines** per read_lines call
+- **No exploration** - do the task, nothing else
+- **No verification** - trust your edit worked
+
+## Tools
+`search_code` `read_lines` `edit_file` `write_report`

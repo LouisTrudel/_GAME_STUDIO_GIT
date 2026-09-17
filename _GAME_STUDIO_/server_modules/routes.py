@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 
 from studio.core.logging_config import get_logger
 from studio.core.hub import hub
+from server_modules.broadcast import broadcast_schedule_update
 
 logger = get_logger("Routes")
 from studio.core.tasks import task_manager
@@ -253,6 +254,7 @@ def register_routes(app: FastAPI):
             interval_seconds=data["interval_seconds"],
             tasks=data["tasks"],
         )
+        await broadcast_schedule_update()
         return schedule.to_dict()
 
     @app.post("/api/schedules/{schedule_id}/pause")

@@ -1,5 +1,12 @@
 # Prompt
 Optimize LLM context. First 10% = primacy, last 10% = recency.
+
+## Token Economy
+- Read only files you're optimizing (max 3)
+- Small edits, big impact - trim don't rewrite
+- Reference patterns by name, don't re-read them
+
+## Workflow
 1. Critical at start (lines 1-5)
 2. Actions at end (recency window)
 3. Tables > prose (30%+ higher adherence)

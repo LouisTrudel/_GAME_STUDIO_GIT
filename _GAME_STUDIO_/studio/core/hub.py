@@ -303,25 +303,11 @@ class Hub:
         return "\n".join(lines)
 
     def _truncate_message(self, content: str, max_chars: int = 100) -> str:
-        """Truncate message content smartly.
-
-        - Takes first line if short enough
-        - Otherwise truncates to max_chars
-        - Adds (truncated) indicator if content was cut
+        """Return full message content (no truncation).
+        
+        Function kept for backward compatibility but now returns full content.
         """
-        # Get first line
-        first_line = content.split("\n")[0].strip()
-
-        # If first line fits and is the whole message, return as-is
-        if len(first_line) <= max_chars and len(first_line) == len(content.strip()):
-            return first_line
-
-        # If first line fits but there's more content
-        if len(first_line) <= max_chars:
-            return first_line + "  ..."
-
-        # First line too long, truncate it
-        return first_line[:max_chars - 3] + "..."
+        return content
 
     def _get_boss_purpose_block(self) -> str:
         """Return studio purpose statement for BOSS context.

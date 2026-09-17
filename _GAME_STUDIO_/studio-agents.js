@@ -137,8 +137,9 @@ function renderAgentCards() {
         panel.appendChild(card);
     }
 
-    // Initialize terminal dock if not done
-    if (!terminalDockInitialized) {
+    // Initialize terminal dock only if Agents tab is visible (xterm needs visible container)
+    const agentsPanel = document.getElementById('panel-agents');
+    if (!terminalDockInitialized && agentsPanel && agentsPanel.classList.contains('active')) {
         initTerminalDock();
     }
 }
@@ -155,7 +156,14 @@ function initTerminalDock() {
     const agentNames = Object.keys(roles);
     if (agentNames.length === 0) return;
 
-    agentNames.forEach((name, idx) => {
+    // Put BOSS first, then others
+    const sortedNames = agentNames.sort((a, b) => {
+        if (a === 'BOSS') return -1;
+        if (b === 'BOSS') return 1;
+        return a.localeCompare(b);
+    });
+
+    sortedNames.forEach((name, idx) => {
         // Create tab
         const tab = document.createElement('div');
         tab.className = 'terminal-tab' + (idx === 0 ? ' active' : '');
@@ -170,11 +178,15 @@ function initTerminalDock() {
         pane.id = `terminal-pane-${name}`;
         contentContainer.appendChild(pane);
 
-        // Init xterm for first tab immediately, others lazily
+        // Set first as active
         if (idx === 0) {
             activeTerminalAgent = name;
-            setTimeout(() => initTerminalForAgent(name), 100);
         }
+    });
+
+    // Initialize ALL terminals (staggered to avoid blocking)
+    sortedNames.forEach((name, idx) => {
+        setTimeout(() => initTerminalForAgent(name), 100 + idx * 50);
     });
 
     terminalDockInitialized = true;
@@ -232,7 +244,7 @@ async function initTerminalForAgent(name) {
 
     agentTerminals[name] = { term, fitAddon };
 
-    // Load history
+    // Load history from server
     try {
         const res = await fetch(`${API_URL}/agents/${name}/terminal`);
         const data = await res.json();
@@ -243,6 +255,13 @@ async function initTerminalForAgent(name) {
         }
     } catch (e) {
         term.writeln(`\x1b[90m[${name} terminal ready]\x1b[0m`);
+    }
+
+    // Flush any buffered messages that arrived before terminal was ready
+    if (terminalBuffers[name] && terminalBuffers[name].length > 0) {
+        console.log('[Terminal] Flushing', terminalBuffers[name].length, 'buffered messages for', name);
+        terminalBuffers[name].forEach(line => term.write(line));
+        terminalBuffers[name] = [];
     }
 
     // Handle resize
@@ -389,10 +408,21 @@ function handlePromptAction(name, action) {
     log('agentLogs', `Prompted ${name}: ${action}`, 'info');
 }
 
+// Buffer for terminal output before terminals are initialized
+const terminalBuffers = {};
+
 // Handle terminal output from WebSocket
 function handleTerminalOutput(agent, line) {
+    console.log('[Terminal]', agent, ':', line.substring(0, 50));
     const termData = agentTerminals[agent];
     if (termData && termData.term) {
         termData.term.write(line);
+    } else {
+        // Buffer until terminal is ready
+        if (!terminalBuffers[agent]) {
+            terminalBuffers[agent] = [];
+        }
+        terminalBuffers[agent].push(line);
+        console.log('[Terminal] Buffered for', agent, '(terminal not ready)');
     }
 }

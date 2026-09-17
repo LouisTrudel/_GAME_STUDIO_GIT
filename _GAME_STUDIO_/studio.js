@@ -43,21 +43,24 @@ document.querySelectorAll('.tab').forEach(tab => {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+
+        // Initialize/refit terminals when switching to Agents tab (xterm needs visible container)
+        if (tab.dataset.tab === 'agents') {
+            setTimeout(() => {
+                // Initialize terminals if not done (first visit to Agents tab)
+                if (!terminalDockInitialized && Object.keys(roles).length > 0) {
+                    initTerminalDock();
+                }
+                // Refit all terminals
+                Object.values(agentTerminals).forEach(t => {
+                    if (t.fitAddon) t.fitAddon.fit();
+                });
+            }, 50);
+        }
     });
 });
 
-// Fetch roles
-async function fetchRoles() {
-    try {
-        const res = await fetch(`${API_URL}/roles`);
-        roles = await res.json();
-        renderTaskAgentSelect();
-        await fetchAgentStats();  // This also calls renderAgentCards
-        log('agentLogs', `Loaded ${Object.keys(roles).length} agents`, 'success');
-    } catch (e) {
-        log('agentLogs', `Failed to fetch roles: ${e}`, 'error');
-    }
-}
+
 
 // Fetch history
 async function fetchHistory() {
@@ -68,130 +71,6 @@ async function fetchHistory() {
         log('wsLogs', `Loaded ${history.length} messages from history`, 'info');
     } catch (e) {
         log('wsLogs', `Failed to fetch history: ${e}`, 'error');
-    }
-}
-
-// Track expanded agent cards
-let expandedAgents = new Set();
-
-// Render agent cards - sorted by tokens (descending), expandable
-function renderAgentCards() {
-    const panel = document.getElementById('panel-agents');
-    panel.innerHTML = '';
-
-    // Build array with stats and sort by tokens descending
-    const agentList = Object.entries(roles).map(([name, info]) => {
-        const stats = agentStats[name] || {};
-        return { name, info, stats, tokens: stats.tokens || 0 };
-    }).sort((a, b) => b.tokens - a.tokens);
-
-    for (const { name, info, stats } of agentList) {
-        const status = stats.status || 'idle';
-        const taskCount = stats.tasks?.assigned || 0;
-        const tokens = formatTokens(stats.tokens || 0);
-        const rawTokens = stats.tokens || 0;
-        const uptime = formatUptime(stats.uptime_seconds || 0);
-        const isExpanded = expandedAgents.has(name);
-
-        const card = document.createElement('div');
-        card.className = `agent-card ${isExpanded ? 'expanded' : ''}`;
-        card.style.setProperty('--agent-color', info.color);
-        card.innerHTML = `
-            <div class="agent-card-header" onclick="toggleAgentCard('${name}')">
-                <span class="status-dot ${status}" title="${status}"></span>
-                <span class="name">${name}</span>
-                <span class="stats">
-                    <span class="stat"><span class="stat-value">${tokens}</span> tokens</span>
-                    <span class="stat"><span class="stat-value">${taskCount}</span> tasks</span>
-                    <span class="stat"><span class="stat-value">${uptime}</span></span>
-                </span>
-                <span class="expand-icon">${isExpanded ? '▲' : '▼'}</span>
-            </div>
-            <div class="agent-card-details" id="agent-details-${name}" style="display: ${isExpanded ? 'block' : 'none'};">
-                <div class="agent-token-details">
-                    <div class="agent-detail-label">Token Usage</div>
-                    <div class="agent-detail-value">${rawTokens.toLocaleString()} total</div>
-                </div>
-                <div class="agent-role-content" id="agent-role-${name}">
-                    <div class="agent-detail-label">Role Definition</div>
-                    <pre class="agent-role-text">Loading...</pre>
-                </div>
-            </div>
-        `;
-
-        panel.appendChild(card);
-
-        // Load role content if expanded
-        if (isExpanded) {
-            loadAgentRole(name);
-        }
-    }
-}
-
-// Toggle agent card expand/collapse
-function toggleAgentCard(name) {
-    if (expandedAgents.has(name)) {
-        expandedAgents.delete(name);
-    } else {
-        expandedAgents.add(name);
-        loadAgentRole(name);
-    }
-    renderAgentCards();
-}
-
-// Load role.md content for an agent
-async function loadAgentRole(name) {
-    const container = document.getElementById(`agent-role-${name}`);
-    if (!container) return;
-
-    const textEl = container.querySelector('.agent-role-text');
-    if (!textEl || textEl.dataset.loaded === 'true') return;
-
-    try {
-        const res = await fetch(`${API_URL}/agents/${name}/role`);
-        const data = await res.json();
-        if (data.error) {
-            textEl.textContent = `Error: ${data.error}`;
-        } else {
-            textEl.textContent = data.content || '(empty)';
-            textEl.dataset.loaded = 'true';
-        }
-    } catch (e) {
-        textEl.textContent = `Error loading: ${e}`;
-    }
-}
-
-// Format token count (e.g., 1234 -> "1.2k")
-function formatTokens(count) {
-    if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
-    if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
-    return count.toString();
-}
-
-// Format uptime (seconds -> "2h", "15m", etc.)
-function formatUptime(seconds) {
-    if (seconds < 60) return seconds + 's';
-    if (seconds < 3600) return Math.floor(seconds / 60) + 'm';
-    return Math.floor(seconds / 3600) + 'h';
-}
-
-// Fetch agent stats
-async function fetchAgentStats() {
-    try {
-        const res = await fetch(`${API_URL}/agents/stats`);
-        agentStats = await res.json();
-        renderAgentCards();
-    } catch (e) {
-        console.error('Failed to fetch agent stats:', e);
-    }
-}
-
-// Render task agent select
-function renderTaskAgentSelect() {
-    const select = document.getElementById('taskAgent');
-    select.innerHTML = '<option value="">Assign to...</option>';
-    for (const name of Object.keys(roles)) {
-        select.innerHTML += `<option value="${name}">${name}</option>`;
     }
 }
 
@@ -598,7 +477,7 @@ function renderHubMetricsBar() {
     const metrics = computeAggregateMetrics();
 
     // Only show if we have meaningful data
-    if (metrics.totalTokens === 0 && metrics.cost === 0) {
+    if (metrics.retries === 0 && metrics.toolErrors === 0) {
         bar.innerHTML = '';
         bar.style.display = 'none';
         return;
@@ -607,22 +486,6 @@ function renderHubMetricsBar() {
     bar.style.display = 'flex';
 
     const items = [];
-
-    // Total tokens
-    if (metrics.totalTokens > 0) {
-        items.push(`<span class="metrics-item">
-            <span class="metrics-value">${formatTokens(metrics.totalTokens)}</span>
-            <span class="metrics-label">tokens</span>
-        </span>`);
-    }
-
-    // Cost
-    if (metrics.cost > 0) {
-        items.push(`<span class="metrics-item">
-            <span class="metrics-value cost">$${metrics.cost.toFixed(2)}</span>
-            <span class="metrics-label">cost</span>
-        </span>`);
-    }
 
     // Retries (show warning indicator if any)
     if (metrics.retries > 0) {
@@ -699,9 +562,6 @@ function renderHubTasks() {
 
     list.innerHTML = filteredTasks.map(task => {
         const agentColor = roles[task.assignee]?.color || '#888';
-        const shortDesc = task.description.length > 60
-            ? task.description.substring(0, 60) + '...'
-            : task.description;
 
         // Per-task token display (compact format)
         const totalTokens = (task.cost?.input_tokens || 0) + (task.cost?.output_tokens || 0);
@@ -717,7 +577,7 @@ function renderHubTasks() {
                     <span class="hub-task-status ${task.status}">${task.status.replace('_', ' ')}</span>
                     ${tokenDisplay}
                 </div>
-                <div class="hub-task-desc" title="${escapeHtml(task.description)}">${escapeHtml(shortDesc)}</div>
+                <div class="hub-task-desc">${escapeHtml(task.description)}</div>
             </div>
         `;
     }).join('');
@@ -2137,6 +1997,7 @@ function connect() {
             updateLiveTokenDisplay(data.agent);
         } else if (data.type === 'terminal_output') {
             // Terminal output from agent CLI
+            console.log('[WS] terminal_output received:', data.agent, data.line?.substring(0, 50));
             handleTerminalOutput(data.agent, data.line);
         } else if (data.type === 'agent_error') {
             // Agent error notification - show prominently
