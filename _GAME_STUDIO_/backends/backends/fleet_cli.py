@@ -369,7 +369,7 @@ class FleetCLI(Backend):
             time.sleep(1)
             wait_count += 1
             if wait_count % 10 == 0:  # Log every 10 seconds
-                logger.info("[%s] Waiting... (%ds, last_output=%ds ago)",
+                logger.info("[%s] Running... (%ds, last_output=%ds ago)",
                            self.agent_name, wait_count, int(time.time() - last_output_time))
             if time.time() - last_output_time > STALE_TIMEOUT_SECONDS:
                 logger.error("[%s] STALE - no output for %ds, killing", self.agent_name, STALE_TIMEOUT_SECONDS)
