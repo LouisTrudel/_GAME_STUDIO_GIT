@@ -8994,5 +8994,18 @@
       "usd": 0.089478
     },
     "friction": null
+  },
+  {
+    "id": "T728",
+    "desc": "[F] studio/ui/agents.tsx, studio/ui/components/TokenDisplay.tsx\n[X] Display must show actual token c",
+    "agent": "Frontend",
+    "outcome": "ok",
+    "at": "2026-09-17T01:52:17.191045",
+    "tokens": {
+      "in": 30,
+      "out": 755,
+      "usd": 0.08577400000000002
+    },
+    "friction": null
   }
 ]

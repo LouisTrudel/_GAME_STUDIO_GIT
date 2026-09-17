@@ -421,6 +421,10 @@ class FleetCLI(Backend):
         """Process stream event."""
         event_type = event.get("type", "")
 
+        # Debug: log ALL events to understand stream structure
+        if event_type not in ("content_block_delta",):  # Skip noisy delta events
+            logger.debug("[%s] Event: %s", self.agent_name, event_type)
+
         if event_type == "assistant":
             message = event.get("message", {})
             for block in message.get("content", []):

@@ -538,7 +538,7 @@ Be specific in task descriptions. Reference suggestion {suggestion.id} for conte
         _discuss_cooldowns[suggestion_id] = time.time()
 
         # T300: Create tasks via normal delegation instead of parallel execution
-        # Step 1: Create Research task
+        # T738: Only Research task - no BOSS analysis
         research_task = task_manager.create_task(
             description=f"""[WHAT] Research suggestion {suggestion.id}
 
@@ -559,41 +559,15 @@ IMPORTANT: After completing research, call add_discussion tool with suggestion_i
             assignee="Research",
         )
 
-        # Step 2: Create Boss analysis task that depends on research
-        boss_task = task_manager.create_task(
-            description=f"""[WHAT] Analyze suggestion {suggestion.id} and provide strategic opinion
-
-[CONTEXT]
-Title: {suggestion.title}
-Category: {suggestion.category}
-Content: {suggestion.content}
-
-[REFERENCE] Research completed in {research_task.id}
-
-[DELIVERABLE]
-Based on the research findings from {research_task.id}, provide your strategic opinion:
-1. Does it align with studio goals and current priorities?
-2. What's the potential impact (high/medium/low)?
-3. Are there any risks or concerns?
-4. Your recommendation: approve, reject, or needs more info?
-
-Be concise (3-5 sentences). Focus on strategic fit, not implementation details.
-
-IMPORTANT: After analysis, call add_discussion tool with suggestion_id="{suggestion.id}" to record your opinion.""",
-            assignee="BOSS",
-            dependencies=[research_task.id],
-        )
-
-        # Post to hub for visibility (tasks will also post as they execute)
+        # Post to hub for visibility (task will also post as it executes)
         hub.post("BOSS", f"Discussing suggestion {suggestion.id}: {suggestion.title}")
-        hub.post("BOSS", f"Created {research_task.id} → Research, {boss_task.id} → BOSS (analysis)")
+        hub.post("BOSS", f"Created {research_task.id} → Research")
 
         return {
             "suggestion_id": suggestion_id,
-            "status": "tasks_created",
+            "status": "task_created",
             "research_task": research_task.id,
-            "boss_task": boss_task.id,
-            "message": f"Discussion initiated. Research task {research_task.id} will run first, then Boss analysis in {boss_task.id}."
+            "message": f"Discussion initiated. Research task {research_task.id} created."
         }
 
     # ============ TOKEN TRACKING ============
