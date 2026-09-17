@@ -23,6 +23,40 @@ STALE_TIMEOUT_SECONDS = 1200  # 20 minutes
 SESSION_TOKEN_THRESHOLD = 150_000  # Auto-clear threshold
 BOSS_SESSION_UUID = "boss-0001-0001-0001-000000000001"
 
+_cleanup_done = False
+
+
+def cleanup_old_sessions():
+    """Delete ALL session files on startup. We inject context each call, no need to restore."""
+    global _cleanup_done
+    if _cleanup_done:
+        return
+    _cleanup_done = True
+
+    cwd = Path(__file__).parent.parent.parent
+    home = Path.home()
+    cwd_str = str(cwd.resolve())
+    encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
+    project_dir = home / ".claude" / "projects" / encoded
+
+    if not project_dir.exists():
+        return
+
+    deleted = 0
+    for session_file in project_dir.glob("*.jsonl"):
+        try:
+            session_file.unlink()
+            deleted += 1
+        except Exception:
+            pass
+
+    if deleted > 0:
+        logger.info("[Cleanup] Deleted %d session files (fresh start)", deleted)
+
+
+# Run cleanup on module import
+cleanup_old_sessions()
+
 
 class BossCLI(Backend):
     """
