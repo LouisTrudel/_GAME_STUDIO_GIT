@@ -58,13 +58,19 @@ NON_RETRYABLE_SUBPROCESS_ERRORS = [
 ]
 
 
-def get_permanent_session_uuid(agent_name: str) -> str:
-    """Generate a deterministic session UUID for an agent.
+# Shared session: ALL agents use the same session for maximum cache reuse
+SHARED_SESSION_UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
-    Same agent always gets same UUID - sessions are permanent.
+# Auto-clear threshold (tokens) - reset session when exceeded
+SESSION_TOKEN_THRESHOLD = 150_000  # ~150K tokens before clearing
+
+
+def get_permanent_session_uuid(agent_name: str) -> str:
+    """Return shared session UUID - all agents share one session.
+
+    Unified session = maximum cache hits across all agents.
     """
-    hash_bytes = hashlib.sha256(f"game-studio-{agent_name}".encode()).digest()
-    return str(uuid.UUID(bytes=hash_bytes[:16]))
+    return SHARED_SESSION_UUID
 
 
 # DEPRECATED: Ephemeral session clearing not supported
@@ -95,7 +101,16 @@ def _session_file_exists(cwd: Path, session_uuid: str) -> bool:
 
 
 class ClaudeCLIBackend(Backend):
-    """Claude CLI backend using subprocess with streaming output and stale detection."""
+    """Claude CLI backend using subprocess with streaming output and stale detection.
+
+    All agents share ONE session for maximum cache reuse.
+    Session auto-clears when cumulative tokens exceed SESSION_TOKEN_THRESHOLD.
+    """
+
+    # Class-level: shared across all agent instances
+    _cumulative_input_tokens: int = 0
+    _session_cleared_at: float = 0  # timestamp of last clear
+    _session_needs_create: bool = True  # True = use --session-id, False = use --resume
 
     def __init__(self, model: str = "claude", agent_name: str = None):
         super().__init__()  # Initialize token tracking from base
@@ -118,6 +133,59 @@ class ClaudeCLIBackend(Backend):
         self.last_cache_read_tokens = 0
         self.last_is_error = False
         self.last_error_message = None
+
+    def _update_cumulative_tokens(self):
+        """Track cumulative tokens and auto-clear session if threshold exceeded."""
+        # Add this call's tokens to cumulative total
+        call_tokens = self.last_input_tokens + self.last_cache_read_tokens
+        ClaudeCLIBackend._cumulative_input_tokens += call_tokens
+
+        cumulative = ClaudeCLIBackend._cumulative_input_tokens
+        logger.debug("[%s] Cumulative tokens: %dK / %dK threshold",
+                     self.agent_name, cumulative // 1000, SESSION_TOKEN_THRESHOLD // 1000)
+
+        # Auto-clear if threshold exceeded
+        if cumulative > SESSION_TOKEN_THRESHOLD:
+            logger.warning("Session token threshold exceeded (%dK > %dK), clearing shared session",
+                          cumulative // 1000, SESSION_TOKEN_THRESHOLD // 1000)
+            self._clear_shared_session()
+
+    def _clear_shared_session(self):
+        """Clear the shared session file to reset context."""
+        import time
+
+        home = Path.home()
+        claude_projects = home / ".claude" / "projects"
+
+        # Find the session file
+        cwd_str = str(self.cwd.resolve())
+        encoded = cwd_str.replace(":", "-").replace("\\", "-").replace("/", "-").replace("_", "-")
+        project_dir = claude_projects / encoded
+
+        if project_dir.exists():
+            session_file = project_dir / f"{SHARED_SESSION_UUID}.jsonl"
+            if session_file.exists():
+                try:
+                    session_file.unlink()
+                    logger.info("Cleared shared session file: %s", session_file.name)
+                except Exception as e:
+                    logger.warning("Failed to clear session file: %s", e)
+
+        # Reset tracking
+        ClaudeCLIBackend._cumulative_input_tokens = 0
+        ClaudeCLIBackend._session_cleared_at = time.time()
+        ClaudeCLIBackend._session_needs_create = True  # Next call creates new session
+
+    @classmethod
+    def get_cumulative_tokens(cls) -> int:
+        """Get current cumulative token count for the shared session."""
+        return cls._cumulative_input_tokens
+
+    @classmethod
+    def force_clear_session(cls):
+        """Force clear the shared session (called externally)."""
+        cls._cumulative_input_tokens = SESSION_TOKEN_THRESHOLD + 1  # Trigger clear on next call
+        logger.info("Session clear requested, will clear on next agent call")
 
     def _build_prompt(self, messages: list[dict], system_prompt: str, tools: list[dict] = None) -> str:
         """Build the full prompt with system context and conversation.
@@ -191,6 +259,9 @@ class ClaudeCLIBackend(Backend):
         except Exception as e:
             return f"Error: {type(e).__name__}: {e}"
         finally:
+            # Track cumulative tokens and auto-clear if threshold exceeded
+            self._update_cumulative_tokens()
+
             # Clean up temp file
             try:
                 os.unlink(temp_path)
@@ -238,23 +309,25 @@ class ClaudeCLIBackend(Backend):
             cmd = ["claude", "-p", "-", "--output-format", "stream-json", "--verbose"]
             shell = False
 
-        # Permanent sessions: deterministic UUID per agent, always resume if exists
-        if self.agent_name:
-            session_uuid = get_permanent_session_uuid(self.agent_name)
-            self._session_uuid = session_uuid
-            session_exists = _session_file_exists(self.cwd, session_uuid)
+        # Shared session: all agents use same UUID, resume if exists (unless just cleared)
+        session_uuid = SHARED_SESSION_UUID
+        self._session_uuid = session_uuid
+        session_exists = _session_file_exists(self.cwd, session_uuid)
 
-            # Check if we're retrying after "session already in use" error
-            force_resume = getattr(self, '_force_resume', False)
+        # Check if we're retrying after "session already in use" error
+        force_resume = getattr(self, '_force_resume', False)
 
-            if session_exists or force_resume:
-                cmd.extend(["--resume", session_uuid])
-                self._session_is_new = False
-                logger.debug("Resuming permanent session for %s: %s", self.agent_name, session_uuid[:8])
-            else:
-                cmd.extend(["--session-id", session_uuid])
-                self._session_is_new = True
-                logger.info("Creating permanent session for %s: %s", self.agent_name, session_uuid[:8])
+        # Use --resume if session exists and wasn't just cleared
+        if (session_exists or force_resume) and not ClaudeCLIBackend._session_needs_create:
+            cmd.extend(["--resume", session_uuid])
+            self._session_is_new = False
+            logger.debug("[%s] Resuming shared session (cumulative: %dK tokens)",
+                        self.agent_name, ClaudeCLIBackend._cumulative_input_tokens // 1000)
+        else:
+            cmd.extend(["--session-id", session_uuid])
+            self._session_is_new = True
+            ClaudeCLIBackend._session_needs_create = False  # Session created
+            logger.info("[%s] Creating new shared session", self.agent_name)
 
         # Add MCP server config for custom tools (create_task, acknowledge, etc.)
         mcp_config_path = (self.cwd / ".claude" / "settings.json").resolve()
@@ -670,8 +743,11 @@ class ClaudeCLIBackend(Backend):
         """Get current session info for debugging."""
         return {
             "agent": self.agent_name,
-            "session_uuid": self._session_uuid[:8] if self._session_uuid else None,
+            "session_uuid": SHARED_SESSION_UUID[:8],
             "is_new": self._session_is_new,
+            "cumulative_tokens": ClaudeCLIBackend._cumulative_input_tokens,
+            "threshold": SESSION_TOKEN_THRESHOLD,
+            "headroom": SESSION_TOKEN_THRESHOLD - ClaudeCLIBackend._cumulative_input_tokens,
         }
 
 
