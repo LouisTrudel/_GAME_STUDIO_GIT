@@ -939,9 +939,9 @@ Memory: data/memory/tier1.md (recent work context)
             if task.assignee == "Raw":
                 continue
 
-            # Regular agent dispatch
+            # Regular agent dispatch (BOSS can now pick up tasks too)
             agent = self._find_agent(task.assignee)
-            if not agent or agent.is_boss:
+            if not agent:
                 continue
 
             if self._dispatch_agent_task(task, agent):
