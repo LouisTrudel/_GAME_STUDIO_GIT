@@ -19,13 +19,20 @@ from pydantic import Field
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Configure logging to stderr (NEVER use print in MCP servers!)
+# Configure logging to FILE so we can actually see it
+LOG_FILE = PROJECT_ROOT / "data" / "logs" / "mcp_server.log"
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stderr
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE, mode='a', encoding='utf-8'),
+        logging.StreamHandler(sys.stderr)  # Keep stderr too
+    ]
 )
 logger = logging.getLogger("game-studio-mcp")
+logger.info("=== MCP SERVER STARTING ===")
 
 from mcp.server import MCPServer
 
