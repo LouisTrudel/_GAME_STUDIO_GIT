@@ -20,7 +20,7 @@ from studio.core.logging_config import get_logger
 
 logger = get_logger("FleetCLI")
 
-STALE_TIMEOUT_SECONDS = 1200  # 20 minutes
+STALE_TIMEOUT_SECONDS = 300  # 5 minutes (was 20 - too long)
 SESSION_TOKEN_THRESHOLD = 150_000  # Auto-clear threshold
 FLEET_SESSION_UUID = "f1ee0002-0002-0002-0002-000000000002"
 DEFAULT_MAX_TURNS = 25
@@ -335,7 +335,11 @@ class FleetCLI(Backend):
             nonlocal last_output_time
             for line in process.stderr:
                 last_output_time = time.time()
-                stderr_lines.append(line.strip())
+                line_stripped = line.strip()
+                stderr_lines.append(line_stripped)
+                # Log stderr in real-time for debugging
+                if line_stripped:
+                    logger.debug("[%s] stderr: %s", self.agent_name, line_stripped[:200])
 
         stdout_thread = threading.Thread(target=read_stdout, daemon=True)
         stderr_thread = threading.Thread(target=read_stderr, daemon=True)
