@@ -44,13 +44,16 @@ When an agent responds, context is assembled:
 3. Agent's assigned tasks
 4. Trigger message
 
-## Employee vs BOSS
+## BOSS vs Workers
 
-| Aspect | BOSS | Employees |
-|--------|------|-----------|
+| Aspect | BOSS | Workers |
+|--------|------|---------|
+| Backend | BossCLI (Haiku) | FleetCLI (Sonnet) |
+| Session | Dedicated, 150K threshold | Shared, 150K threshold |
 | Hub access | All messages | Mentions + BOSS messages |
 | Task access | All tasks | Own tasks only |
-| Tools | create_task, get_task_status | pick_task, complete_task |
+| MCP Tools | create_task, create_routine, get_task_status, recall_memory | search_code, read_lines, edit_file, write_report |
+| Claude Tools | None | Bash (all), WebSearch (Research only) |
 
 ## Relationships
 

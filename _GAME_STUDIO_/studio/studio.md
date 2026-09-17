@@ -64,13 +64,25 @@ projects/
 - Architecture: `docs/architecture/`
 - Principles: `docs/principles.md`
 
-## Current Agents
+## Current Agents (18)
 
-| Agent      | Role                                                              |
-| ---------- | ----------------------------------------------------------------- |
-| BOSS       | Orchestrator - receives user prompts, creates tasks, reviews work |
-| Designer   | Game design, mechanics, systems                                   |
-| Programmer | Code implementation                                               |
-| Artist     | Visual design, UI                                                 |
-| Writer     | Narrative, dialogue, documentation                                |
-| QA         | Testing, review, quality assurance                                |
+| Agent | Backend | Role |
+|-------|---------|------|
+| BOSS | boss | Orchestrator - delegates tasks, reviews work |
+| Code | fleet | Python/JS implementation |
+| Frontend | fleet | UI/UX, HTML/CSS |
+| Backend | fleet | Server, API, database |
+| Audit | fleet | Code review, testing |
+| Research | fleet | Web search, analysis |
+| Design | fleet | Game design, systems |
+| Routine | fleet | Scheduled workflows |
+| ArtSpec | fleet | Art direction, specs |
+| Prompt | fleet | Prompt engineering |
+| Data | fleet | Data processing |
+| Network | fleet | Networking, multiplayer |
+| Structure | fleet | Architecture planning |
+| Compression | vanilla | Context compression |
+| Text | vanilla | Writing, narrative |
+| Image | vanilla | Image analysis |
+| Audio | vanilla | Audio processing |
+| Video | vanilla | Video processing |
