@@ -302,8 +302,14 @@ class BossCLI(Backend):
 
         if process.returncode != 0:
             error = "\n".join(stderr_lines)
-            if "rate limit" in error.lower() or "overloaded" in error.lower():
+            error_lower = error.lower()
+            if "rate limit" in error_lower or "overloaded" in error_lower:
                 raise RetryableError(f"Rate limited: {error[:100]}")
+            if "already in use" in error_lower:
+                # Session locked - clear it and retry
+                logger.warning("[BOSS] Session locked, clearing and retrying")
+                self._clear_session()
+                raise RetryableError("Session locked, cleared")
             raise RuntimeError(f"CLI error (code {process.returncode}): {error[:200]}")
 
         return self._extract_result(result_data[0], text_content)

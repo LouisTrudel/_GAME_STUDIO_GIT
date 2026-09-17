@@ -351,6 +351,12 @@ class FleetCLI(Backend):
             if any(p in error_lower for p in MCP_ERROR_PATTERNS):
                 raise RetryableError(f"MCP connection failed: {error[:150]}")
 
+            # Session locked - clear and retry
+            if "already in use" in error_lower:
+                logger.warning("[%s] Session locked, clearing and retrying", self.agent_name)
+                self._clear_session()
+                raise RetryableError("Session locked, cleared")
+
             raise RuntimeError(f"CLI error (code {process.returncode}): {error[:200]}")
 
         return self._extract_result(result_data[0], text_content)
