@@ -140,7 +140,7 @@ class Studio:
 
         prompt = f"""Compress this into tagged bullets. Output ONLY the three sections below.
 
-{friction_section}## Content ({len(content)} chars)
+{friction_section}## Content
 {content_preview}
 
 ---
