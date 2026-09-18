@@ -163,6 +163,13 @@ function connect() {
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
+
+        // Respond to server pings to keep connection alive
+        if (data.type === 'ping') {
+            ws.send(JSON.stringify({ type: 'pong' }));
+            return;
+        }
+
         console.log('[WS] Message received:', data.type, 'at', new Date().toISOString());
 
         if (data.type === 'message') {

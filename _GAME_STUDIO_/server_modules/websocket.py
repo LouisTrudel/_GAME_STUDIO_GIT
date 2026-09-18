@@ -69,9 +69,30 @@ async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[
     connections.append(websocket)
     logger.info("Client connected. Total: %d", len(connections))
 
+    # Heartbeat task to keep connection alive
+    async def heartbeat():
+        while True:
+            await asyncio.sleep(30)  # Ping every 30 seconds
+            try:
+                await websocket.send_text('{"type":"ping"}')
+            except Exception:
+                break  # Connection dead, exit heartbeat
+
+    heartbeat_task = asyncio.create_task(heartbeat())
+
     try:
         while True:
-            data = await websocket.receive_text()
+            # Timeout on receive to detect dead connections faster
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=60)
+            except asyncio.TimeoutError:
+                # No message in 60s, send ping to verify connection
+                try:
+                    await websocket.send_text('{"type":"ping"}')
+                    continue
+                except Exception:
+                    logger.warning("Connection dead (ping failed)")
+                    break
 
             # Parse JSON with error handling to prevent handler crash
             try:
@@ -79,6 +100,10 @@ async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[
             except json.JSONDecodeError as e:
                 logger.warning("Malformed JSON from client: %s", e)
                 continue  # Skip this message, keep connection alive
+
+            # Handle pong responses (client keepalive)
+            if msg.get("type") == "pong":
+                continue  # Just a keepalive, no action needed
 
             if msg.get("type") == "user_message":
                 content = msg.get("content", "").strip()
@@ -151,5 +176,11 @@ async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[
                     await _broadcast_schedules()
 
     except WebSocketDisconnect:
-        connections.remove(websocket)
+        pass  # Normal disconnect
+    except Exception as e:
+        logger.error("WebSocket error: %s", e)
+    finally:
+        heartbeat_task.cancel()
+        if websocket in connections:
+            connections.remove(websocket)
         logger.info("Client disconnected. Total: %d", len(connections))

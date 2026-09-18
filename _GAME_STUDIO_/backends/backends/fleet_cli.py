@@ -20,7 +20,7 @@ from studio.core.logging_config import get_logger
 
 logger = get_logger("FleetCLI")
 
-STALE_TIMEOUT_SECONDS = 300  # 5 minutes (was 20 - too long)
+STALE_TIMEOUT_SECONDS = 120  # 2 minutes - kill stalled agents faster
 SESSION_TOKEN_THRESHOLD = 150_000  # Auto-clear threshold
 FLEET_SESSION_UUID = "f1ee0002-0002-0002-0002-000000000002"
 DEFAULT_MAX_TURNS = 25
@@ -90,7 +90,7 @@ class FleetCLI(Backend):
     _lock = threading.Lock()
     _session_semaphore = threading.Semaphore(1)  # Only one agent at a time
 
-    def __init__(self, model: str = "sonnet", agent_name: str = "Worker"):
+    def __init__(self, model: str = "opus", agent_name: str = "Worker"):
         super().__init__()
         self.model = model
         self.agent_name = agent_name
