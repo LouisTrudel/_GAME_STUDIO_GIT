@@ -458,7 +458,8 @@ class FleetCLI(Backend):
         if event_type == "assistant":
             message = event.get("message", {})
             for block in message.get("content", []):
-                if block.get("type") == "text":
+                block_type = block.get("type", "")
+                if block_type == "text":
                     text = block.get("text", "")
                     text_content.append(text)
                     # Broadcast to terminal (truncate completion blocks)
@@ -470,6 +471,17 @@ class FleetCLI(Backend):
                                 broadcast_terminal_line_sync(self.agent_name, terminal_text + "\n")
                         except Exception:
                             pass
+                elif block_type == "tool_use":
+                    # Tool calls embedded in assistant message content
+                    self._tool_use_count += 1
+                    tool_name = block.get("name", "unknown")
+                    tool_id = block.get("id", "")[:8]
+                    logger.info("[%s] TOOL: %s (id=%s)", self.agent_name, tool_name, tool_id)
+                    try:
+                        from server_modules.broadcast import broadcast_terminal_line_sync
+                        broadcast_terminal_line_sync(self.agent_name, f"[tool: {tool_name}]\n")
+                    except Exception:
+                        pass
             usage = message.get("usage", {})
             if usage.get("input_tokens"):
                 in_tok = usage.get("input_tokens", 0)

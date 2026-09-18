@@ -344,8 +344,14 @@ class BossCLI(Backend):
         if event_type == "assistant":
             message = event.get("message", {})
             for block in message.get("content", []):
-                if block.get("type") == "text":
+                block_type = block.get("type", "")
+                if block_type == "text":
                     text_content.append(block.get("text", ""))
+                elif block_type == "tool_use":
+                    # Tool calls embedded in assistant message content
+                    self._tool_use_count += 1
+                    tool_name = block.get("name", "unknown")
+                    logger.info("[BOSS] TOOL: %s", tool_name)
             usage = message.get("usage", {})
             if usage.get("input_tokens"):
                 self._log_step("reasoning", usage.get("input_tokens", 0), usage.get("output_tokens", 0))
