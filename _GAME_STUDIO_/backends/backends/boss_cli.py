@@ -275,7 +275,11 @@ class BossCLI(Backend):
 
         def read_stdout():
             nonlocal last_output_time
-            for line in process.stdout:
+            # Use readline() instead of iteration - iteration can buffer and deadlock
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
                 last_output_time = time.time()
                 line = line.strip()
                 if not line:
@@ -290,7 +294,11 @@ class BossCLI(Backend):
 
         def read_stderr():
             nonlocal last_output_time
-            for line in process.stderr:
+            # Use readline() instead of iteration - iteration can buffer and deadlock
+            while True:
+                line = process.stderr.readline()
+                if not line:
+                    break
                 last_output_time = time.time()
                 stderr_lines.append(line.strip())
 
