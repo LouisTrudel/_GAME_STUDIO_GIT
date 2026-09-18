@@ -45,10 +45,11 @@ async def websocket_endpoint(websocket: WebSocket, studio, project_id: Optional[
         logger.info("Client connected with project context: %s", project_id)
 
     # Send initial state before adding to broadcast list (prevents race condition)
-    task_manager.reload_from_disk()
+    # CRITICAL: Use to_thread for blocking calls to avoid deadlocking event loop
+    await asyncio.to_thread(task_manager.reload_from_disk)
     tasks_data = json.dumps({
         "type": "tasks_update",
-        "data": [t.to_dict() for t in task_manager.get_all_tasks()]
+        "data": [t.to_dict() for t in await asyncio.to_thread(task_manager.get_all_tasks)]
     })
     await websocket.send_text(tasks_data)
 

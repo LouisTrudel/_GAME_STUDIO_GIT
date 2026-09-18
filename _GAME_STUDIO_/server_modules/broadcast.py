@@ -299,7 +299,7 @@ def broadcast_schedules_sync():
 async def _do_broadcast_tasks():
     """Broadcast current task list to all clients."""
     from studio.core.tasks import task_manager
-    tasks = task_manager.get_all_tasks()
+    tasks = await asyncio.to_thread(task_manager.get_all_tasks)
     data = json.dumps({
         "type": "tasks_update",
         "data": [t.to_dict() for t in tasks]
@@ -367,9 +367,10 @@ async def _task_broadcast_loop():
     last_hash = ""
     while True:
         # Reload from disk to catch changes from MCP server
-        task_manager.reload_from_disk()
+        # CRITICAL: Use to_thread for blocking calls to avoid deadlocking event loop
+        await asyncio.to_thread(task_manager.reload_from_disk)
 
-        tasks = task_manager.get_all_tasks()
+        tasks = await asyncio.to_thread(task_manager.get_all_tasks)
         current_hash = str([(t.id, t.status.value) for t in tasks])
         if current_hash != last_hash:
             last_hash = current_hash
@@ -409,9 +410,10 @@ async def _schedule_broadcast_loop():
     last_hash = ""
     while True:
         # Reload from disk to catch changes from MCP server
-        schedule_manager.reload_from_disk()
+        # CRITICAL: Use to_thread for blocking calls to avoid deadlocking event loop
+        await asyncio.to_thread(schedule_manager.reload_from_disk)
 
-        schedules = schedule_manager.get_all()
+        schedules = schedule_manager.get_all()  # No lock, safe to call directly
         current_hash = str([(s.id, s.status.value, s.next_run) for s in schedules])
         if current_hash != last_hash:
             last_hash = current_hash
@@ -554,7 +556,8 @@ async def _agent_stats_broadcast_loop():
     last_hash = ""
     while True:
         if connections:
-            stats = _compute_agent_stats(include_task_details=False)
+            # CRITICAL: Use to_thread - _compute_agent_stats uses task_manager locks
+            stats = await asyncio.to_thread(_compute_agent_stats, False)
 
             current_hash = str(stats)
             if current_hash != last_hash:
@@ -651,16 +654,23 @@ async def _session_stats_broadcast_loop():
                 boss_stats = BossCLI.get_session_stats()
                 fleet_stats = FleetCLI.get_session_stats()
 
+                # Calculate costs (Haiku for BOSS, Sonnet for Fleet)
+                # Pricing: Haiku input=$0.80/M, output=$4/M; Sonnet input=$3/M, output=$15/M
+                boss_cost_usd = round(boss_stats["cumulative_tokens"] * 0.80 / 1_000_000, 4)
+                fleet_cost_usd = round(fleet_stats["cumulative_tokens"] * 3.0 / 1_000_000, 4)
+
                 stats = {
                     "boss": {
                         "cumulative_tokens": boss_stats["cumulative_tokens"],
                         "threshold": BOSS_THRESHOLD,
                         "usage_pct": round((boss_stats["cumulative_tokens"] / BOSS_THRESHOLD) * 100, 1),
+                        "cost_usd": boss_cost_usd,
                     },
                     "fleet": {
                         "cumulative_tokens": fleet_stats["cumulative_tokens"],
                         "threshold": FLEET_THRESHOLD,
                         "usage_pct": round((fleet_stats["cumulative_tokens"] / FLEET_THRESHOLD) * 100, 1),
+                        "cost_usd": fleet_cost_usd,
                     }
                 }
 

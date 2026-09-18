@@ -89,7 +89,8 @@ def register_routes(app: FastAPI):
     @app.get("/api/agents/stats")
     async def get_agent_stats():
         """Get live stats for all agents."""
-        return _compute_agent_stats(include_task_details=True)
+        # CRITICAL: Use to_thread - _compute_agent_stats uses task_manager locks
+        return await asyncio.to_thread(_compute_agent_stats, True)
 
     @app.get("/api/agents/{agent_name}/role")
     async def get_agent_role_content(agent_name: str):
