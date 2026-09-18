@@ -415,6 +415,12 @@ class FleetCLI(Backend):
                 self._clear_session()
                 raise RetryableError(f"Session error, cleared: {error[:50]}")
 
+            # API 400 error - corrupted session (orphaned tool_result, etc.)
+            if "400" in error or "invalid_request" in error_lower or "tool_result" in error_lower:
+                logger.warning("[%s] API validation error (corrupted session), clearing: %s", self.agent_name, error[:100])
+                self._clear_session()
+                raise RetryableError(f"API error, session cleared: {error[:50]}")
+
             # Unknown code 1 with empty/vague error - likely session issue, clear and retry
             if process.returncode == 1 and len(error.strip()) < 20:
                 logger.warning("[%s] Unknown code 1 error (likely session), clearing: %s", self.agent_name, error[:50])
