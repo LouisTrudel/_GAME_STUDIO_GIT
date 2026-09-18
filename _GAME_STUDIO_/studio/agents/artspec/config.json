@@ -2,7 +2,6 @@
   "name": "ArtSpec",
   "title": "Art Director",
   "backend": "fleet",
-  "model": "sonnet",
   "max_turns": 25,
   "color": "#2ecc71"
 }

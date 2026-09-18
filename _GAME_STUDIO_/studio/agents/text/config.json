@@ -2,7 +2,8 @@
   "name": "Text",
   "title": "Narrative Designer",
   "backend": "vanilla",
-  "model": "sonnet",
+  "model": "haiku",
   "max_turns": 25,
-  "color": "#f39c12"
+  "color": "#f39c12",
+  "vanilla": true
 }

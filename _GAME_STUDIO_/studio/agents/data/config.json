@@ -2,7 +2,6 @@
   "name": "Data",
   "title": "Data Engineer",
   "backend": "fleet",
-  "model": "sonnet",
   "max_turns": 25,
   "color": "#1abc9c"
 }

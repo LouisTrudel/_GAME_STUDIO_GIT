@@ -2,7 +2,8 @@
   "name": "Audio",
   "title": "Sound Producer",
   "backend": "vanilla",
-  "model": "sonnet",
+  "model": "haiku",
   "max_turns": 25,
-  "color": "#9c27b0"
+  "color": "#9c27b0",
+  "vanilla": true
 }

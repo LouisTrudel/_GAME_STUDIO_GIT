@@ -2,7 +2,6 @@
   "name": "Network",
   "title": "Network Engineer",
   "backend": "fleet",
-  "model": "sonnet",
   "max_turns": 25,
   "color": "#e67e22"
 }

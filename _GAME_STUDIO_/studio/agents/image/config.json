@@ -2,7 +2,8 @@
   "name": "Image",
   "title": "Image Producer",
   "backend": "vanilla",
-  "model": "sonnet",
+  "model": "haiku",
   "max_turns": 25,
-  "color": "#e91e63"
+  "color": "#e91e63",
+  "vanilla": true
 }

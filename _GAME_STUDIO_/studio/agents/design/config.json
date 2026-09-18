@@ -2,7 +2,6 @@
   "name": "Design",
   "title": "Game Designer",
   "backend": "fleet",
-  "model": "sonnet",
   "max_turns": 25,
   "color": "#9b59b6"
 }

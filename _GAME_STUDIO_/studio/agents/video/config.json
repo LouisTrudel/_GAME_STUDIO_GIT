@@ -2,7 +2,8 @@
   "name": "Video",
   "title": "Video Producer",
   "backend": "vanilla",
-  "model": "sonnet",
+  "model": "haiku",
   "max_turns": 25,
-  "color": "#ff5722"
+  "color": "#ff5722",
+  "vanilla": true
 }
