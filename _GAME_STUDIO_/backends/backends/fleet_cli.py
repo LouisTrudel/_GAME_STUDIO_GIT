@@ -90,13 +90,21 @@ class FleetCLI(Backend):
     _lock = threading.Lock()
     _session_semaphore = threading.Semaphore(1)  # Only one agent at a time
 
-    def __init__(self, model: str = "opus", agent_name: str = "Worker"):
+    # FLEET-WIDE MODEL: All agents share one session, so they MUST use the same model
+    # Per-agent model configs are IGNORED - change this constant to switch fleet model
+    FLEET_MODEL = "opus"
+
+    def __init__(self, model: str = None, agent_name: str = "Worker"):
         super().__init__()
-        self.model = model
+        # Ignore per-agent model - fleet uses shared session with single model
+        if model and model != FleetCLI.FLEET_MODEL:
+            logger.warning("[%s] Ignoring model='%s' - fleet uses shared '%s' session",
+                          agent_name, model, FleetCLI.FLEET_MODEL)
+        self.model = FleetCLI.FLEET_MODEL
         self.agent_name = agent_name
         self.cwd = Path(__file__).parent.parent.parent
         self._reset_metrics()
-        logger.info("[%s] Fleet CLI initialized (shared session)", agent_name)
+        logger.info("[%s] Fleet CLI initialized (model=%s, shared session)", agent_name, self.model)
 
     def _reset_metrics(self):
         """Reset metrics for new call."""
