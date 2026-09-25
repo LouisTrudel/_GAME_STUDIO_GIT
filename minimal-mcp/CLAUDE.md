@@ -24,6 +24,14 @@ Do this BEFORE responding to the user. This loads project context and preference
 - Use grep/glob before reading unknown paths
 - Keep responses concise - no restating the obvious
 
+# Documentation
+
+Maintain project docs when appropriate:
+- `whitepaper.md` - what this project is, why it exists, key decisions
+- `roadmap.md` - where it's going, priorities, milestones
+
+Propose updates during significant changes. Discuss with user before modifying.
+
 # Delegation
 
 Match approach to task:
