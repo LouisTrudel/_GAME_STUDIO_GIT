@@ -314,19 +314,13 @@ def task_done(task_id: str) -> str:
 # === MEMORY INJECTION ===
 
 @mcp.tool()
-def inject_memory(mode: str = "full") -> str:
+def inject_memory() -> str:
     """
-    Get memory context for session start. Call this on /clear or new session.
+    Load memory context from previous sessions. Call this at session start.
 
-    Args:
-        mode: What to inject
-            - "full": Everything (episodic + narrative + semantic)
-            - "episodic": Event history only
-            - "narrative": Story/reasoning only
-            - "minimal": Just tier1 + semantic (smallest)
-
-    Returns formatted memory context for injection.
+    Returns episodic history (what happened) + narrative context (the story).
     """
+    mode = "full"
     EPISODIC_DIR = MEMORY_DIR / "episodic"
     NARRATIVE_DIR = MEMORY_DIR / "narrative"
     SEMANTIC_DIR = MEMORY_DIR / "semantic"
@@ -396,6 +390,42 @@ def inject_memory(mode: str = "full") -> str:
 
     total = sum(len(s) for s in sections)
     return f"# Memory Context (~{total//4} tokens)\n\n" + "\n\n---\n\n".join(sections)
+
+
+# === COMPRESS TOOL ===
+
+@mcp.tool()
+def compress_memory() -> str:
+    """
+    Manually trigger memory compression. Use when memory feels bloated.
+
+    Compresses episodic (tier0→tier1) and narrative (draft→chapter) if thresholds exceeded.
+    """
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["python", "hooks/compress.py"],
+            capture_output=True,
+            text=True,
+            timeout=300,
+            cwd=Path(__file__).parent,
+            shell=True
+        )
+        # Parse output for summary
+        output = result.stderr or result.stdout
+        if "Compressed" in output:
+            return f"Compression complete.\n{output}"
+        elif "Rate limited" in output:
+            return "Rate limited - compression ran recently. Try again in ~60s."
+        elif "Another compression" in output:
+            return "Compression already in progress."
+        else:
+            return f"Compression finished.\n{output}"
+    except subprocess.TimeoutExpired:
+        return "Compression timed out (>5min)"
+    except Exception as e:
+        return f"Compression error: {e}"
 
 
 # === CONTEXT TOOL ===

@@ -352,7 +352,25 @@ def compress_episodic_tier(n: int) -> bool:
     path.write_text("", encoding="utf-8")
     log(f"Cleared episodic/tier{n}, appended to tier{n+1}")
 
+    # Trigger semantic extraction after tier0→tier1 compression
+    if n == 0:
+        trigger_semantic("prefs")
+
     return True
+
+
+def trigger_semantic(extraction_type: str):
+    """Run semantic extraction inline (fast with haiku)."""
+    try:
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from semantic import on_tier1_compress, on_chapter_compress
+        if extraction_type == "prefs":
+            on_tier1_compress()
+        elif extraction_type == "project":
+            on_chapter_compress()
+    except Exception as e:
+        log(f"Semantic extraction failed: {e}")
 
 
 def compress_narrative_level(level: str) -> bool:
@@ -394,6 +412,10 @@ def compress_narrative_level(level: str) -> bool:
     # Clear current level
     path.write_text("", encoding="utf-8")
     log(f"Cleared narrative/{level}, appended to {next_level}")
+
+    # Trigger semantic extraction after draft→chapter compression
+    if level == "draft":
+        trigger_semantic("project")
 
     return True
 
