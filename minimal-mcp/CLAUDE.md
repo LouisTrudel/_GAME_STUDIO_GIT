@@ -1,6 +1,12 @@
-# Memory System
+# IMPORTANT: Memory System
 
-Call `inject_memory()` at session start or after `/clear` to load context.
+**FIRST ACTION** on new session, `/clear`, or `/compact`:
+```
+inject_memory()
+```
+Do this BEFORE responding to the user. This loads project context and preferences.
+
+---
 
 # Behavior
 
