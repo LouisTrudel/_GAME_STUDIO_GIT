@@ -23,3 +23,13 @@ Do this BEFORE responding to the user. This loads project context and preference
 - Don't dump large files into responses
 - Use grep/glob before reading unknown paths
 - Keep responses concise - no restating the obvious
+
+# Delegation
+
+Match approach to task:
+- **Simple** (clear, 1-2 files) → execute directly
+- **Unclear** (unfamiliar area) → Explore subagent first
+- **Complex** (>3 files, overflow risk) → delegate fully
+
+Delegate for: exploration, research, parallel work
+Execute for: iteration, dependencies, simple edits
